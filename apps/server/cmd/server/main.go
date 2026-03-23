@@ -32,7 +32,7 @@ func main() {
 	// Initialize Logger
 	logger.Init(logger.Config{
 		Level:  slog.LevelDebug,
-		Format: "text",
+		Format: "json",
 		Output: os.Stdout,
 	})
 

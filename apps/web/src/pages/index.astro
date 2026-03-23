@@ -3,20 +3,20 @@ import Shell from "../layouts/Shell.astro";
 import Navbar from "../components/landing/Navbar.astro";
 import Hero from "../components/landing/Hero.astro";
 import Features from "../components/landing/Features.astro";
+import en from "../i18n/en.json";
 
 // Redirect if logged in
 ---
 
 <Shell title="SpatialNotes - Your Secure Spatial Canvas">
-    <div class="landing-page">
+    <div class="landing-page" role="document">
         <Navbar />
-        <main>
+        <main role="main" aria-label="Main content">
             <Hero />
             <Features />
         </main>
-        <footer class="footer">
-            &copy; {new Date().getFullYear()} SpatialNotes. All rights reserved. Zero-Knowledge.
-            Open Source.
+        <footer class="footer" role="contentinfo">
+            &copy; {new Date().getFullYear()} {en.footer}
         </footer>
     </div>
 </Shell>

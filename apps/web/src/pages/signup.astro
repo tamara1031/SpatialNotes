@@ -11,7 +11,7 @@ import AuthModalToggle from "../components/auth/AuthModalToggle.astro";
             <AuthModalHeader mode="signup" />
             <SignupForm
                 client:only="react"
-                onSuccess={() => (window.location.href = "/vault/")}
+                onSuccess={() => (window.location.href = "/app/")}
             />
             <AuthModalToggle mode="signup" />
         </div>

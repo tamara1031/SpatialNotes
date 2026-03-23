@@ -5,22 +5,23 @@
 export const enforceAuthStatus = (mode: "public" | "private") => {
     if (typeof window === "undefined") return;
 
-    const hasToken = !!localStorage.getItem("session_token");
+    const token = localStorage.getItem("session_token");
+    const hasToken = token !== null && token !== "null" && token !== "undefined" && token !== "";
     const path = window.location.pathname;
 
     // Use trailingSlash: "always" compatible checks
     const isRoot = path === "/" || path === "";
     const isAuthPage = path.includes("/signin") || path.includes("/signup");
-    const isVaultPage = path.includes("/vault");
+    const isVaultPage = path.includes("/app");
 
     console.debug(`[AuthGuard] Mode: ${mode}, Token: ${hasToken}, Path: ${path}`);
 
     if (mode === "public") {
-        // If on public pages and authenticated, go to vault
-        // ONLY redirect if not already on a vault page
+        // If on public pages and authenticated, go to app
+        // ONLY redirect if not already on an app page
         if (hasToken && !isVaultPage) {
-            console.log("[AuthGuard] Authenticated user on public page, redirecting to /vault/");
-            window.location.href = "/vault/";
+            console.log("[AuthGuard] Authenticated user on public page, redirecting to /app/");
+            window.location.href = "/app/";
         }
     } else if (mode === "private") {
         // If on private pages and NOT authenticated, go to signin

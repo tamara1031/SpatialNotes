@@ -20,9 +20,7 @@ Detailed design artifacts translate robustness diagrams into implementation-read
 
 ## 2. Class Diagrams
 
-- [Core Domain/Service Classes](./class-diagram.puml)
-- [Refactored Interaction Components](./refactored-class-diagram.puml)
-- [Auth Components & Stores](./auth-class-diagram.puml)
+- [Unified Class Diagram](./unified-class-diagram.puml)
 
 ## 3. Implementation Notes
 

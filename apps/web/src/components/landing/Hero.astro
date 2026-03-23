@@ -1,23 +1,21 @@
 ---
-
+import en from "../../i18n/en.json";
 ---
 
 <section class="hero">
     <div class="hero-content">
         <h1>
-            A Spatial Canvas for <br />
-            <span class="accent">Your Deep Thoughts.</span>
+            {en.landing.title} <br />
+            <span class="accent">{en.landing.accent}</span>
         </h1>
 
         <p class="description">
-            SpatialNotes combines the freedom of a digital canvas with the power
-            of E2EE security. Organize, draw, and write without boundaries or
-            compromises.
+            {en.landing.description}
         </p>
 
-        <div class="actions">
-            <a href="/signup" class="btn-primary">Create Your Vault</a>
-            <a href="#features" class="btn-secondary">See Features</a>
+        <div class="actions" role="group" aria-label="Hero Actions">
+            <a href="/signup" class="btn-primary" role="button">{en.landing.createVault}</a>
+            <a href="#features" class="btn-secondary" role="button">{en.landing.seeFeatures}</a>
         </div>
     </div>
 </section>

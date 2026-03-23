@@ -1,11 +1,13 @@
 import { useStore } from "@nanostores/react";
 import { AnimatePresence, motion } from "framer-motion";
-import type React from "react";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, Suspense, lazy } from "react";
 import { $appState, checkVaultStatus } from "../store/vaultStore";
-import { NoteViewShell } from "./NoteViewShell";
+import { ErrorBoundary } from "./shared/ErrorBoundary";
+
+const NoteViewShell = lazy(() => import("./NoteViewShell").then(module => ({ default: module.NoteViewShell })));
+const SidebarView = lazy(() => import("./sidebar/SidebarView").then(module => ({ default: module.SidebarView })));
+
 import { VaultSetupOverlay } from "./setup/VaultSetupOverlay";
-import { SidebarView } from "./sidebar/SidebarView";
 import { UserSelector } from "./UserSelector";
 import { VaultEmailOverlay } from "./VaultEmailOverlay";
 import { VaultUnlockOverlay } from "./VaultUnlockOverlay";
@@ -37,59 +39,65 @@ export const DesktopApp: React.FC = () => {
 	}
 
 	return (
-		<div
-			style={{
-				width: "100vw",
-				height: "100vh",
-				overflow: "hidden",
-				position: "relative",
-				display: "flex",
-				background: "var(--surface-base)",
-			}}
-		>
-			<VaultEmailOverlay />
-			<VaultSetupOverlay />
-			<VaultUnlockOverlay />
-			<UserSelector />
-
-			<AnimatePresence>
-				{!isInitialized && (
-					<motion.div
-						initial={{ opacity: 1 }}
-						exit={{ opacity: 0 }}
-						style={{
-							position: "fixed",
-							inset: 0,
-							zIndex: 2000,
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
-							background: "var(--surface)",
-							color: "var(--text-muted)",
-						}}
-					>
-						Connecting to Vault...
-					</motion.div>
-				)}
-			</AnimatePresence>
-
+		<ErrorBoundary>
 			<div
-				className="main-shell"
-				style={{ flex: 1, display: "flex", height: "100%" }}
+				style={{
+					width: "100vw",
+					height: "100vh",
+					overflow: "hidden",
+					position: "relative",
+					display: "flex",
+					background: "var(--surface-base)",
+				}}
 			>
-				<aside
-					className="sidebar"
-					style={{
-						width: "280px",
-						borderRight: "1px solid var(--glass-border)",
-					}}
+				<VaultEmailOverlay />
+				<VaultSetupOverlay />
+				<VaultUnlockOverlay />
+				<UserSelector />
+
+				<AnimatePresence>
+					{!isInitialized && (
+						<motion.div
+							initial={{ opacity: 1 }}
+							exit={{ opacity: 0 }}
+							style={{
+								position: "fixed",
+								inset: 0,
+								zIndex: 2000,
+								display: "flex",
+								alignItems: "center",
+								justifyContent: "center",
+								background: "var(--surface)",
+								color: "var(--text-muted)",
+							}}
+						>
+							Connecting to Vault...
+						</motion.div>
+					)}
+				</AnimatePresence>
+
+				<div
+					className="main-shell"
+					style={{ flex: 1, display: "flex", height: "100%" }}
 				>
-					<SidebarView />
-				</aside>
-				<main className="content" style={{ flex: 1 }}>
-					<NoteViewShell />
-				</main>
+					<Suspense fallback={<div>Loading Sidebar...</div>}>
+						<aside
+							className="sidebar"
+							style={{
+								width: "280px",
+								borderRight: "1px solid var(--glass-border)",
+							}}
+						>
+							<SidebarView />
+						</aside>
+					</Suspense>
+					<Suspense fallback={<div>Loading Editor...</div>}>
+						<main className="content" style={{ flex: 1 }}>
+							<NoteViewShell />
+						</main>
+					</Suspense>
+				</div>
 			</div>
-		</div>
+		</ErrorBoundary>
 	);
 };

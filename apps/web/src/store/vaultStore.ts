@@ -31,6 +31,10 @@ export const authService = new AuthService(sessionStorage);
 export const $currentUser = atom<any>(null);
 authService.subscribe(user => $currentUser.set(user));
 
+/**
+ * Checks the vault status on initialization, looking for previous user sessions.
+ * Triggers identifyUser if a previous user is found.
+ */
 export const checkVaultStatus = async () => {
 	if (typeof window === "undefined" || !window.localStorage) return;
 

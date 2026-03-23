@@ -21,6 +21,10 @@ var (
 )
 
 // Config holds logger configuration
+//
+// Level represents the minimum log level to record (e.g. slog.LevelDebug)
+// Format defines the logging structure (e.g. "json" or "text")
+// Output determines the io.Writer where logs are sent (e.g. os.Stdout)
 type Config struct {
 	Level  slog.Level
 	Format string // "json" or "text"
