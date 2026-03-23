@@ -2,11 +2,15 @@ import { $sessionToken } from "../store/vaultStore";
 
 export const api = {
 	async pushUpdate(nodeId: string, payload: Uint8Array) {
-		const base64Payload = btoa(
-			Array.from(payload)
-				.map((b) => String.fromCharCode(b))
-				.join(""),
-		);
+		const chunk_size = 0x8000;
+		let binary = "";
+		for (let i = 0; i < payload.length; i += chunk_size) {
+			binary += String.fromCharCode.apply(
+				null,
+				payload.subarray(i, i + chunk_size) as unknown as number[],
+			);
+		}
+		const base64Payload = btoa(binary);
 
 		const token = $sessionToken.get();
 		const resp = await fetch(`/api/nodes/${nodeId}/updates`, {
@@ -52,11 +56,7 @@ export const api = {
 		const updates: { payload: string }[] = await resp.json();
 		return updates.map((u) => {
 			const binary = atob(u.payload);
-			const bytes = new Uint8Array(binary.length);
-			for (let i = 0; i < binary.length; i++) {
-				bytes[i] = binary.charCodeAt(i);
-			}
-			return bytes;
+			return Uint8Array.from(binary, (c) => c.charCodeAt(0));
 		});
 	},
 };
