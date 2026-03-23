@@ -5,20 +5,27 @@ export class PanningTool implements Tool {
 		return "grabbing";
 	}
 
-	onPointerDown(e: PointerEvent, ctx: InteractionContext): void {
+	onPointerDown(
+		e: PointerEvent,
+		ctx: InteractionContext,
+		_coords: { x: number; y: number },
+	): void {
 		ctx.store.update({
 			isPanning: true,
 			lastPanPos: { x: e.clientX, y: e.clientY },
 		});
 	}
 
-	onPointerMove(e: PointerEvent, ctx: InteractionContext): void {
+	onPointerMove(
+		e: PointerEvent,
+		ctx: InteractionContext,
+		_coords: { x: number; y: number },
+	): void {
 		const state = ctx.store.getState();
 		if (state.isPanning && state.lastPanPos) {
 			const dx = e.clientX - state.lastPanPos.x;
 			const dy = e.clientY - state.lastPanPos.y;
 
-			// Fix invalid ctx.dispatch call: use store.update directly
 			const currentPan = state.viewport.pan;
 			ctx.store.update({
 				viewport: {
@@ -30,7 +37,11 @@ export class PanningTool implements Tool {
 		}
 	}
 
-	onPointerUp(e: PointerEvent, ctx: InteractionContext): void {
+	onPointerUp(
+		e: PointerEvent,
+		ctx: InteractionContext,
+		_coords: { x: number; y: number },
+	): void {
 		ctx.store.update({ isPanning: false, lastPanPos: null });
 	}
 }
