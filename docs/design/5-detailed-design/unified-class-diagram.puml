@@ -1,0 +1,132 @@
+@startuml unified-class-diagram
+!theme plain
+skinparam backgroundColor white
+hide circle
+
+package "Domain Layer" {
+    abstract class Node <<Entity>> {
+        + id: string
+        + parentId: string | null
+        + name: string
+        + type: NodeType
+        + encryptionStrategy: EncryptionStrategy
+        + rename(newName: string)
+        + move(newParent: string | null)
+        + delete()
+        + accept(visitor: CanvasElementVisitor)
+    }
+    class Chapter extends Node {
+        - children: Node[]
+        + addChild(node: Node)
+    }
+    class Notebook extends Node {
+        - elements: CanvasElement[]
+        + addElement(element: CanvasElement)
+    }
+    abstract class CanvasElement extends Node {
+        + zIndex: number
+        + metadata: any
+    }
+    class StrokeElement extends CanvasElement
+    class ImageElement extends CanvasElement
+    class TextElement extends CanvasElement
+
+    interface INodeRepository <<Interface>> {
+        + save(node: Node)
+        + findById(id: string): Node
+        + findAll(userId: string): Node[]
+    }
+    class NodeFactory <<Factory>>
+
+    class DomainEventBus {
+        +publish(event: IDomainEvent)
+        +subscribe(type: string, handler: Function)
+    }
+}
+
+package "Application Layer" {
+    class CreateNodeUseCase
+    class RenameNodeUseCase {
+        -bus: DomainEventBus
+        +execute(nodeId: string, newName: string)
+    }
+    class RegisterVaultUseCase <<UseCase>>
+    class UnlockVaultUseCase <<UseCase>>
+    class SyncManager <<Control>> {
+        - repository: INodeRepository
+        - crypto: CryptoService
+        + pushUpdate(delta: Uint8Array)
+        + onAck()
+    }
+
+    interface IStore {
+        +get(key: string): any
+        +set(key: string, value: any)
+    }
+
+    abstract class Command {
+        +execute()
+    }
+
+    class UpdateNodeCommand extends Command {
+        -store: IStore
+        -record: NodeRecord
+        +execute()
+    }
+}
+
+package "Infrastructure Layer" {
+    class OPFSSqliteRepository implements INodeRepository
+    class YjsNodeRepository implements INodeRepository
+    class CryptoWorkerProxy
+
+    class YjsStoreAdapter implements IStore {
+        -yMap: Y.Map
+    }
+
+    class SyncService {
+        -bus: DomainEventBus
+        +onNodeRenamed(event: NodeRenamed)
+    }
+}
+
+package "Web Application (apps/web)" {
+    class VaultStore <<UI State>> {
+        +$sessionToken: atom
+        +$appState: atom
+        +checkVaultStatus()
+        +logout()
+    }
+    class NoteStore <<UI State>>
+    class SigninForm {
+        +handleSubmit()
+        +onSuccess()
+    }
+    class DesktopApp {
+        +setIsInitialized()
+        +render()
+    }
+    class NoteViewShell <<UI>>
+    class Shell <<layout>> {
+        +title
+    }
+}
+
+' Relationships
+Chapter "1" *-- "0..*" Node : contains
+Notebook "1" *-- "0..*" CanvasElement : contains
+SyncManager --> INodeRepository
+SyncManager --> CryptoWorkerProxy
+VaultStore ..> RegisterVaultUseCase : uses
+VaultStore ..> UnlockVaultUseCase : uses
+
+RenameNodeUseCase ..> Node : uses
+RenameNodeUseCase ..> DomainEventBus : publishes
+SyncService ..> DomainEventBus : subscribes
+SyncService ..> UpdateNodeCommand : creates
+UpdateNodeCommand ..> IStore : uses
+
+VaultStore <.. SigninForm : uses
+VaultStore <.. DesktopApp : uses
+Shell ..> DesktopApp : wraps
+@enduml

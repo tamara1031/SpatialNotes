@@ -81,4 +81,10 @@ describe("vaultStore checkVaultStatus", () => {
         await checkVaultStatus();
         expect(authActions.identifyUser).toHaveBeenCalledWith("test@example.com");
     });
+
+    it("should handle error gracefully when identifyUser throws", async () => {
+        (localStorage.getItem as any).mockReturnValue("test@example.com");
+        vi.spyOn(authActions, "identifyUser").mockRejectedValue(new Error("Network Error"));
+        await expect(checkVaultStatus()).rejects.toThrow("Network Error");
+    });
 });
