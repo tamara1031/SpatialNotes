@@ -1,0 +1,36 @@
+---
+interface Props {
+    mode: "signin" | "signup";
+}
+
+const { mode } = Astro.props;
+const isSignin = mode === "signin";
+const targetUrl = isSignin ? "/signup" : "/signin";
+const text = isSignin ? "Don't have an account?" : "Already have an account?";
+const actionText = isSignin ? "Sign Up" : "Sign In";
+---
+
+<div class="toggle-container">
+    {text}
+    <a href={targetUrl} class="toggle-link">{actionText}</a>
+</div>
+
+<style>
+    .toggle-container {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .toggle-link {
+        color: var(--accent);
+        text-decoration: none;
+        font-weight: 600;
+        transition: opacity 0.2s;
+    }
+
+    .toggle-link:hover {
+        opacity: 0.8;
+    }
+</style>

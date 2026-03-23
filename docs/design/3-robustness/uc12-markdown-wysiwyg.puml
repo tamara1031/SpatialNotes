@@ -1,0 +1,23 @@
+@startuml uc12-markdown-wysiwyg UC12_Markdown_WYSIWYG_Robustness
+left to right direction
+
+actor "User" as user
+
+boundary "Markdown Interaction View" as View
+boundary "Markdown Toolbar" as Toolbar
+boundary "Slash Command Menu" as Menu
+boundary "Sync Gateway" as SyncGateway
+control "Markdown Parser (WASM)" as Parser
+control "WASM Renderer" as Renderer
+entity "Document Model" as Model
+
+user -> View : Type Markdown / Input
+user -> Toolbar : Click Format Tool
+user -> Menu : Select Item
+View -> Model : Update Block Content
+Toolbar -> Model : Apply Formatting
+Model -> Parser : Parse to AST
+Parser -> Renderer : Render to WYSIWYG
+Renderer -> View : Display Output
+Model -> SyncGateway : Encrypted Sync (UC11)
+@enduml

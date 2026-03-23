@@ -1,0 +1,61 @@
+<h2>Phase 1: Core Domain & Logic</h2>
+<p class="subtitle">Focus: packages/core alignment with Command Pattern & Refined Design</p>
+
+<div class="section">
+  <h3>1. Type & Interface Alignment</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Types (types.ts)</p>
+      <pre>
+export type NodeType = 
+  | 'FOLDER' | 'NOTEBOOK' | 'PAGE' 
+  | 'ELEMENT_STROKE' | 'ELEMENT_IMAGE' 
+  | 'ELEMENT_TEXT' | 'ELEMENT_TAPE';
+
+export interface NodeRecord {
+  id: string;
+  parentId: string | null;
+  type: NodeType;
+  metadata: Record&lt;string, any&gt;;
+  updatedAt: number;
+}
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Command Pattern Implementation</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">CanvasCommand (TS)</p>
+      <pre>
+export interface CanvasCommand {
+  execute(): void;
+  undo(): void;
+}
+
+export class CommandHistory {
+  private undoStack: CanvasCommand[] = [];
+  private redoStack: CanvasCommand[] = [];
+  // ... stack management logic
+}
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Hierarchy & Validation (ADR-002)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <ul>
+        <li><strong>Node.ts</strong>: Abstract base with circular reference protection.</li>
+        <li><strong>PageNode.ts</strong>: Fixed-size canvas logic (A4/B5 metrics).</li>
+        <li><strong>CanvasElement.ts</strong>: Abstract leaf node with Bounding Box support.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<p>Does this structure for Phase 1 align with your expectations? I'll prepare the design doc once you approve.</p>

@@ -1,0 +1,66 @@
+<h2>Canvas Implementation: Hybrid Architecture</h2>
+<p class="subtitle">Solving the "Performance vs. Interactivity" trade-off.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Component Stack (Implementation View)</div>
+  <div class="mockup-body" style="padding: 20px; font-family: monospace; font-size: 0.85rem;">
+    <div style="border: 2px solid #555; padding: 10px; border-radius: 4px; margin-bottom: 5px; background: #eee;">
+      <strong>&lt;CanvasContainer /&gt;</strong> (Handles Zoom, Pan, Gestures)
+      <div style="border: 1px solid #77f; padding: 10px; border-radius: 4px; margin: 10px 0; background: rgba(119, 119, 255, 0.1);">
+        <strong>&lt;InteractiveLayer /&gt; (SVG/DOM)</strong>
+        <ul>
+          <li>Text Inputs (ContentEditable)</li>
+          <li>Images (Drag handles)</li>
+          <li>Lasso Selection Marquee</li>
+        </ul>
+      </div>
+      <div style="border: 1px solid #f77; padding: 10px; border-radius: 4px; margin: 10px 0; background: rgba(255, 119, 119, 0.1);">
+        <strong>&lt;InkTrailLayer /&gt; (Canvas + Web Ink API)</strong>
+        <ul>
+          <li>The "Delegated Trail" (Zero Lag)</li>
+        </ul>
+      </div>
+      <div style="border: 1px solid #7f7; padding: 10px; border-radius: 4px; margin: 10px 0; background: rgba(119, 255, 119, 0.1);">
+        <strong>&lt;StaticStrokeLayer /&gt; (Canvas)</strong>
+        <ul>
+          <li>All committed pen strokes (Pre-rendered)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Strategic Implementation Detail: MM-to-Pixel Mapping</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h4>The "Core" is MM</h4>
+        <p>All positions in <code>Yjs</code> are stored in physical millimeters (A4: 210x297). This ensures PDF export is always pixel-perfect.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h4>The "View" is Pixels</h4>
+        <p>A <code>Matrix3x3</code> transform converts MM to Screen Pixels based on the current Zoom level. We apply this transform via <code>ctx.setTransform()</code> for the canvas layers.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="virtual" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Virtual Page Loading</h3>
+      <p>Only pages in the viewport are "mounted." Best for huge 100+ page notebooks.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="column" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Continuous Column</h3>
+      <p>Pages are stacked vertically with small gaps. Simplest "Infinite" experience.</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+@startuml uc16-metadata-separation uc16_metadata_separation_robustness
+!theme plain
+skinparam linetype ortho
+
+actor "User" as user
+
+boundary "Notebook Dashboard" as dashboard
+control "SyncManager" as sync_mgr
+entity "OPFS SQLite (Metadata)" as local_db
+entity "IndexedDB / OPFS (Content)" as content_cache
+boundary "Backend API" as api
+
+== Initial Load ==
+sync_mgr -> api : GET /api/notes/metadata
+api --> sync_mgr : metadataList
+sync_mgr -> local_db : upsert(metadata)
+local_db --> dashboard : updatedList
+dashboard -> user : Display Note List
+
+== Load Note Content ==
+user -> dashboard : Select Note
+dashboard -> sync_mgr : loadNote(id)
+sync_mgr -> content_cache : checkCache(id)
+
+alt Cache Miss
+    sync_mgr -> api : GET /api/notes/{id}/content
+    api --> sync_mgr : encrypted / plaintext content
+    sync_mgr -> content_cache : save(id, content)
+end
+
+sync_mgr -> dashboard : renderEditor(content)
+
+@enduml

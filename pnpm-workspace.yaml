@@ -1,0 +1,5 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+  - 'packages/canvas-engine/packages/canvas-wasm'
+  - 'packages/markdown-engine/packages/markdown-wasm'

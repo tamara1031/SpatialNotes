@@ -1,0 +1,17 @@
+@startuml uc7-undo
+left to right direction
+
+actor "Student (Actor)" as actor
+boundary "Canvas View" as canvas
+control "Undo Manager (Yjs)" as undo
+entity "Elements Map" as elements
+entity "Notebook Map" as notebook
+
+' --- Association Flow ---
+actor -- canvas
+canvas -- undo
+undo -- elements
+undo -- notebook
+
+@enduml
+

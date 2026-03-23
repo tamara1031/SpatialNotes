@@ -1,0 +1,22 @@
+@startuml UC5_Hierarchical_Move_Sequence
+!theme plain
+autonumber
+
+actor "User" as user
+boundary "Sidebar Boundary" as boundary
+participant "nodesMap" as Nodes
+participant "Web Sync Manager" as Sync
+
+user -> boundary : Drag Node A to Folder B
+boundary -> boundary : validateMove(nodeA, nodeB)
+note right: Check for circular references locally
+
+alt valid
+    boundary -> Nodes : set(nodeA.id, { ...nodeA, parentId: nodeB.id })
+    boundary -> Sync : markChanged()
+    boundary -> boundary : refreshHierarchy()
+else invalid
+    boundary -> boundary : showErrorMessage("Invalid Move")
+end
+
+@enduml

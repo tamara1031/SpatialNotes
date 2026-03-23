@@ -1,0 +1,32 @@
+[package]
+name = "markdown-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["SpatialNotes Contributors"]
+description = "High-performance Rust markdown engine for SpatialNotes"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.92"
+wasm-bindgen-futures = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde-wasm-bindgen = "0.6.5"
+pulldown-cmark = { version = "0.10", default-features = false, features = ["html"] }
+web-sys = { version = "0.3.69", features = [
+    "console",
+    "Window",
+    "Document",
+    "Element",
+    "Node",
+    "HtmlElement"
+] }
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.42"

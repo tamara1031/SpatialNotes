@@ -1,0 +1,20 @@
+@startuml UC3_Rich_Elements_Sequence
+!theme plain
+autonumber
+
+actor "User" as user
+participant "InteractionManager" as IM
+participant "DrawingTool" as Tool
+participant "DrawingService" as service
+participant "CanvasStore" as Store
+participant "CommandBus" as Bus
+
+user -> IM : Click for Text
+IM -> Tool : onPointerDown()
+Tool -> service : createElement("ELEMENT_TEXT", x, y)
+activate service
+service -> Store : update(Optimistic Elements)
+service -> Bus : dispatch(CREATE_ELEMENT)
+deactivate service
+Store -> user : Render Editor
+@enduml

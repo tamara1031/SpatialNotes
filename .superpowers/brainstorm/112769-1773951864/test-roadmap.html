@@ -1,0 +1,45 @@
+<h2>Test Implementation Roadmap</h2>
+<p class="subtitle">Select the priority for missing quality gate implementations</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="unit" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>Phase A: Domain Extensions</h3>
+      <ul>
+        <li><strong>SC-U4/U5</strong>: NodeFactory (Polymorphism & Validation)</li>
+        <li><strong>SC-U6</strong>: Visitor Pattern (Traversal & PDF/Search logic)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="option" data-choice="infra" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>Phase B: Sync & Protocol</h3>
+      <ul>
+        <li><strong>SC-I3</strong>: Yjs Binary Merge (actual WebSocket context)</li>
+        <li><strong>SC-S1</strong>: Cross-Device Move Flow (E2E simulation)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="option" data-choice="system" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>Phase C: Advanced Interactions</h3>
+      <ul>
+        <li><strong>SC-S2</strong>: Atomic Erasure (Gesture logic integration)</li>
+        <li><strong>Visual Regression</strong>: PDF Export fidelity checks</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Current Test Coverage Summary</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p>✅ <strong>Implemented</strong>: Basic Hierarchy (SC-U1/2/3), Basic Persistence (SC-I1/2), Command Stack (SC-U7/8)</p>
+      <p>❌ <strong>Missing</strong>: Polymorphic Factory, Visitor Pattern, Binary Protocol Merges, Gesture Logic</p>
+    </div>
+  </div>
+</div>

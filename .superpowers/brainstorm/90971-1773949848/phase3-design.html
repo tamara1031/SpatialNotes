@@ -1,0 +1,40 @@
+<h2>Phase 3: Frontend & Real-time Sync</h2>
+<p class="subtitle">Focus: React UI, Canvas Interaction, and Yjs Real-time Sync</p>
+
+<div class="section">
+  <h3>1. Canvas Rendering Engine</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <ul>
+        <li><strong>Interaction View</strong>: React-based canvas for stroke/image rendering.</li>
+        <li><strong>Framer Motion</strong>: Implementation of spring-physics for Element Pop.</li>
+        <li><strong>Glassmorphism</strong>: Sidebar blur and UI tokens (ADR-003).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Yjs Gateway integration</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Sync Logic (TS)</p>
+      <pre>
+const ydoc = new Y.Doc();
+const provider = new WebsocketProvider('ws://localhost:8080', room, ydoc);
+// ... sync command execution with Y.Doc updates
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. Undo/Redo UI</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p>Binding keyboard shortcuts (Ctrl+Z) to the local <code>CommandHistory</code> entity implemented in Phase 1.</p>
+    </div>
+  </div>
+</div>
+
+<p>I'm ready to write the design doc for Phase 3. Proceed?</p>

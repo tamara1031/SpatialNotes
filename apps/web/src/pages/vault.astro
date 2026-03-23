@@ -1,0 +1,15 @@
+---
+import { DesktopApp } from "../components/DesktopApp";
+import { NotificationIsland } from "../components/shared/NotificationIsland";
+import Shell from "../layouts/Shell.astro";
+---
+
+<Shell title="SpatialNotes">
+	<DesktopApp client:load />
+	<NotificationIsland client:idle />
+</Shell>
+
+<script>
+	import { enforceAuthStatus } from "../utils/AuthGuard";
+	enforceAuthStatus("private");
+</script>

@@ -1,0 +1,42 @@
+@startuml uc10-vault-auth-sequence
+actor User
+participant "App Shell" as app
+participant "AuthService" as auth
+participant "CryptoWorkerProxy" as worker
+participant "VaultManager" as vault
+participant "Go Backend" as api
+database "Database" as db
+
+== Boot & Check Status ==
+app -> api : GET /api/auth/status
+api -> db : GetCurrentUser()
+db --> api : User or None
+api --> app : {initialized: true/false, saltAuth: ...}
+
+alt Not Initialized
+    app -> User : Show Setup View
+    User -> app : Enter Email & Password
+    app -> auth : setupVault(email, password)
+    auth -> worker : deriveVaultKeys(password, salts)
+    worker --> auth : {authToken, kek}
+    auth -> worker : generate + wrap DEK
+    auth -> api : POST /api/auth/register
+    api -> db : Create User + Wrapped DEK
+    api --> auth : 201 Created (Token: JWT)
+    auth -> vault : setUnlocked(authToken, DEK, KEK)
+    auth -> app : Set state to 'unlocked'
+else Initialized
+    app -> User : Show Unlock View
+    User -> app : Enter Password
+    app -> auth : unlockVault(password)
+    auth -> worker : deriveVaultKeys(password, fetchedSalts)
+    worker --> auth : {authToken, kek}
+    auth -> api : POST /api/auth/login
+    api --> auth : 200 OK (Token: JWT, Wrapped DEK)
+    auth -> worker : unwrapKey(Wrapped DEK, kek)
+    worker --> auth : DEK
+    auth -> vault : setUnlocked(authToken, DEK, KEK)
+    auth -> app : Set state to 'unlocked'
+end
+
+@enduml

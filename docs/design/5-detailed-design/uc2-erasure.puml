@@ -1,0 +1,29 @@
+@startuml UC2_Gesture_Erasure_Sequence
+!theme plain
+autonumber
+
+actor "User (Stylus)" as user
+participant "InteractionManager" as IM
+participant "EraserTool" as Tool
+control "EraserService" as service
+participant "WorkerGateway" as bridge
+participant "CanvasStore" as Store
+
+user -> IM : Draw Eraser Path
+IM -> Tool : onPointerMove(path)
+Tool -> service : eraseAt(path)
+activate service
+service -> bridge : queryAt(path)
+bridge -> service : ids
+alt Precision Mode
+    service -> bridge : partialErase(el, path)
+    bridge -> service : fragments
+else Stroke Mode
+    service -> service : markDeleted(ids)
+end
+service -> Store : update(Optimistic updates)
+service -> Store : emitCommand(DELETE/UPDATE_ELEMENTS)
+deactivate service
+
+Store -> user : Feedback (Visual Removal)
+@enduml

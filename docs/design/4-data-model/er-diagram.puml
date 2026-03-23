@@ -1,0 +1,40 @@
+@startuml spatial_notes_er_diagram_final
+!theme plain
+hide circle
+skinparam linetype ortho
+
+entity "notebook_nodes" as node {
+  * id : TEXT <<PK>>
+  --
+  ' --- 構造・制御データ（常に平文） ---
+  ' --- Structure & Control Data (Always Plaintext) ---
+  parent_id : TEXT <<index>>
+  type : TEXT (CHAPTER | NOTEBOOK)
+  engine_type : TEXT (CANVAS | MARKDOWN)
+  encryption_strategy : TEXT (STANDARD | E2EE)
+
+  ' --- メタデータ本体（Strategyにより平文か暗号文かが決まる） ---
+  ' --- Metadata Payload (Plaintext or Encrypted depends on Strategy) ---
+  ' Standard: JSON / E2EE: Encrypted Binary
+  metadata_payload : BLOB 
+
+  is_deleted : BOOLEAN
+  updated_at : INTEGER
+}
+
+entity "node_updates" as update {
+  * id : INTEGER <<PK-Auto>>
+  --
+  node_id : TEXT <<index>>
+  ' 本文データ本体（Strategyにより平文か暗号文かが決まる）
+  ' Content Payload (Plaintext or Encrypted depends on Strategy)
+  payload : BLOB 
+
+  created_at : INTEGER <<default:now>>
+}
+
+' --- 物理的なリレーション ---
+' --- Physical Relationships ---
+node ||..o{ node : "parent_id"
+node ||..o{ update : "node_id"
+@enduml

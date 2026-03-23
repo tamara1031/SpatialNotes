@@ -1,0 +1,26 @@
+{
+	"name": "spatial-notes",
+	"private": true,
+	"packageManager": "pnpm@10.17.0",
+	"scripts": {
+		"dev": "run-p dev:web dev:server",
+		"dev:web": "pnpm --filter web dev",
+		"dev:server": "mkdir -p bin && go build -o bin/dev-server apps/server/cmd/server/main.go && ./bin/dev-server",
+		"build": "pnpm build:wasm && pnpm build:core && pnpm build:web && pnpm build:server",
+		"build:wasm": "cd packages/canvas-engine/packages/canvas-wasm && wasm-pack build --target web --out-dir dist",
+		"build:core": "pnpm --filter @spatial-notes/core build",
+		"build:engine-core": "pnpm --filter engine-core build",
+		"build:web": "pnpm --filter web build",
+		"build:server": "go build -o apps/server/bin/server apps/server/cmd/server/main.go",
+		"lint": "pnpm --filter web run lint 2>/dev/null || echo 'web: no lint script'",
+		"format:check": "pnpm --filter web run format:check 2>/dev/null || echo 'web: no format script'",
+		"test": "pnpm --filter canvas-engine test && pnpm --filter web test",
+		"test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.8",
+		"@playwright/test": "^1.58.2",
+		"npm-run-all": "^4.1.5",
+		"typescript": "^5.9.3"
+	}
+}

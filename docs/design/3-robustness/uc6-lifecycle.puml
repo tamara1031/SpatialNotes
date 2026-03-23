@@ -1,0 +1,30 @@
+@startuml uc6-lifecycle
+!theme plain
+skinparam backgroundColor white
+
+actor "User" as actor
+boundary "Sidebar Boundary" as sidebar
+control "RenameNodeUseCase" as rename_ctrl
+control "DeleteNodeUseCase" as delete_ctrl
+entity "Node" as node
+control "DomainEventBus" as bus
+control "SubtreeDeletionService" as service
+entity "UpdateNodeCommand" as cmd
+
+' --- Rename Flow ---
+actor -> sidebar : Double-click Node Name
+sidebar -> rename_ctrl : rename(nodeId, newName)
+rename_ctrl -> node : rename(newName)
+rename_ctrl -> bus : publish(NodeRenamed)
+bus -> sync : handleNodeRenamed
+sync -> cmd : execute
+cmd -> sidebar : Refresh UI (via store)
+
+' --- Delete Flow ---
+actor -> sidebar : Select Delete
+sidebar -> delete_ctrl : delete(nodeId)
+delete_ctrl -> service : markSubtreeAsDeleted(nodeId)
+service -> node : markDeleted()
+delete_ctrl -> bus : publish(NodeDeleted)
+bus -> sync : handleNodeDeleted
+@enduml

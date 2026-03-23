@@ -1,0 +1,55 @@
+@startuml refactored-class-diagram
+!theme plain
+
+package "Domain Layer" {
+    abstract class Node {
+        +id: string
+        +rename(newName: string)
+        +markDeleted()
+    }
+    
+    class DomainEventBus {
+        +publish(event: IDomainEvent)
+        +subscribe(type: string, handler: Function)
+    }
+}
+
+package "Application Layer" {
+    class RenameNodeUseCase {
+        -bus: DomainEventBus
+        +execute(nodeId: string, newName: string)
+    }
+    
+    interface IStore {
+        +get(key: string): any
+        +set(key: string, value: any)
+    }
+    
+    abstract class Command {
+        +execute()
+    }
+    
+    class UpdateNodeCommand extends Command {
+        -store: IStore
+        -record: NodeRecord
+        +execute()
+    }
+}
+
+package "Infrastructure Layer" {
+    class YjsStoreAdapter implements IStore {
+        -yMap: Y.Map
+    }
+    
+    class SyncService {
+        -bus: DomainEventBus
+        +onNodeRenamed(event: NodeRenamed)
+    }
+}
+
+RenameNodeUseCase ..> Node : uses
+RenameNodeUseCase ..> DomainEventBus : publishes
+SyncService ..> DomainEventBus : subscribes
+SyncService ..> UpdateNodeCommand : creates
+UpdateNodeCommand ..> IStore : uses
+@enduml

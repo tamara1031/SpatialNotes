@@ -1,0 +1,9 @@
+{
+	"name": "markdown-wasm",
+	"version": "0.1.0",
+	"description": "Wasm bridge for SpatialNotes Markdown Engine",
+	"private": true,
+	"main": "dist/markdown_wasm.js",
+	"types": "dist/markdown_wasm.d.ts",
+	"type": "module"
+}

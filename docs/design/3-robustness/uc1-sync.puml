@@ -1,0 +1,46 @@
+@startuml uc1-sync
+!theme plain
+skinparam linetype ortho
+
+actor "User" as user
+
+boundary "Canvas/Markdown View" as ui
+boundary "Header Status Indicator" as header
+boundary "CryptoWorker" as worker
+boundary "Sync Gateway" as gateway
+
+control "Sync Manager" as sync_mgr
+control "Crypto Service" as crypto_svc
+control "Local Cache Manager" as cache_mgr
+
+entity "Yjs Document" as y_doc
+entity "OPFS SQLite" as local_db
+entity "Backend Relay" as server
+
+' Interaction
+user -> ui : Interaction
+ui -> y_doc : updateState(delta)
+y_doc -> sync_mgr : onChange(delta)
+
+' Local Persistence
+sync_mgr -> cache_mgr : persist(delta)
+cache_mgr -> local_db : saveUpdate(binary)
+
+' Sync Flow
+sync_mgr -> header : setStatus("Unsaved changes")
+sync_mgr -> sync_mgr : debounce(5s)
+... Timer Expires ...
+sync_mgr -> header : setStatus("Saving...")
+
+sync_mgr -> crypto_svc : encrypt(delta)
+crypto_svc -> worker : AES-GCM (Optional)
+worker --> crypto_svc : encryptedPayload
+
+crypto_svc -> gateway : push(payload)
+gateway -> server : POST /api/sync
+server --> gateway : ACK
+
+gateway --> sync_mgr : onAck()
+sync_mgr -> header : setStatus("Saved to Cloud")
+
+@enduml

@@ -1,0 +1,49 @@
+# Node.js
+node_modules/
+dist/
+.npm
+.pnpm-debug.log
+pnpm-lock.yaml
+.astro/
+
+# Rust / Wasm
+target/
+**/*.rs.bk
+apps/web/packages/canvas-wasm/pkg/
+apps/web/packages/canvas-wasm/dist/
+
+# Go
+bin/
+apps/server/bin/
+apps/server/cmd/server/dist/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+spatial_notes.db
+*.db
+search_res.txt
+
+# IDEs & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+playwright-report/
+test-results/
+test-results.xml
+coverage/
+
+# Logs
+*.log
+.worktrees/

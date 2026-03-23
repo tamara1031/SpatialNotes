@@ -1,0 +1,38 @@
+@startuml uc7-command-sequence
+!theme plain
+autonumber
+
+participant "User" as user
+participant "NoteViewShell" as shell
+participant "CanvasEngine" as engine
+participant "Command (Core)" as cmd
+participant "YjsMap" as yjs
+participant "Y.UndoManager" as undo
+
+== Execute Command ==
+user -> engine : Mouse/Pen Action
+engine -> shell : onCommand(ACTION)
+shell -> yjs : transact()
+activate yjs
+shell -> cmd : new Command(yjs, data)
+shell -> cmd : execute()
+cmd -> yjs : set/delete()
+yjs -> undo : register(tx)
+deactivate yjs
+
+== Local Undo ==
+user -> engine : Ctrl+Z
+engine -> shell : onUndo()
+shell -> undo : undo()
+undo -> yjs : revert()
+yjs -> shell : observe()
+shell -> engine : updateElements()
+
+== Local Redo ==
+user -> engine : Ctrl+Shift+Z
+engine -> shell : onRedo()
+shell -> undo : redo()
+undo -> yjs : apply()
+yjs -> shell : observe()
+shell -> engine : updateElements()
+@enduml

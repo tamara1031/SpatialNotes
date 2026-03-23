@@ -1,0 +1,44 @@
+# Node.js
+node_modules/
+.npm
+.pnpm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.astro/
+
+# Rust / Wasm – only exclude target dirs and old pkg paths; keep dist/ inside packages
+target/
+**/*.rs.bk
+# Old canvas-wasm paths (now nested under canvas-engine)
+packages/canvas-wasm/
+
+# Web build output (Go embeds from a copy, not from source)
+apps/web/dist/
+
+# Go
+bin/
+apps/server/bin/
+apps/server/cmd/server/dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+spatial_notes.db
+
+# IDEs & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# Docker / CI
+Dockerfile*
+docker-compose.yml
+.git/
+.github/
+
+# Logs
+*.log

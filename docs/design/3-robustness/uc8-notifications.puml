@@ -1,0 +1,30 @@
+@startuml uc8-notifications
+!theme plain
+skinparam backgroundColor white
+
+actor "User" as user
+actor "System Component" as sys
+
+boundary "NotificationIsland" as b_notify
+control "Notification Controller" as c_notify
+entity "NotificationStore" as e_store
+
+' Flow 1: Triggering
+sys -> c_notify : request notification(msg, action?)
+c_notify -> e_store : append notification
+e_store -> b_notify : notify state change
+b_notify -> user : Display Feedback
+
+' Flow 2: Auto-dismiss
+c_notify -> c_notify : wait(5s)
+c_notify -> e_store : remove notification(id)
+e_store -> b_notify : notify state change
+b_notify -> user : Hide Feedback
+
+' Flow 3: Undo Action
+user -> b_notify : Click "Undo"
+b_notify -> c_notify : trigger action
+c_notify -> sys : revert()
+c_notify -> e_store : remove notification(id)
+
+@enduml

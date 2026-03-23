@@ -1,0 +1,33 @@
+<h2>Test Phase B: Sync & Protocol</h2>
+<p class="subtitle">Focus: Yjs State Integrity and Collaborative Flows</p>
+
+<div class="section">
+  <h3>1. Yjs Binary Merge (SC-I3)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Test Scenario</p>
+      <ul>
+        <li>Client A and Client B start with same state.</li>
+        <li>Client A adds element 1, Client B adds element 2 concurrently.</li>
+        <li>Verify <code>Y.applyUpdate</code> results in identical docs on both.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Collaborative Move (SC-S1)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Behavioral Simulation</p>
+      <pre>
+// Mock WebSocket flow
+bus.on('update', (delta) => clients.forEach(c => c.sync(delta)));
+clientA.moveNode('n1', 'folder-x');
+expect(clientB.getNode('n1').parentId).toBe('folder-x');
+      </pre>
+    </div>
+  </div>
+</div>
+
+<p>I'm ready to write the implementation plan for Phase B. Proceed?</p>

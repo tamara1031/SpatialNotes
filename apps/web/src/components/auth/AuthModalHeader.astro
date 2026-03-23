@@ -1,0 +1,33 @@
+---
+interface Props {
+    mode: "signin" | "signup";
+}
+
+const { mode } = Astro.props;
+---
+
+<h2 class="title">
+    {mode === "signin" ? "Welcome Back" : "Join SpatialNotes"}
+</h2>
+<p class="subtitle">
+    {
+        mode === "signin"
+            ? "Sign in to access your vault."
+            : "Create a zero-knowledge encrypted vault."
+    }
+</p>
+
+<style>
+    .title {
+        font-size: 2rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        text-align: center;
+    }
+
+    .subtitle {
+        color: var(--text-secondary);
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+</style>

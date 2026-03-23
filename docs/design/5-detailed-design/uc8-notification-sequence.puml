@@ -1,0 +1,29 @@
+@startuml UC8_Notification_Sequence
+!theme plain
+autonumber
+
+participant "SidebarView" as sidebar
+participant "NotificationStore" as store
+participant "NotificationIsland" as island
+participant "User" as user
+
+sidebar -> store : showNotification("Deleted", undoFn)
+activate store
+store -> store : add to $notifications atom
+store -> island : emit change event
+deactivate store
+
+activate island
+island -> island : render snack-bar
+island -> user : display feedback
+deactivate island
+
+... User reacts within 5s ...
+
+user -> island : Click "Undo"
+activate island
+island -> sidebar : call undoFn()
+island -> store : remove(notificationId)
+deactivate island
+
+@enduml

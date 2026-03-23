@@ -1,0 +1,52 @@
+[package]
+name = "canvas-wasm"
+version = "0.1.0"
+edition = "2021"
+authors = ["SpatialNotes Contributors"]
+description = "High-performance Rust ink engine for SpatialNotes"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+wasm-bindgen = "0.2.92"
+wasm-bindgen-futures = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6.5"
+web-sys = { version = "0.3.69", features = [
+    "console",
+    "Gpu",
+    "GpuAdapter",
+    "GpuDevice",
+    "GpuQueue",
+    "GpuCanvasContext",
+    "GpuRenderPipeline",
+    "GpuShaderModule",
+    "GpuBuffer",
+    "GpuTexture",
+    "GpuTextureFormat",
+    "GpuRequestAdapterOptions",
+    "GpuDeviceDescriptor",
+    "GpuBufferDescriptor",
+    "GpuTextureDescriptor",
+    "GpuRenderPassDescriptor",
+    "GpuColorTargetState",
+    "GpuFragmentState",
+    "GpuVertexState",
+    "Window",
+    "Document",
+    "HtmlCanvasElement",
+    "Element"
+] }
+rstar = "0.12.0"
+uuid = { version = "1.8", features = ["v4", "js"] }
+# デバッグ用のパニックフック
+wgpu = { version = "0.19", features = ["webgpu", "webgl"] }
+bytemuck = { version = "1.15", features = ["derive"] }
+console_error_panic_hook = { version = "0.1.7", optional = true }
+
+[features]
+default = ["console_error_panic_hook"]
+
+[dev-dependencies]
+wasm-bindgen-test = "0.3.42"

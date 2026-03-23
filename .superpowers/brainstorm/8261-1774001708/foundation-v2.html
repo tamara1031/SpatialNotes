@@ -1,0 +1,77 @@
+<h2>Foundation: Custom Engine vs. Integrated SDK</h2>
+<p class="subtitle">SpatialNotes needs to balance "GoodNotes-like" responsiveness with development efficiency.</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="custom" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Custom Ink API Engine</h3>
+      <p>Directly implement Web Ink API (DelegatedInkTrail) on an absolute-size HTML Canvas.</p>
+      <ul>
+        <li><strong>Pro:</strong> Full control over "GoodNotes" look & feel (pen physics, erasers).</li>
+        <li><strong>Pro:</strong> Optimized for fixed physical sizes (A4/B5) from the ground up.</li>
+        <li><strong>Con:</strong> Significant development effort for stroke smoothing, pressure sensitivity, and rendering.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sdk-tldraw" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>tldraw SDK Integration</h3>
+      <p>Embed the tldraw core as the rendering engine while wrapping it in SpatialNotes' physical-page UI.</p>
+      <ul>
+        <li><strong>Pro:</strong> Industry-leading Ink API implementation and performance (120Hz support).</li>
+        <li><strong>Pro:</strong> Battle-tested collaboration (Yjs) and eraser logic.</li>
+        <li><strong>Con:</strong> License considerations (tldraw v2 license is complex for commercial use).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sdk-excalidraw" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Excalidraw SDK Integration</h3>
+      <p>Leverage the Excalidraw library for the canvas.</p>
+      <ul>
+        <li><strong>Pro:</strong> Excellent "hand-drawn" aesthetic; very light and fast.</li>
+        <li><strong>Con:</strong> More focused on "whiteboard" style than "notebook" style. Harder to adapt to pixel-perfect A4 printing.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sdk-diagrams" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>diagrams.net (Draw.io) SDK</h3>
+      <p>Integrate the industry standard for structured diagramming.</p>
+      <ul>
+        <li><strong>Pro:</strong> Unmatched for professional diagrams (UML, flowcharts, AWS/Azure icons).</li>
+        <li><strong>Pro:</strong> Apache License 2.0 (extremely friendly for monetization).</li>
+        <li><strong>Con:</strong> DOM/SVG-based (mxGraph) — not optimized for low-latency handwriting. The "feel" of a stylus will be significantly worse than GoodNotes.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Strategic Comparison</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Inking Focus (A/B/C)</h4>
+      <ul>
+        <li>Feels like a pen on paper.</li>
+        <li>Priority on handwriting speed.</li>
+        <li>Perfect for students & creative notes.</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Diagramming Focus (D)</h4>
+      <ul>
+        <li>Feels like a documentation tool.</li>
+        <li>Priority on structured layout.</li>
+        <li>Better for software engineers.</li>
+      </ul>
+    </div>
+  </div>
+</div>

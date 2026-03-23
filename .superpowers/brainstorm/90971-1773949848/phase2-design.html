@@ -1,0 +1,43 @@
+<h2>Phase 2: Backend & Persistence</h2>
+<p class="subtitle">Focus: Go server implementation, DBClient, and SQLite partitioning</p>
+
+<div class="section">
+  <h3>1. SQL Wrapper (DBClient)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">DBClient Interface (Go)</p>
+      <pre>
+type DBClient interface {
+    Exec(query string, args ...any) error
+    Query(query string, args ...any) (Rows, error)
+    QueryRow(query string, args ...any) Row
+    Close() error
+}
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Partitioned Repository (ADR-001)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <ul>
+        <li><strong>NotebookNodes</strong>: Hierarchy (is_deleted, updated_at).</li>
+        <li><strong>Pages</strong>: Format size (A4/B5) and orientation.</li>
+        <li><strong>PageElements</strong>: Spatial indexing (min_x, max_x) and JSON data.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>3. JSON Protocol Alignment</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p>Implementation of <code>ELEMENT_</code> prefixed types in the backend Domain layer to match the frontend.</p>
+    </div>
+  </div>
+</div>
+
+<p>I'm ready to write the design doc for Phase 2. Proceed?</p>

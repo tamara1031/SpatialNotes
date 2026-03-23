@@ -1,0 +1,43 @@
+@startuml uc12-markdown-sequence
+!theme plain
+autonumber
+
+actor "User" as user
+participant "EditorInterface" as Editor
+participant "BlockManager" as Blocks
+participant "MarkdownParser (WASM)" as Parser
+participant "RenderingEngine (WASM)" as Renderer
+participant "EngineManager" as Engine
+participant "SyncGateway" as Sync
+
+user -> Editor : Type Content / Use Toolbar
+activate Editor
+
+Editor -> Blocks : updateBlock(id, content)
+activate Blocks
+
+Blocks -> Parser : parse(content)
+activate Parser
+Parser -> Parser : pulldown-cmark(WASM)
+Parser --> Blocks : AST / IR
+deactivate Parser
+
+Blocks -> Renderer : render(AST)
+activate Renderer
+Renderer -> Renderer : WASM Rendering
+Renderer --> Editor : Rendered Output
+deactivate Renderer
+
+Editor --> user : Display WYSIWYG
+deactivate Blocks
+
+loop Periodic Auto-save
+    Editor -> Engine : getState()
+    activate Engine
+    Engine --> Editor : documentState
+    deactivate Engine
+    Editor -> Sync : pushDelta(documentState) [UC11]
+end
+
+deactivate Editor
+@enduml

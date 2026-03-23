@@ -1,0 +1,21 @@
+@startuml uc17-landing-page
+!theme plain
+skinparam linetype ortho
+
+actor "Guest/User" as user
+boundary "LandingPage (/)" as landing
+control "AuthGuard" as guard
+entity "LocalStorage" as storage
+boundary "VaultPage (/vault/)" as vault
+
+user -> landing : Access root
+landing -> guard : checkSession()
+guard -> storage : getItem("session_token")
+storage --> guard : token
+
+alt Session Exists
+    guard -> vault : Redirect to /vault/
+else No Session
+    guard -> landing : Render Landing Content
+end
+@enduml

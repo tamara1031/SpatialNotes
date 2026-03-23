@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>SpatialNotes: Data Flow Diagram</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f4f4f4; padding: 20px; }
+        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Creating a Notebook Node: Sequence</h1>
+        <div class="mermaid">
+        sequenceDiagram
+            participant User as User (UI)
+            participant UI as UI Shell (Astro/React)
+            participant Nano as Nanostores ($nodeTree)
+            participant App as CreateNodeUseCase (Application)
+            participant Repo as YjsNodeRepository (Infrastructure)
+            participant Yjs as Yjs/CRDT Engine
+            participant Sync as SyncGateway (WebSocket)
+
+            User->>UI: Click "New Notebook"
+            UI->>App: execute({ type: 'NOTEBOOK' })
+            App->>Repo: save(newNode)
+            Repo->>Yjs: updateDoc(newNode)
+            Yjs->>Yjs: Commit Transaction
+            Yjs-->>Repo: on('change')
+            Repo->>Nano: update($nodeTree)
+            Nano-->>UI: Reactive Update
+            UI-->>User: Show New Notebook (Optimistic)
+            
+            Note over Yjs,Sync: Background Persistence & Sync
+            Yjs->>Sync: Push Update
+            Sync->>Sync: Encrypt & Send to Go Backend
+        </div>
+    </div>
+    <script>mermaid.initialize({startOnLoad:true});</script>
+</body>
+</html>

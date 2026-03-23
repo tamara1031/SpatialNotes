@@ -1,0 +1,28 @@
+@startuml uc15-stylus-optimization uc15_stylus_optimization_robustness
+!theme plain
+skinparam linetype ortho
+
+actor "User (Stylus)" as user
+
+boundary "Canvas View" as canvas
+boundary "InteractionHandler" as handler
+control "DrawingService" as drawing_svc
+control "PredictiveRenderer" as predictor
+entity "Canvas Store" as store
+entity "Stroke Element" as stroke
+
+user -> canvas : PointerDown / Move / Up (with Pressure)
+canvas -> handler : handlePointerEvent(e)
+handler -> predictor : updatePrediction(points, pressure)
+predictor -> canvas : renderShadowInk()
+
+handler -> drawing_svc : addPoint(x, y, pressure)
+drawing_svc -> store : dispatch(ADD_POINT)
+store -> stroke : update()
+
+user -> canvas : PointerUp
+handler -> drawing_svc : finalizeStroke()
+drawing_svc -> store : dispatch(FINALIZE_ELEMENT)
+store -> stroke : applySmoothing()
+
+@enduml

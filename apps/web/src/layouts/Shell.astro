@@ -1,0 +1,68 @@
+---
+interface Props {
+	title: string;
+}
+
+const { title } = Astro.props;
+import "../styles/tokens.css";
+import { NotificationIsland } from "../components/shared/NotificationIsland";
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<meta name="generator" content={Astro.generator} />
+		<title>{title}</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com" />
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+		<link
+			href="https://fonts.googleapis.com/css2?family=Outfit:wght@100..900&display=swap"
+			rel="stylesheet"
+		/>
+	</head>
+	<body>
+		<slot />
+		<NotificationIsland client:idle />
+	</body>
+</html>
+
+<style is:global>
+	:root {
+		--sidebar-width: 260px;
+	}
+	body {
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		font-family: "Outfit", sans-serif;
+	}
+	.main-shell {
+		display: flex;
+		min-height: 100vh;
+		background-color: var(--surface);
+		overflow: hidden;
+	}
+	.sidebar {
+		width: var(--sidebar-width);
+		height: 100vh;
+		background-color: var(--glass-bg);
+		backdrop-filter: blur(var(--blur));
+		border-right: 1px solid var(--glass-border);
+		flex-shrink: 0;
+		z-index: 100;
+	}
+	.content {
+		flex: 1;
+		position: relative;
+		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+	}
+	astro-slot,
+	astro-island {
+		display: contents;
+	}
+</style>

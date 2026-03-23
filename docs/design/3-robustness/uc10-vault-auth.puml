@@ -1,0 +1,26 @@
+@startuml uc10-vault-auth
+skinparam handwritten true
+
+actor "User" as user
+boundary "VaultSetupOverlay" as setupView
+boundary "VaultUnlockOverlay" as unlockView
+control "AuthService" as auth
+control "CryptoWorkerProxy" as crypto
+entity "VaultManager" as vault
+entity "Go Backend" as server
+
+user -> setupView : Enters Password
+setupView -> auth : setupVault(email, pwd)
+auth -> crypto : deriveVaultKeys
+crypto -> server : POST /api/auth/register
+crypto -> vault : setUnlocked(authToken, DEK, KEK)
+
+user -> unlockView : Enters Password
+unlockView -> auth : unlockVault(pwd)
+auth -> crypto : deriveVaultKeys
+auth -> server : POST /api/auth/login
+server -> auth : Wrapped DEK
+auth -> crypto : unwrapKey(Wrapped DEK, KEK)
+auth -> vault : setUnlocked(authToken, DEK, KEK)
+
+@enduml

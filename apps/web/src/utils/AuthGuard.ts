@@ -1,0 +1,33 @@
+/**
+ * Client-side Auth Guard for Astro Pages
+ * Centralizes redirect logic to prevent loops and ensure consistency.
+ */
+export const enforceAuthStatus = (mode: "public" | "private") => {
+    if (typeof window === "undefined") return;
+
+    const hasToken = !!localStorage.getItem("session_token");
+    const path = window.location.pathname;
+
+    // Use trailingSlash: "always" compatible checks
+    const isRoot = path === "/" || path === "";
+    const isAuthPage = path.includes("/signin") || path.includes("/signup");
+    const isVaultPage = path.includes("/vault");
+
+    console.debug(`[AuthGuard] Mode: ${mode}, Token: ${hasToken}, Path: ${path}`);
+
+    if (mode === "public") {
+        // If on public pages and authenticated, go to vault
+        // ONLY redirect if not already on a vault page
+        if (hasToken && !isVaultPage) {
+            console.log("[AuthGuard] Authenticated user on public page, redirecting to /vault/");
+            window.location.href = "/vault/";
+        }
+    } else if (mode === "private") {
+        // If on private pages and NOT authenticated, go to signin
+        // ONLY redirect if not already on an auth page or root
+        if (!hasToken && !isAuthPage && !isRoot) {
+            console.log("[AuthGuard] Unauthenticated user on private page, redirecting to /signin/");
+            window.location.href = "/signin/";
+        }
+    }
+};

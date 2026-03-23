@@ -1,0 +1,33 @@
+@startuml uc4-absolute-size
+left to right direction
+
+actor "User (Actor)" as user
+actor "Browser Downloads (Actor)" as browser
+
+boundary "Canvas Header" as boundary_header
+boundary "Browser Download API" as boundary_api
+
+control "Trigger Exporting" as control_trigger
+control "Gather Elements" as control_gather
+control "Map Elements (Vector/Image)" as control_map
+control "export_svg()" as control_export
+control "Initiate Download" as control_download
+
+entity "Canvas Engine" as entity_engine
+entity "Canvas Store" as entity_store
+entity "Wasm Bridge" as entity_bridge
+entity "Wasm Engine" as entity_wasm
+entity "SVG Output" as entity_svg
+
+'Flow
+user -- boundary_header
+boundary_header -- control_trigger
+control_trigger -- control_gather
+control_gather -- control_map
+control_map -- entity_bridge
+control_map -- control_export
+control_export -- entity_wasm
+control_export -- entity_svg
+control_export -- control_download
+control_download -- boundary_api
+@enduml

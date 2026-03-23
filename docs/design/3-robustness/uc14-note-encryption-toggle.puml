@@ -1,0 +1,25 @@
+@startuml uc14-encryption-toggle
+!theme plain
+skinparam linetype ortho
+
+actor "User" as user
+
+boundary "Note Toolbar" as toolbar
+boundary "Notification System" as notify
+control "NoteService" as note_svc
+control "SyncManager" as sync_mgr
+entity "Note Metadata" as meta
+entity "Note Content" as content
+boundary "Backend API" as api
+
+user -> toolbar : Toggle Encryption (Standard <-> E2EE)
+toolbar -> note_svc : setEncryptionLevel(level)
+note_svc -> meta : update(encryption_level)
+note_svc -> notify : "Encryption mode updated"
+
+note_svc -> sync_mgr : triggerReSync()
+sync_mgr -> content : fetchCurrent()
+sync_mgr -> api : POST /api/notes/{id}/mode { level }
+api -> api : Purge/Index Content
+
+@enduml

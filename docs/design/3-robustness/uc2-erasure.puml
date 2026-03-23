@@ -1,0 +1,19 @@
+@startuml uc2-erasure
+left to right direction
+
+actor "Tablet User (Actor)" as user
+actor "Stylus Digitizer (Actor)" as stylus
+
+boundary "Canvas Interaction View" as boundary_canvas
+entity "WorkerGateway" as entity_gateway
+control "EraserService" as service_eraser
+entity "CanvasStore" as entity_store
+
+'Flow
+user -- boundary_canvas
+stylus -- boundary_canvas
+boundary_canvas -- service_eraser : invoke(eraseAt)
+service_eraser -- entity_gateway : query
+service_eraser -- entity_store : update(Optimistic)
+service_eraser -- entity_store : emitCommand(DELETE/UPDATE)
+@enduml

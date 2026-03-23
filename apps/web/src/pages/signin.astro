@@ -1,0 +1,61 @@
+---
+import Shell from "../layouts/Shell.astro";
+import { SigninForm } from "../components/auth/SigninForm";
+import AuthModalHeader from "../components/auth/AuthModalHeader.astro";
+import AuthModalToggle from "../components/auth/AuthModalToggle.astro";
+
+// Redirect if logged in (Client-side check is easier for now without middleware)
+---
+
+<Shell title="Sign In - SpatialNotes">
+    <div class="auth-page">
+        <div class="auth-container">
+            <AuthModalHeader mode="signin" />
+            <SigninForm
+                client:only="react"
+                onSuccess={() => (window.location.href = "/vault/")}
+            />
+            <AuthModalToggle mode="signin" />
+        </div>
+        <a href="/" class="back-link">← Back to home</a>
+    </div>
+</Shell>
+
+<style>
+    .auth-page {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        background: var(--surface);
+    }
+
+    .auth-container {
+        width: 100%;
+        max-width: 450px;
+        background: var(--surface-raised);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 3rem;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+    }
+
+    .back-link {
+        margin-top: 2rem;
+        color: var(--text-secondary);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .back-link:hover {
+        color: var(--text-primary);
+    }
+</style>
+
+<script>
+    import { enforceAuthStatus } from "../utils/AuthGuard";
+    enforceAuthStatus("public");
+</script>

@@ -1,0 +1,32 @@
+<h2>Test Phase C: Advanced Interactions</h2>
+<p class="subtitle">Focus: Gesture Erasure and PDF Export Fidelity</p>
+
+<div class="section">
+  <h3>1. Atomic Erasure (SC-S2)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Gesture Interaction Test</p>
+      <ul>
+        <li>Setup page with multiple <code>ELEMENT_STROKE</code> nodes.</li>
+        <li>Simulate a pointer path (eraser gesture) that intersects one stroke.</li>
+        <li>Verify the intersected stroke is marked <code>is_deleted: true</code>.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>2. Visual Regression (PDF Fidelity)</h3>
+  <div class="mockup">
+    <div class="mockup-body">
+      <p class="label">Export Verification</p>
+      <pre>
+const pdfBytes = await exporter.generate(page);
+const screenshot = await renderer.render(pdfBytes);
+expect(screenshot).toMatchSnapshot();
+      </pre>
+    </div>
+  </div>
+</div>
+
+<p>I'm ready to write the implementation plan for Phase C. Proceed?</p>

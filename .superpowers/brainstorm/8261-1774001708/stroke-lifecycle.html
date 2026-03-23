@@ -1,0 +1,53 @@
+<h2>The Stroke Lifecycle & Persistence</h2>
+<p class="subtitle">Distinguishing between immediate feedback, application view, and canonical storage.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">1. Visual Lifecycle (Front-end)</div>
+    <div class="mockup-body" style="padding: 15px;">
+      <div style="border-left: 3px solid #f77; padding-left: 10px; margin-bottom: 15px;">
+        <strong style="color: #f77;">Ink API Trail (Active)</strong><br/>
+        <span style="font-size: 0.8rem;">Immediate raw feedback via OS. Vanishes on pen-up.</span>
+      </div>
+      <div style="border-left: 3px solid #7f7; padding-left: 10px; margin-bottom: 15px;">
+        <strong style="color: #2a2;">App View (Static Layer)</strong><br/>
+        <span style="font-size: 0.8rem;">Smoothed spline rendered locally in the React Canvas. Committed on pen-up.</span>
+      </div>
+      <div style="border-left: 3px solid #77f; padding-left: 10px;">
+        <strong style="color: #77f;">Synced State (Yjs)</strong><br/>
+        <span style="font-size: 0.8rem;">Broadcast to all open views. The "working memory" of the desk.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">2. Persistence Lifecycle (Back-end)</div>
+    <div class="mockup-body" style="padding: 15px;">
+      <div style="background: rgba(255, 165, 0, 0.1); border: 1px solid #ffa500; padding: 10px; border-radius: 4px; margin-bottom: 15px;">
+        <strong>Local-First DB (SQLite/IndexedDB)</strong><br/>
+        <span style="font-size: 0.75rem;">Immediate local disk write. The "safety net" for offline work.</span>
+      </div>
+      <div style="text-align: center; margin-bottom: 15px;">&darr; Sync Bus &darr;</div>
+      <div style="background: rgba(0, 0, 0, 0.05); border: 1px solid #333; padding: 10px; border-radius: 4px;">
+        <strong>Remote DB (Elements Table)</strong><br/>
+        <span style="font-size: 0.75rem;">Canonical storage with spatial indexing (Bounding Boxes). Source for PDF export.</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Optimization: "View-Port Only" Sync</h3>
+  <p>To support notebooks with up to 50 pages (MVP constraint), the <strong>App View</strong> only renders the current page, while the <strong>Sync Bus</strong> maintains the full notebook state in the <strong>Local-First DB</strong> background.</p>
+</div>
+
+<div class="pros-cons">
+  <div class="pros">
+    <h4>Why Three States?</h4>
+    <ul>
+      <li><strong>Ink API:</strong> Solves lag.</li>
+      <li><strong>App View:</strong> Solves aesthetics (smoothing).</li>
+      <li><strong>DB Layer:</strong> Solves reliability (offline/sync).</li>
+    </ul>
+  </div>
+</div>

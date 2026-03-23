@@ -1,0 +1,39 @@
+@startuml uc1-sync-sequence
+!theme plain
+autonumber
+
+actor "User" as user
+participant "InteractionView" as ui
+participant "CanvasStore" as store
+participant "LocalPersistence" as local
+participant "SyncManager" as sync
+participant "CryptoWorker" as worker
+participant "Gateway" as gateway
+participant "Server" as server
+
+== Local Change ==
+user -> ui : Interaction
+ui -> store : pushUpdate(delta)
+store -> local : saveBinary(delta)
+store -> ui : refreshVisuals()
+
+== Sync Feedback ==
+store -> sync : onUpdate(delta)
+sync -> ui : setStatusIndicator("Unsaved")
+sync -> sync : debounce(5s)
+
+... Debounce Timer ...
+
+== Cloud Sync ==
+sync -> ui : setStatusIndicator("Saving...")
+sync -> worker : compressAndEncrypt(delta)
+worker --> sync : payload
+
+sync -> gateway : push(payload)
+gateway -> server : POST /api/sync
+server --> gateway : 200 OK (Ack)
+
+gateway -> sync : onAck()
+sync -> ui : setStatusIndicator("Saved")
+
+@enduml

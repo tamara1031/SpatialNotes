@@ -1,0 +1,110 @@
+---
+
+---
+
+<section class="hero">
+    <div class="hero-content">
+        <h1>
+            A Spatial Canvas for <br />
+            <span class="accent">Your Deep Thoughts.</span>
+        </h1>
+
+        <p class="description">
+            SpatialNotes combines the freedom of a digital canvas with the power
+            of E2EE security. Organize, draw, and write without boundaries or
+            compromises.
+        </p>
+
+        <div class="actions">
+            <a href="/signup" class="btn-primary">Create Your Vault</a>
+            <a href="#features" class="btn-secondary">See Features</a>
+        </div>
+    </div>
+</section>
+
+<style>
+    .hero {
+        min-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 8rem 2rem 4rem;
+        text-align: center;
+        background: radial-gradient(
+            circle at 50% 50%,
+            var(--accent-subtle) 0%,
+            transparent 70%
+        );
+    }
+
+    .hero-content {
+        max-width: 1000px;
+    }
+
+    h1 {
+        font-size: clamp(2.5rem, 8vw, 4.5rem);
+        font-weight: 900;
+        line-height: 1.1;
+        margin-bottom: 1.5rem;
+        background: linear-gradient(to bottom, #fff, #999);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    .accent {
+        color: var(--accent);
+        -webkit-text-fill-color: var(--accent);
+    }
+
+    .description {
+        font-size: 1.25rem;
+        color: var(--text-secondary);
+        max-width: 800px;
+        margin: 0 auto 2.5rem;
+        line-height: 1.6;
+    }
+
+    .actions {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .btn-primary {
+        background: var(--accent);
+        color: white;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: var(--radius-lg);
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-decoration: none;
+        box-shadow: 0 8px 20px var(--accent-glow);
+        transition:
+            transform 0.2s,
+            box-shadow 0.2s;
+    }
+
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px var(--accent-glow);
+    }
+
+    .btn-secondary {
+        background: var(--glass-bg);
+        color: var(--text-primary);
+        border: 1px solid var(--glass-border);
+        padding: 1rem 2rem;
+        border-radius: var(--radius-lg);
+        font-weight: 700;
+        font-size: 1.1rem;
+        text-decoration: none;
+        backdrop-filter: blur(var(--blur));
+        transition: background 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: var(--glass-border);
+    }
+</style>

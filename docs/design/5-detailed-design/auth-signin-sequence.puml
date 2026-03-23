@@ -1,0 +1,24 @@
+@startuml auth-signin-sequence
+participant U as User
+participant L as LandingPage [
+    /
+]
+participant S as SigninPage [
+    /signin/
+]
+participant G as AuthGuard
+participant LS as LocalStorage
+
+U->>L: Access /
+L->>G: Check token
+G->>LS: getItem("session_token")
+LS-->>G: null
+G-->>L: Stay on page
+
+U->>L: Click "Sign In"
+L->>S: Navigate to /signin/
+S->>G: Check token
+G->>LS: getItem("session_token")
+LS-->>G: null
+G-->>S: Render SigninForm
+@enduml

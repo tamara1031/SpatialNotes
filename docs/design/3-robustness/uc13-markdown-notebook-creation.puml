@@ -1,0 +1,20 @@
+@startuml uc13-engine-selection
+left to right direction
+
+actor "Student / Researcher" as user
+
+boundary "Workspace View" as Workspace
+boundary "Creation Modal" as Modal
+control "Create New Note" as Creator
+entity "MetadataStore" as Metadata
+boundary "Markdown Interaction View" as MDView
+boundary "Canvas Interaction View" as CVView
+
+user -> Workspace : Click Create New Item
+Workspace -> Modal : Show (Options: Canvas/Markdown)
+user -> Modal : Select "Markdown Notebook"
+Modal -> Creator : engineType: MARKDOWN
+Creator -> Metadata : Save Node Metadata
+Metadata -> Workspace : Update Node List
+Workspace -> MDView : Navigate and Activate Engine
+@enduml

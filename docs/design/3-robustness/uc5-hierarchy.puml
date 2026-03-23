@@ -1,0 +1,31 @@
+@startuml uc5-hierarchy
+!theme plain
+left to right direction
+
+actor "User (Actor)" as user
+
+boundary "Navigation Sidebar" as boundary_sidebar
+
+control "Initialize Move" as control_init
+control "Validate Hierarchy" as control_validate
+control "Update Parent" as control_update
+control "Web Sync Manager" as control_sync
+
+entity "Yjs nodesMap" as entity_nodes
+
+'Flow
+user -- boundary_sidebar
+boundary_sidebar -- control_init
+
+control_init -- control_validate
+control_validate -- control_update
+
+'Entities
+control_validate -- entity_nodes
+control_update -- entity_nodes
+
+'Feedback
+control_update -- boundary_sidebar
+control_update -- control_sync
+
+@enduml

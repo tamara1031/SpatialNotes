@@ -1,0 +1,25 @@
+# Development Dockerfile (All-in-one)
+FROM node:24-bullseye
+
+# Install Go
+ENV GO_VERSION=1.24.0
+RUN curl -OL https://golang.org/dl/go${GO_VERSION}.linux-amd64.tar.gz && \
+    tar -C /usr/local -xzf go${GO_VERSION}.linux-amd64.tar.gz && \
+    rm go${GO_VERSION}.linux-amd64.tar.gz
+ENV PATH=$PATH:/usr/local/go/bin
+
+# Install Rust & wasm-pack
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN cargo install wasm-pack
+
+# Install pnpm
+RUN npm install -g pnpm@10.17.0
+
+WORKDIR /app
+
+# Expose ports for web dev and server
+EXPOSE 4321 8080
+
+# The startup command should be configured in docker-compose
+CMD ["bash"]

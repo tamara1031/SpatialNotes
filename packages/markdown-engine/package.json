@@ -1,0 +1,36 @@
+{
+	"name": "markdown-engine",
+	"version": "1.0.0",
+	"main": "src/index.ts",
+	"types": "src/types.ts",
+	"dependencies": {
+		"engine-core": "workspace:*",
+		"markdown-wasm": "workspace:*",
+		"lexical": "^0.18.0",
+		"@lexical/react": "^0.18.0",
+		"@lexical/markdown": "^0.18.0",
+		"@lexical/rich-text": "^0.18.0",
+		"@lexical/list": "^0.18.0",
+		"@lexical/table": "^0.18.0",
+		"@lexical/link": "^0.18.0",
+		"@lexical/code": "^0.18.0",
+		"@lexical/selection": "^0.18.0",
+		"@lexical/utils": "^0.18.0",
+		"@lexical/clipboard": "^0.18.0",
+		"@lexical/history": "^0.18.0",
+		"react": "^19.0.0",
+		"react-dom": "^19.0.0",
+		"katex": "^0.16.11"
+	},
+	"devDependencies": {
+		"@testing-library/react": "^16.3.2",
+		"@testing-library/jest-dom": "^6.4.2",
+		"@testing-library/user-event": "^14.6.1",
+		"jsdom": "^29.0.1",
+		"@types/react": "^19.0.0",
+		"@types/react-dom": "^19.0.0",
+		"@types/katex": "^0.16.7",
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.0"
+	}
+}

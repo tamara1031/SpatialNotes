@@ -1,0 +1,27 @@
+@startuml auth-class-diagram
+class VaultStore {
+    +$sessionToken: atom
+    +$appState: atom
+    +checkVaultStatus()
+    +logout()
+}
+
+class SigninForm {
+    +handleSubmit()
+    +onSuccess()
+}
+
+class DesktopApp {
+    +setIsInitialized()
+    +render()
+}
+
+class Shell <<layout>> {
+    +title
+}
+
+VaultStore <.. SigninForm : uses
+VaultStore <.. DesktopApp : uses
+Shell ..> LandingPage : wraps
+Shell ..> VaultPage : wraps
+@enduml

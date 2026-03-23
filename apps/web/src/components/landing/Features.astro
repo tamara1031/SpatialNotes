@@ -1,0 +1,108 @@
+---
+const features = [
+    {
+        title: "End-to-End Encryption",
+        description:
+            "Your notes are encrypted before they even leave your device. No one else can read them.",
+        icon: "🔒",
+    },
+    {
+        title: "Spatial Canvas",
+        description:
+            "Infinite whiteboard to map out complex ideas, draw diagrams, and connect thoughts.",
+        icon: "🎨",
+    },
+    {
+        title: "Markdown Support",
+        description:
+            "Structure your thoughts with full Markdown and LaTeX support for technical work.",
+        icon: "📝",
+    },
+    {
+        title: "Real-time Sync",
+        description:
+            "Collaborate and sync across all your devices with zero-friction reliability.",
+        icon: "⚡",
+    },
+];
+---
+
+<section id="features" class="features-section">
+    <div class="header">
+        <h2>Built for Deep Work</h2>
+        <p>Powerful tools designed to keep you in the flow.</p>
+    </div>
+
+    <div class="grid">
+        {
+            features.map((f) => (
+                <div class="card">
+                    <div class="icon">{f.icon}</div>
+                    <h3>{f.title}</h3>
+                    <p>{f.description}</p>
+                </div>
+            ))
+        }
+    </div>
+</section>
+
+<style>
+    .features-section {
+        padding: 6rem 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .header {
+        text-align: center;
+        margin-bottom: 4rem;
+    }
+
+    h2 {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+    }
+
+    p {
+        color: var(--text-secondary);
+    }
+
+    .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 2rem;
+    }
+
+    .card {
+        background: var(--glass-bg);
+        border: 1px solid var(--glass-border);
+        border-radius: var(--radius-lg);
+        padding: 2.5rem;
+        backdrop-filter: blur(var(--blur));
+        transition:
+            transform 0.3s ease,
+            border-color 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        border-color: var(--accent);
+    }
+
+    .icon {
+        font-size: 2.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    h3 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .card p {
+        color: var(--text-secondary);
+        line-height: 1.6;
+    }
+</style>

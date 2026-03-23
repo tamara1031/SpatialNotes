@@ -1,0 +1,47 @@
+<h2>Strategy: Custom Ink API Engine (Option A)</h2>
+<p class="subtitle">The "Magic Desk" foundation for native-level responsiveness.</p>
+
+<div class="cards">
+  <div class="card">
+    <div class="card-body">
+      <h3>1. Low-Latency Trail</h3>
+      <p>Uses <code>DelegatedInkTrailPresenter</code>. The browser hands off rendering to the OS compositor, bypassing the JS event loop for the "active" stroke.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3>2. Pressure Sensitivity</h3>
+      <p>Captures <code>PointerEvent.pressure</code> (0.0 to 1.0). Maps pressure to line width in real-time for an organic, "fountain pen" feel.</p>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <h3>3. Spline Smoothing</h3>
+      <p>Transforms raw jagged points into smooth curves using <strong>Catmull-Rom</strong> interpolation after the pen is lifted.</p>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">Canvas Layer Stack (Side View)</div>
+  <div class="mockup-body" style="height: 200px; display: flex; flex-direction: column; gap: 10px; padding: 20px;">
+    <div style="background: rgba(200, 200, 255, 0.2); border: 2px dashed #77f; padding: 10px; border-radius: 4px;">
+      <strong>Interaction Layer:</strong> Selection boxes, Tape, UI Handles
+    </div>
+    <div style="background: rgba(255, 200, 200, 0.2); border: 2px dashed #f77; padding: 10px; border-radius: 4px;">
+      <strong>Active Layer (Ink API):</strong> Real-time trailing ink
+    </div>
+    <div style="background: rgba(200, 255, 200, 0.2); border: 2px dashed #7f7; padding: 10px; border-radius: 4px;">
+      <strong>Static Layer:</strong> Committed Strokes, Images, PDF Background
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>The Pipeline</h3>
+  <ol>
+    <li><strong>PointerDown:</strong> Initialize <code>StrokeBuffer</code> and <code>InkTrail</code>.</li>
+    <li><strong>PointerMove:</strong> Update <code>InkTrail</code> (Immediate) + Save points (Buffer).</li>
+    <li><strong>PointerUp:</strong> Apply Smoothing + Simplification -> Create <code>StrokeElement</code> Command.</li>
+  </ol>
+</div>

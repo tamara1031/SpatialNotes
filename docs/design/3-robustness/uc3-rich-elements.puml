@@ -1,0 +1,18 @@
+@startuml uc3-rich-elements
+left to right direction
+
+actor "User (Actor)" as user
+
+boundary "Canvas Interaction View" as View
+control "WorkerGateway" as Gateway
+control "CanvasWorker" as Worker
+entity "CanvasStore" as Store
+control "DrawingService" as Drawing
+
+View -> Gateway : Pointer Event (Async)
+Gateway -> Worker : Process Stroke
+Worker -> Gateway : Result (Points/Bounds)
+Gateway -> Drawing : Data
+Drawing -> Store : Update State (Optimistic)
+Store -> View : Emit Change (Sync)
+@enduml

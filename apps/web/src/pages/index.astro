@@ -1,0 +1,46 @@
+---
+import Shell from "../layouts/Shell.astro";
+import Navbar from "../components/landing/Navbar.astro";
+import Hero from "../components/landing/Hero.astro";
+import Features from "../components/landing/Features.astro";
+
+// Redirect if logged in
+---
+
+<Shell title="SpatialNotes - Your Secure Spatial Canvas">
+    <div class="landing-page">
+        <Navbar />
+        <main>
+            <Hero />
+            <Features />
+        </main>
+        <footer class="footer">
+            &copy; {new Date().getFullYear()} SpatialNotes. All rights reserved. Zero-Knowledge.
+            Open Source.
+        </footer>
+    </div>
+</Shell>
+
+<style>
+    .landing-page {
+        min-height: 100vh;
+        background: var(--surface);
+        color: var(--text-primary);
+        overflow-x: hidden;
+        overflow-y: auto;
+        height: 100vh;
+    }
+
+    .footer {
+        padding: 4rem 2rem;
+        text-align: center;
+        border-top: 1px solid var(--glass-border);
+        color: var(--text-muted);
+        font-size: 0.875rem;
+    }
+</style>
+
+<script>
+    import { enforceAuthStatus } from "../utils/AuthGuard";
+    enforceAuthStatus("public");
+</script>

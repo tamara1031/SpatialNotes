@@ -1,0 +1,24 @@
+@startuml UC4_Absolute_Size_Export_Sequence
+!theme plain
+autonumber
+
+actor "User" as user
+participant "CanvasApp" as App
+participant "CanvasEngine" as Engine
+participant "WasmCanvasEngine" as wasm
+boundary "File System" as fs
+
+user -> App : Click "Export to SVG"
+App -> Engine : exportToSVG()
+activate Engine
+
+Engine -> wasm : export_svg()
+activate wasm
+wasm --> Engine : svgString
+deactivate wasm
+
+Engine --> App : svgString
+deactivate Engine
+
+App -> fs : saveAs(filename, svgString)
+@enduml

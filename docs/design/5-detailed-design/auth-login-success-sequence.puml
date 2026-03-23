@@ -1,0 +1,16 @@
+@startuml auth-login-success-sequence
+participant U as User
+participant F as SigninForm
+participant A as AuthActions
+participant LS as LocalStorage
+participant V as VaultPage [
+    /vault/
+]
+
+U->>F: Input Credentials & Submit
+F->>A: signin(password)
+A->>LS: setItem("session_token", token)
+A-->>F: Success
+F->>V: Redirect to /vault/
+V->>V: Render DesktopApp
+@enduml

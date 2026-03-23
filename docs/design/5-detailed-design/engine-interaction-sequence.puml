@@ -1,0 +1,45 @@
+@startuml uc9-engine-interaction-sequence
+!theme plain
+autonumber
+
+actor "User" as user
+participant "InteractionManager" as IM
+participant "CanvasTool" as Tool
+participant "Service" as service
+participant "CanvasStore" as Store
+participant "WorkerGateway" as Gateway
+participant "CanvasWorker" as Worker
+participant "WasmEngine" as Rust
+participant "OffscreenCanvas" as predictor
+
+
+user -> IM : Pointer Event (pressure, tilt)
+activate IM
+
+IM -> Tool : onPointerEvent(e, ctx)
+activate Tool
+
+Tool -> predictor : predictStroke(points, pressure)
+predictor -> UI : renderToOffscreenCanvas()
+
+Tool -> Gateway : request(POINTER_EVENT, { pressure, tilt })
+activate Gateway
+Gateway -> Worker : postMessage()
+activate Worker
+Worker -> Rust : engine.pointer_move()
+Worker --> Gateway : onMessage(DONE)
+deactivate Worker
+Gateway --> Tool : Promise.resolve()
+deactivate Gateway
+
+Tool -> Store : update(InteractionState)
+Tool -> service : callServiceMethod()
+activate service
+service -> Store : dispatch(DomainEvent)
+deactivate service
+
+Store -> Engine : notifySubscribers()
+
+deactivate Tool
+deactivate IM
+@enduml

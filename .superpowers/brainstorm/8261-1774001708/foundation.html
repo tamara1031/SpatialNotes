@@ -1,0 +1,47 @@
+<h2>Foundation: Custom Engine vs. Integrated SDK</h2>
+<p class="subtitle">SpatialNotes needs to balance "GoodNotes-like" responsiveness with development efficiency.</p>
+
+<div class="options">
+  <div class="option" data-choice="custom" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Custom Ink API Engine</h3>
+      <p>Directly implement Web Ink API (DelegatedInkTrail) on an absolute-size HTML Canvas.</p>
+      <ul>
+        <li><strong>Pro:</strong> Full control over "GoodNotes" look & feel (pen physics, erasers).</li>
+        <li><strong>Pro:</strong> Optimized for fixed physical sizes (A4/B5) from the ground up.</li>
+        <li><strong>Con:</strong> Significant development effort for stroke smoothing, pressure sensitivity, and rendering.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sdk-tldraw" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>tldraw SDK Integration</h3>
+      <p>Embed the tldraw core as the rendering engine while wrapping it in SpatialNotes' physical-page UI.</p>
+      <ul>
+        <li><strong>Pro:</strong> Industry-leading Ink API implementation and performance (120Hz support).</li>
+        <li><strong>Pro:</strong> Battle-tested collaboration (Yjs) and eraser logic.</li>
+        <li><strong>Con:</strong> License considerations (tldraw is MIT-licensed but "Pro" features or branding may have restrictions).</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="option" data-choice="sdk-excalidraw" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Excalidraw SDK Integration</h3>
+      <p>Leverage the Excalidraw library for the canvas.</p>
+      <ul>
+        <li><strong>Pro:</strong> Excellent "hand-drawn" aesthetic; very light and fast.</li>
+        <li><strong>Con:</strong> More focused on "whiteboard" style than "notebook" style. Harder to adapt to pixel-perfect A4 printing.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Strategic Question</h3>
+  <p>If we want to "monetize" later, a custom engine (Option A) provides the strongest IP, while Option B (tldraw) provides the fastest path to a "premium" feel. tldraw's license is MIT, but they offer a commercial license for some advanced components. We need to verify if "inking" is part of the free core.</p>
+</div>
