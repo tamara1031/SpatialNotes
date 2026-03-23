@@ -14,7 +14,6 @@ export const VaultEmailOverlay: React.FC = () => {
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		console.log("[VaultEmailOverlay] Submitting email:", email);
 		if (!email.includes("@")) return;
 		setIsLoading(true);
 		setError(null);
