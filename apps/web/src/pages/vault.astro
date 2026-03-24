@@ -5,8 +5,8 @@ import Shell from "../layouts/Shell.astro";
 ---
 
 <Shell title="SpatialNotes">
-	<DesktopApp client:load />
-	<NotificationIsland client:idle />
+	<DesktopApp client:only="react" />
+	<NotificationIsland client:only="react" />
 </Shell>
 
 <script>

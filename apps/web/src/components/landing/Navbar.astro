@@ -8,10 +8,23 @@
     </div>
 
     <div class="nav-links">
-        <a href="/signin/" class="btn-ghost">Sign In</a>
-        <a href="/signup/" class="btn-primary">Get Started</a>
+        <div id="auth-guest" class="auth-group">
+            <a href="/signin/" class="btn-ghost">Sign In</a>
+            <a href="/signup/" class="btn-primary">Get Started</a>
+        </div>
+        <div id="auth-user" class="auth-group" style="display: none;">
+            <a href="/vault/" class="btn-primary">Go to Vault</a>
+        </div>
     </div>
 </nav>
+
+<script>
+    const token = localStorage.getItem("session_token");
+    if (token) {
+        document.getElementById("auth-guest")!.style.display = "none";
+        document.getElementById("auth-user")!.style.display = "flex";
+    }
+</script>
 
 <style>
     .navbar {

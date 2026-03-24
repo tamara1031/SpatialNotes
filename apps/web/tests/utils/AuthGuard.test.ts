@@ -22,18 +22,27 @@ describe('AuthGuard', () => {
         vi.unstubAllGlobals();
     });
 
-    it('should redirect to /app/ if authenticated on public page (root)', () => {
+    it('should NOT redirect to /vault/ if authenticated on public page (root)', () => {
         localStorage.setItem('session_token', 'valid-token');
         window.location.pathname = '/';
 
         enforceAuthStatus('public');
 
-        expect(window.location.href).toBe('/app/');
+        expect(window.location.href).toBe('/');
     });
 
-    it('should NOT redirect if authenticated but already on /app/ (public mode)', () => {
+    it('should redirect to /vault/ if authenticated on signin page', () => {
         localStorage.setItem('session_token', 'valid-token');
-        window.location.pathname = '/app/';
+        window.location.pathname = '/signin/';
+
+        enforceAuthStatus('public');
+
+        expect(window.location.href).toBe('/vault/');
+    });
+
+    it('should NOT redirect if authenticated but already on /vault/ (public mode)', () => {
+        localStorage.setItem('session_token', 'valid-token');
+        window.location.pathname = '/vault/';
 
         enforceAuthStatus('public');
 
@@ -50,7 +59,7 @@ describe('AuthGuard', () => {
     });
 
     it('should redirect to /signin/ if NOT authenticated on private page', () => {
-        window.location.pathname = '/app/';
+        window.location.pathname = '/vault/';
 
         enforceAuthStatus('private');
 
@@ -67,7 +76,7 @@ describe('AuthGuard', () => {
 
     it('should NOT redirect if authenticated on private page', () => {
         localStorage.setItem('session_token', 'valid-token');
-        window.location.pathname = '/app/';
+        window.location.pathname = '/vault/';
 
         enforceAuthStatus('private');
 

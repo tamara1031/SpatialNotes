@@ -12,10 +12,12 @@ export interface ISessionStorage {
 export type AuthListener = (user: User | null) => void;
 
 /**
- * Service to manage the current user session.
+ * Service to manage the current user session and authentication state.
+ * This is the single source of truth for the logged-in user.
  */
 export class AuthService {
 	private currentUser: User | null = null;
+	private sessionToken: string | null = null;
 	private listeners: AuthListener[] = [];
 
 	constructor(private readonly sessionStorage: ISessionStorage) {
@@ -34,21 +36,33 @@ export class AuthService {
 		this.listeners.forEach((l) => l(this.currentUser));
 	}
 
-	public async login(username: string): Promise<User> {
-		let user = this.findUserInStorage(username);
-		if (!user) {
-			user = UserEntity.create(username);
-			this.saveUserToStorage(user);
-		}
-
+	/**
+	 * Sets the current session from a successful login/signup.
+	 */
+	public setSession(user: User, token: string): void {
 		this.currentUser = user;
-		this.sessionStorage.setItem("spatial_notes_last_user", user.id);
+		this.sessionToken = token;
+		this.sessionStorage.setItem("session_token", token);
+		this.sessionStorage.setItem("spatial_notes_last_user", user.email || user.id);
+
+		// Store user data for persistence
+		const usersJson = this.sessionStorage.getItem("spatial_notes_users") || "[]";
+		const users = JSON.parse(usersJson);
+		const existingIndex = users.findIndex((u: any) => u.email === user.email);
+		if (existingIndex >= 0) {
+			users[existingIndex] = user;
+		} else {
+			users.push(user);
+		}
+		this.sessionStorage.setItem("spatial_notes_users", JSON.stringify(users));
+
 		this.notify();
-		return user;
 	}
 
 	public logout(): void {
 		this.currentUser = null;
+		this.sessionToken = null;
+		this.sessionStorage.removeItem("session_token");
 		this.sessionStorage.removeItem("spatial_notes_last_user");
 		this.notify();
 	}
@@ -57,31 +71,21 @@ export class AuthService {
 		return this.currentUser;
 	}
 
+	public getSessionToken(): string | null {
+		return this.sessionToken;
+	}
+
 	private loadSession(): void {
-		const lastUserId = this.sessionStorage.getItem("spatial_notes_last_user");
-		if (lastUserId) {
-			const usersJson =
-				this.sessionStorage.getItem("spatial_notes_users") || "[]";
+		this.sessionToken = this.sessionStorage.getItem("session_token");
+		const lastUserEmail = this.sessionStorage.getItem("spatial_notes_last_user");
+
+		if (this.sessionToken && lastUserEmail) {
+			const usersJson = this.sessionStorage.getItem("spatial_notes_users") || "[]";
 			const users = JSON.parse(usersJson);
-			const user = users.find((u: any) => u.id === lastUserId);
+			const user = users.find((u: any) => u.email === lastUserEmail || u.id === lastUserEmail);
 			if (user) {
 				this.currentUser = user;
 			}
 		}
-	}
-
-	private findUserInStorage(username: string): User | null {
-		const usersJson =
-			this.sessionStorage.getItem("spatial_notes_users") || "[]";
-		const users = JSON.parse(usersJson);
-		return users.find((u: any) => u.username === username) || null;
-	}
-
-	private saveUserToStorage(user: User): void {
-		const usersJson =
-			this.sessionStorage.getItem("spatial_notes_users") || "[]";
-		const users = JSON.parse(usersJson);
-		users.push(user);
-		this.sessionStorage.setItem("spatial_notes_users", JSON.stringify(users));
 	}
 }

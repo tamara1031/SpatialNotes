@@ -11,7 +11,7 @@ Verify the landing page presentation and the authentication flow (Sign-in/Sign-u
     1. Clear localStorage and cookies.
     2. Navigate to `/`.
     3. Verify that the Auth Modal overlay is NOT visible and does not block interactions.
-- **Expectation**: Landing page is fully visible and interactive.
+- **Expectation**: Landing page is fully visible and interactive. Even if a `session_token` exists, no automatic redirection occurs from the root.
 
 ### 2.1 Landing Page Presentation (Manual/Visual)
 - **Objective**: Ensure the design follows ADR-037.
@@ -30,12 +30,19 @@ Verify the landing page presentation and the authentication flow (Sign-in/Sign-u
     4. Click "Sign In" button in Header.
     5. Verify modal appears with "Welcome Back" title.
 
+### 2.2.1 "Go to Vault" Visibility
+- **Objective**: Ensure authenticated users see a way into the app.
+- **Steps**:
+    1. Manually set a valid `session_token` in localStorage.
+    2. Navigate to `/`.
+- **Expectation**: "Sign In/Sign Up" buttons are replaced or supplemented by a "Go to Vault" button.
+
 ### 2.3 Registration Flow (Automated - Playwright)
 - **Objective**: Verify end-to-end registration.
 - **Steps**:
     1. Fill registration form with new email/password.
     2. Click "Register".
-    3. Verify redirection to `/vault`.
+    3. Verify redirection to `/vault/`.
     4. Verify user can create a new node in the workspace.
 
 ### 2.4 Login Flow (Automated - Playwright)

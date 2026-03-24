@@ -7,18 +7,21 @@ test.describe("Astro Auth Flow & Redirection", () => {
         await expect(page.locator("h1").first()).toContainText("A Spatial Canvas");
     });
 
-    test("Authenticated user should be redirected from root to /vault/", async ({ page }) => {
+    test("Authenticated user should NOT be redirected from root automatically", async ({ page }) => {
         await page.goto("/");
         // Simulate login
         await page.evaluate(() => {
             localStorage.setItem("session_token", "test-token");
         });
 
-        // Reload to trigger script
+        // Reload
         await page.goto("/");
 
-        // Wait for redirect to /vault/ (Astro trailing slash)
-        await expect(page).toHaveURL(/\/vault\/?$/);
+        // Should STILL be on root
+        await expect(page).toHaveURL(/\/$/);
+
+        // Wait for client-side script to show Go to Vault button
+        await expect(page.locator("text=Go to Vault").first()).toBeVisible();
     });
 
     test("Authenticated user should be redirected from /signin/ to /vault/", async ({ page }) => {

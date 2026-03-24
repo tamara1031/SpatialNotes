@@ -8,6 +8,7 @@ import { showNotification } from "./notificationStore";
 export * from "./vault/vault.store.base";
 export * from "./vault/vault.store";
 export * from "./auth/auth.actions";
+export { authService } from "./auth/auth.service";
 export { domainSyncService } from "./sync/SyncService";
 
 // --- Facade Re-exports and Legacy Support ---
@@ -22,12 +23,7 @@ import { vaultManager, updateVaultState, lockVaultInternal } from "./vault/vault
 import { identifyUser, cryptoService, cryptoWorker } from "./auth/auth.actions";
 export { identifyUser, cryptoService, cryptoWorker };
 
-const sessionStorage = {
-	getItem: (key: string) => typeof window !== "undefined" ? localStorage.getItem(key) : null,
-	setItem: (key: string, value: string) => { if (typeof window !== "undefined") localStorage.setItem(key, value); },
-	removeItem: (key: string) => { if (typeof window !== "undefined") localStorage.removeItem(key); }
-};
-export const authService = new AuthService(sessionStorage);
+import { authService } from "./auth/auth.service";
 export const $currentUser = atom<any>(null);
 authService.subscribe(user => $currentUser.set(user));
 
@@ -67,12 +63,11 @@ export const lockVault = () => {
 
 export const logout = () => {
 	lockVaultInternal();
+	authService.logout();
 	$sessionToken.set(null);
-	localStorage.removeItem("session_token");
 	$currentUserEmail.set(null);
 	$saltAuth.set(null);
 	$saltEncryption.set(null);
 	$appState.set("email");
 	syncService.reset();
-	// Navigation is handled by AuthGuard or manually in components if needed
 };

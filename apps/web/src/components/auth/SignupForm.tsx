@@ -4,10 +4,10 @@ import { useAsyncAction } from "../../hooks/useAsyncAction";
 import { signup } from "../../store/vaultStore";
 
 interface SignupFormProps {
-    onSuccess: () => void;
+    redirectPath?: string;
 }
 
-export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
+export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -15,6 +15,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
     const { execute, isLoading, error } = useAsyncAction(
         async (email: string, pass: string) => {
             await signup(email, pass);
+            return true;
         },
         {
             loadingMessage: "Creating account...",
@@ -27,7 +28,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ onSuccess }) => {
         e.preventDefault();
         const success = await execute(email, password);
         if (success !== undefined) {
-            onSuccess();
+            window.location.href = redirectPath || "/vault/";
         }
     };
 

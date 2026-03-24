@@ -14,8 +14,8 @@ guard -> storage : getItem("session_token")
 storage --> guard : token
 
 alt Session Exists
-    guard -> vault : Redirect to /vault/
+    guard -> landing : Show "Go to Vault" component
 else No Session
-    guard -> landing : Render Landing Content
+    guard -> landing : Render Default Landing Content
 end
 @enduml

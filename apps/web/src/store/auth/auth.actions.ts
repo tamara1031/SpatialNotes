@@ -8,6 +8,7 @@ import { VaultGateway } from "../../infrastructure/vault/VaultGateway";
 import CryptoWorker from "../../workers/CryptoWorker?worker";
 import { $appState, $currentUserEmail, $saltAuth, $saltEncryption, $sessionToken } from "../vault/vault.store.base";
 import { updateVaultState, vaultManager } from "../vault/vault.store";
+import { authService } from "./auth.service";
 
 // Infrastructure
 const gateway = new VaultGateway();
@@ -34,6 +35,7 @@ export const identifyUser = async (email: string) => {
 };
 
 export const signup = async (email: string, password: string) => {
+    $currentUserEmail.set(email);
     const { token } = await registerUseCase.execute({ email, password });
     finalizeLogin(token);
 };
@@ -55,8 +57,17 @@ export const signin = async (password: string) => {
 };
 
 const finalizeLogin = (token: string) => {
+    const email = $currentUserEmail.get();
+    if (email) {
+        authService.setSession({
+            id: email, // Use email as fallback ID if not provided by backend
+            username: email.split("@")[0],
+            email: email,
+            createdAt: Date.now()
+        }, token);
+    }
+
     $sessionToken.set(token);
-    localStorage.setItem("session_token", token);
     updateVaultState();
     $appState.set("unlocked");
 };

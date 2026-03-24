@@ -226,6 +226,7 @@ export const SidebarNodeItem = memo<{
 							e.stopPropagation();
 							onDelete(node.id);
 						}}
+						title="Delete node"
 						style={{
 							display: "flex",
 							cursor: "pointer",

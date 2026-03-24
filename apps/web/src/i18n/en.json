@@ -4,7 +4,8 @@
     "accent": "Your Deep Thoughts.",
     "description": "SpatialNotes combines the freedom of a digital canvas with the power of Hybrid E2EE security. Choose between seamless Standard notes or Zero-Knowledge E2EE vaults. Organize, draw, and write without boundaries or compromises.",
     "createVault": "Create Your Vault",
-    "seeFeatures": "See Features"
+    "seeFeatures": "See Features",
+    "goToVault": "Go to Vault"
   },
   "features": {
     "title": "Built for Deep Work",

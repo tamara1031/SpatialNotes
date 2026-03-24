@@ -5,7 +5,8 @@ import en from "../../i18n/en.json";
 <section class="hero">
     <div class="hero-content">
         <h1>
-            {en.landing.title} <br />
+            {en.landing.title}
+            <br />
             <span class="accent">{en.landing.accent}</span>
         </h1>
 
@@ -14,11 +15,33 @@ import en from "../../i18n/en.json";
         </p>
 
         <div class="actions" role="group" aria-label="Hero Actions">
-            <a href="/signup" class="btn-primary" role="button">{en.landing.createVault}</a>
-            <a href="#features" class="btn-secondary" role="button">{en.landing.seeFeatures}</a>
+            <div id="hero-auth-guest" class="auth-group">
+                <a href="/signup" class="btn-primary" role="button"
+                    >{en.landing.createVault}</a
+                >
+                <a href="#features" class="btn-secondary" role="button"
+                    >{en.landing.seeFeatures}</a
+                >
+            </div>
+            <div id="hero-auth-user" class="auth-group" style="display: none;">
+                <a href="/vault/" class="btn-primary" role="button"
+                    >{en.landing.goToVault}</a
+                >
+                <a href="#features" class="btn-secondary" role="button"
+                    >{en.landing.seeFeatures}</a
+                >
+            </div>
         </div>
     </div>
 </section>
+
+<script>
+    const token = localStorage.getItem("session_token");
+    if (token) {
+        document.getElementById("hero-auth-guest")!.style.display = "none";
+        document.getElementById("hero-auth-user")!.style.display = "flex";
+    }
+</script>
 
 <style>
     .hero {

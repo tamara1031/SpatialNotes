@@ -82,9 +82,9 @@ func main() {
 	mux := http.NewServeMux()
 
 	// Auth API (Public)
-	mux.HandleFunc("GET /api/auth/salt", authHandler.HandleGetSalt)
-	mux.HandleFunc("POST /api/auth/register", authHandler.HandleRegister)
-	mux.HandleFunc("POST /api/auth/login", authHandler.HandleLogin)
+	mux.HandleFunc("GET /api/auth/salt/", authHandler.HandleGetSalt)
+	mux.HandleFunc("POST /api/auth/register/", authHandler.HandleRegister)
+	mux.HandleFunc("POST /api/auth/login/", authHandler.HandleLogin)
 
 	// Protected API
 	mux.Handle("GET /api/nodes", authMiddleware(http.HandlerFunc(nodeHandler.HandleList)))

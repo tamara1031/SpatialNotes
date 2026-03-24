@@ -1,7 +1,7 @@
 # ADR-047: Landing Page & Route Separation
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 SpatialNotes currently launches directly into the workspace (NoteView). As we transition to a multi-user, product-ready application, we need a dedicated Landing Page (`/`) to communicate the value proposition, showcase features, and provide clear entry points for Sign-in and Sign-up.
@@ -12,12 +12,14 @@ SpatialNotes currently launches directly into the workspace (NoteView). As we tr
     - `/vault`: Main Workspace (Astro Page hosting the React `DesktopApp`).
 2. **Technology**:
     - Use **Astro** for the landing page to ensure maximum performance (Zero-JS by default) and SEO optimization.
-    - Use **React + Framer Motion** for the Auth Modals to provide a premium, smooth transition experience (Glassmorphism).
+    - Use **React + Framer Motion** for the Auth Components to provide a premium experience.
 3. **Auth Integration**:
-    - The `vaultStore` will manage the shared authentication state and modal visibility.
-    - Redirect logic will be handled at the page level or within the store initialization.
+    - The `vaultStore` manages the shared authentication state.
+    - **No Auto-Redirect from Root**: Even if authenticated, users stay on the landing page at `/`. A "Go to Vault" button is displayed in the UI (Navbar/Hero) to allow manual transition to `/vault`.
+    - Access to `/vault` is protected and requires a valid session; otherwise, users are redirected to `/signin`.
 
 ## Consequences
 - Improving SEO and first-load performance for guests.
 - Clearer separation of marketing content and application logic.
-- Requires careful handling of "Checking Vault Status" to avoid unintended redirects while browsing the landing page.
+- Users have control over when they enter the application from the landing page.
+- requires consistent session verification on the `/vault` route.

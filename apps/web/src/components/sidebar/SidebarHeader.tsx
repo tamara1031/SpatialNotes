@@ -117,6 +117,7 @@ export const SidebarHeader: React.FC<{
 												onCreateNode(item.type);
 												setShowCreateMenu(false);
 											}}
+											title={item.label}
 											style={{
 												display: "flex",
 												alignItems: "center",

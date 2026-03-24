@@ -6,5 +6,5 @@ go build -o bin/test-server apps/server/cmd/server/main.go
 # Use a unique DB file for this run to avoid schema cache issues
 export DSN="test_spatial_notes_$(date +%s).db"
 rm -f "$DSN"*
-# Start the server with reset-db flag
-./bin/test-server -reset-db
+# Start the server with reset-db flag and log to a file
+./bin/test-server -reset-db > test_server.log 2>&1

@@ -2,7 +2,7 @@ import type { IVaultAuthGateway, IVaultRegistryGateway } from "@spatial-notes/co
 
 export class VaultGateway implements IVaultRegistryGateway, IVaultAuthGateway {
     async register(data: any) {
-        const res = await fetch("/api/auth/register", {
+        const res = await fetch("/api/auth/register/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -21,7 +21,7 @@ export class VaultGateway implements IVaultRegistryGateway, IVaultAuthGateway {
     }
 
     async login(data: any) {
-        const res = await fetch("/api/auth/login", {
+        const res = await fetch("/api/auth/login/", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(data),
@@ -41,7 +41,7 @@ export class VaultGateway implements IVaultRegistryGateway, IVaultAuthGateway {
 
     async getSalt(email: string) {
         const res = await fetch(
-            `/api/auth/salt?email=${encodeURIComponent(email)}`,
+            `/api/auth/salt/?email=${encodeURIComponent(email)}`,
         );
         if (!res.ok) {
             const text = await res.text();

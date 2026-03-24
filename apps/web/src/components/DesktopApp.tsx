@@ -22,6 +22,16 @@ export const DesktopApp: React.FC = () => {
 		});
 	}, []);
 
+	useEffect(() => {
+		if (isInitialized && (appState === "email" || appState === "setup")) {
+			// If we are in DesktopApp but state is still email/setup, 
+			// it means no valid vault session was found/resumed.
+			// Redirect back to landing to avoid "forced signup" feeling.
+			console.warn("[DesktopApp] Vault not ready, redirecting to landing.");
+			window.location.href = "/";
+		}
+	}, [isInitialized, appState]);
+
 	if (!isInitialized) {
 		return (
 			<div style={{

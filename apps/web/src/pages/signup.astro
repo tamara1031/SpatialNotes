@@ -7,13 +7,14 @@ import AuthModalToggle from "../components/auth/AuthModalToggle.astro";
 
 <Shell title="Sign Up - SpatialNotes">
     <div class="auth-page">
-        <div class="auth-container">
+        <div class="auth-card glass-panel">
             <AuthModalHeader mode="signup" />
-            <SignupForm
-                client:only="react"
-                onSuccess={() => (window.location.href = "/app/")}
-            />
-            <AuthModalToggle mode="signup" />
+
+            <SignupForm client:only="react" redirectPath="/vault/" />
+
+            <div class="auth-footer">
+                <p>Already have a vault? <a href="/signin/">Sign in</a></p>
+            </div>
         </div>
         <a href="/" class="back-link">← Back to home</a>
     </div>
