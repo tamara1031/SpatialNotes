@@ -10,6 +10,7 @@ type StructureRepository interface {
 	FindByID(ctx context.Context, id, userID string) (Node, error)
 	GetTree(ctx context.Context, rootId, userID string) ([]Node, error)
 	Delete(ctx context.Context, id, userID string) error
+	DeleteMany(ctx context.Context, ids []string, userID string) error
 	Search(ctx context.Context, query, userID string) ([]Node, error)
 }
 
@@ -20,6 +21,7 @@ type ElementRepository interface {
 	Save(ctx context.Context, node Node) error
 	FindByID(ctx context.Context, id, userID string) (Node, error)
 	Delete(ctx context.Context, id, userID string) error
+	DeleteMany(ctx context.Context, ids []string, userID string) error
 	DeleteByNodeID(ctx context.Context, nodeId, userID string) error
 }
 

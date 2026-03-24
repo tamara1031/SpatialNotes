@@ -77,6 +77,15 @@ func (f *FakeStructureRepository) Delete(ctx context.Context, id, userID string)
 	return nil
 }
 
+func (f *FakeStructureRepository) DeleteMany(ctx context.Context, ids []string, userID string) error {
+	for _, id := range ids {
+		if err := f.Delete(ctx, id, userID); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (f *FakeStructureRepository) Search(ctx context.Context, query, userID string) ([]Node, error) {
 	return nil, errors.New("not implemented")
 }
@@ -106,6 +115,15 @@ func (f *FakeElementRepository) Delete(ctx context.Context, id, userID string) e
 	n, ok := f.elements[id]
 	if ok && n.UserID() == userID {
 		delete(f.elements, id)
+	}
+	return nil
+}
+
+func (f *FakeElementRepository) DeleteMany(ctx context.Context, ids []string, userID string) error {
+	for _, id := range ids {
+		if err := f.Delete(ctx, id, userID); err != nil {
+			return err
+		}
 	}
 	return nil
 }

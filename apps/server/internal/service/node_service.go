@@ -133,16 +133,27 @@ func (s *NodeService) DeleteNode(ctx context.Context, id string) error {
 		return s.elementRepo.Delete(ctx, id, uid)
 	}
 
+	var structureIDs []string
+	var elementIDs []string
+
 	for _, n := range nodes {
 		switch n.Type() {
 		case "CHAPTER", "NOTEBOOK":
-			if err := s.structureRepo.Delete(ctx, n.ID(), uid); err != nil {
-				return err
-			}
+			structureIDs = append(structureIDs, n.ID())
 		default:
-			if err := s.elementRepo.Delete(ctx, n.ID(), uid); err != nil {
-				return err
-			}
+			elementIDs = append(elementIDs, n.ID())
+		}
+	}
+
+	if len(structureIDs) > 0 {
+		if err := s.structureRepo.DeleteMany(ctx, structureIDs, uid); err != nil {
+			return err
+		}
+	}
+
+	if len(elementIDs) > 0 {
+		if err := s.elementRepo.DeleteMany(ctx, elementIDs, uid); err != nil {
+			return err
 		}
 	}
 
