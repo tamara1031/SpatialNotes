@@ -23,12 +23,14 @@ export default defineConfig({
 			url: "http://localhost:4321",
 			cwd: "../../",
 			reuseExistingServer: true,
+			timeout: 120000,
 		},
 		{
 			command: "bash ./seed_db_playwright.sh",
 			port: 8080,
 			cwd: "../../",
 			reuseExistingServer: true,
+			timeout: 120000,
 		},
 	],
 });
