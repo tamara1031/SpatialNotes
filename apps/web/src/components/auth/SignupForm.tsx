@@ -39,6 +39,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
 		>
 			<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 				<label
+					htmlFor="signup-email"
 					style={{
 						fontSize: "0.875rem",
 						fontWeight: 600,
@@ -48,6 +49,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
 					Email
 				</label>
 				<input
+					id="signup-email"
 					type="email"
 					value={email}
 					onChange={(e) => setEmail(e.target.value)}
@@ -66,6 +68,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
 
 			<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 				<label
+					htmlFor="signup-password"
 					style={{
 						fontSize: "0.875rem",
 						fontWeight: 600,
@@ -76,6 +79,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
 				</label>
 				<div style={{ position: "relative" }}>
 					<input
+						id="signup-password"
 						type={showPassword ? "text" : "password"}
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}

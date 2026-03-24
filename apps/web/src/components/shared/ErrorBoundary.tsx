@@ -51,6 +51,7 @@ export class ErrorBoundary extends Component<Props, State> {
 							{this.state.error?.toString()}
 						</details>
 						<button
+							type="button"
 							onClick={() => window.location.reload()}
 							style={{
 								marginTop: "2rem",

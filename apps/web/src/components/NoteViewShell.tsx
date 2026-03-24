@@ -44,7 +44,7 @@ export const NoteViewShell: React.FC = () => {
 			? 100
 			: 5000;
 
-	const { syncStatus, markChanged, syncNow } = useEncryptedSync(
+	const { syncStatus, syncNow } = useEncryptedSync(
 		activeNodeId,
 		debounceTime,
 	);

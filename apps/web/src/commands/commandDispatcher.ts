@@ -39,9 +39,9 @@ export const dispatchCommand = (
 		case "BATCH":
 			elementsMap.doc?.transact(() => {
 				const subCommands = Array.isArray(payload) ? payload : [];
-				subCommands.forEach((subCmd: any) =>
-					dispatchCommand(subCmd.type, subCmd.payload, context),
-				);
+				subCommands.forEach((subCmd: any) => {
+					dispatchCommand(subCmd.type, subCmd.payload, context);
+				});
 			});
 			break;
 		default:

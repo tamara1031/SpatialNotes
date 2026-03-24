@@ -39,6 +39,7 @@ export const SigninForm: React.FC<SigninFormProps> = ({ onSuccess }) => {
 		>
 			<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 				<label
+					htmlFor="signin-email"
 					style={{
 						fontSize: "0.875rem",
 						fontWeight: 600,
@@ -48,6 +49,7 @@ export const SigninForm: React.FC<SigninFormProps> = ({ onSuccess }) => {
 					Email
 				</label>
 				<input
+					id="signin-email"
 					type="email"
 					value={email}
 					onChange={(e) => setEmail(e.target.value)}
@@ -66,6 +68,7 @@ export const SigninForm: React.FC<SigninFormProps> = ({ onSuccess }) => {
 
 			<div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
 				<label
+					htmlFor="signin-password"
 					style={{
 						fontSize: "0.875rem",
 						fontWeight: 600,
@@ -76,6 +79,7 @@ export const SigninForm: React.FC<SigninFormProps> = ({ onSuccess }) => {
 				</label>
 				<div style={{ position: "relative" }}>
 					<input
+						id="signin-password"
 						type={showPassword ? "text" : "password"}
 						value={password}
 						onChange={(e) => setPassword(e.target.value)}
