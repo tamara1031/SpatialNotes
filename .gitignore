@@ -3,7 +3,6 @@ node_modules/
 dist/
 .npm
 .pnpm-debug.log
-pnpm-lock.yaml
 .astro/
 
 # Rust / Wasm
