@@ -101,3 +101,60 @@ func TestSqliteNodeRepository_GetTree(t *testing.T) {
 		t.Errorf("should not find root2 for u1")
 	}
 }
+
+func TestSqliteNodeRepository_Delete(t *testing.T) {
+	db, err := infrastructure.NewDB("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	if err := infrastructure.CreateSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := repository.NewNodeRepository(db)
+
+	// Setup nodes
+	n1 := service.NewBaseNode("n1", "NOTEBOOK", "", "u1")
+	n2 := service.NewBaseNode("n2", "NOTEBOOK", "", "u2")
+
+	if err := repo.Save(ctx, n1); err != nil {
+		t.Fatal(err)
+	}
+	if err := repo.Save(ctx, n2); err != nil {
+		t.Fatal(err)
+	}
+
+	// 1. Happy Path: Delete n1 for u1
+	if err := repo.Delete(ctx, "n1", "u1"); err != nil {
+		t.Errorf("failed to delete node: %v", err)
+	}
+
+	saved1, err := repo.FindByID(ctx, "n1", "u1")
+	if err != nil {
+		t.Fatalf("failed to find n1 after delete: %v", err)
+	}
+	if !saved1.IsDeleted() {
+		t.Errorf("expected n1 to be deleted")
+	}
+
+	// 2. Edge Case: Wrong User - Delete n2 for u1
+	if err := repo.Delete(ctx, "n2", "u1"); err != nil {
+		t.Errorf("expected no error when deleting with wrong user (no rows affected), got: %v", err)
+	}
+
+	saved2, err := repo.FindByID(ctx, "n2", "u2")
+	if err != nil {
+		t.Fatalf("failed to find n2: %v", err)
+	}
+	if saved2.IsDeleted() {
+		t.Errorf("expected n2 to NOT be deleted because wrong user requested it")
+	}
+
+	// 3. Edge Case: Non-existent Node
+	if err := repo.Delete(ctx, "non_existent", "u1"); err != nil {
+		t.Errorf("expected no error when deleting non-existent node (no rows affected), got: %v", err)
+	}
+}
