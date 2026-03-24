@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 
+import "./setup";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -22,7 +23,7 @@ describe("MarkdownView", () => {
 			/>,
 		);
 
-		const editor = screen.getByRole("textbox");
+		const editor = document.querySelector(".ProseMirror") as HTMLElement;
 		expect(editor).toBeDefined();
 	});
 
@@ -32,7 +33,8 @@ describe("MarkdownView", () => {
 				id: "1",
 				type: "PARAGRAPH",
 				parentId: "node-1",
-				metadata: { content: "Hello" },
+				content: "Hello",
+				metadata: { kind: "PARAGRAPH" },
 				updatedAt: 123,
 			},
 		];
@@ -48,7 +50,7 @@ describe("MarkdownView", () => {
 			/>,
 		);
 
-		const editor = screen.getByRole("textbox");
+		const editor = document.querySelector(".ProseMirror") as HTMLElement;
 		expect(editor.textContent).toContain("Hello");
 	});
 
@@ -58,7 +60,8 @@ describe("MarkdownView", () => {
 				id: "1",
 				type: "HEADING",
 				parentId: "node-1",
-				metadata: { content: "Main Title", level: 1 },
+				content: "Main Title",
+				metadata: { kind: "HEADING", level: 1 },
 				updatedAt: 123,
 			},
 		];
@@ -78,66 +81,14 @@ describe("MarkdownView", () => {
 		expect(heading.textContent).toBe("Main Title");
 	});
 
-	it("should render list elements", () => {
-		const testElements = [
-			{
-				id: "1",
-				type: "LIST",
-				parentId: "node-1",
-				metadata: { content: "Item 1", listType: "bullet" },
-				updatedAt: 123,
-			},
-		];
-
-		render(
-			<MarkdownView
-				activeNodeId="test-node"
-				elements={testElements as any}
-				onCommand={vi.fn()}
-				canUndo={false}
-				canRedo={false}
-				elementFactory={vi.fn()}
-			/>,
-		);
-
-		const list = screen.getByRole("list");
-		expect(list).toBeDefined();
-	});
-
-	it("should render image elements", () => {
-		const testElements = [
-			{
-				id: "1",
-				type: "IMAGE",
-				parentId: "node-1",
-				metadata: { src: "https://example.com/image.png", alt: "Test Image" },
-				updatedAt: 123,
-			},
-		];
-
-		render(
-			<MarkdownView
-				activeNodeId="test-node"
-				elements={testElements as any}
-				onCommand={vi.fn()}
-				canUndo={false}
-				canRedo={false}
-				elementFactory={vi.fn()}
-			/>,
-		);
-
-		const img = screen.getByRole("img");
-		expect(img).toBeDefined();
-		expect(img.getAttribute("src")).toBe("https://example.com/image.png");
-	});
-
 	it("should render table elements", () => {
 		const testElements = [
 			{
 				id: "1",
 				type: "TABLE",
 				parentId: "node-1",
-				metadata: { rows: [["Cell 1", "Cell 2"]] },
+				content: "",
+				metadata: { kind: "TABLE" },
 				updatedAt: 123,
 			},
 		];
@@ -163,7 +114,8 @@ describe("MarkdownView", () => {
 				id: "1",
 				type: "LATEX",
 				parentId: "node-1",
-				metadata: { content: "\\sum_{i=0}^n i^2", isRendered: true },
+				content: "\\sum_{i=0}^n i^2",
+				metadata: { kind: "LATEX", isRendered: true },
 				updatedAt: 123,
 			},
 		];

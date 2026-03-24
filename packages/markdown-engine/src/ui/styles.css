@@ -1,0 +1,134 @@
+.editor-container {
+	height: 100%;
+	overflow-y: auto;
+	padding: var(--spacing-lg);
+	background-color: var(--surface);
+	color: var(--text-primary);
+}
+
+.ProseMirror {
+	outline: none;
+	min-height: 100%;
+	line-height: 1.6;
+	font-family: var(--font-core);
+}
+
+.ProseMirror p {
+	margin-bottom: var(--spacing-md);
+}
+
+.ProseMirror h1 {
+	font-size: 2rem;
+	margin-top: var(--spacing-lg);
+	margin-bottom: var(--spacing-md);
+	color: var(--text-primary);
+}
+
+.ProseMirror h2 {
+	font-size: 1.5rem;
+	margin-top: var(--spacing-lg);
+	margin-bottom: var(--spacing-md);
+	color: var(--text-primary);
+}
+
+.ProseMirror h3 {
+	font-size: 1.25rem;
+	margin-top: var(--spacing-lg);
+	margin-bottom: var(--spacing-md);
+	color: var(--text-primary);
+}
+
+.ProseMirror table {
+	border-collapse: collapse;
+	table-layout: fixed;
+	width: 100%;
+	margin: var(--spacing-md) 0;
+	overflow: hidden;
+}
+
+.ProseMirror td, .ProseMirror th {
+	vertical-align: top;
+	box-sizing: border-box;
+	position: relative;
+	border: 1px solid var(--glass-border);
+	padding: var(--spacing-sm);
+}
+
+.ProseMirror .column-resize-handle {
+	position: absolute;
+	right: -2px;
+	top: 0;
+	bottom: 0;
+	width: 4px;
+	z-index: 20;
+	background-color: var(--accent);
+	cursor: col-resize;
+}
+
+.ProseMirror .selectedCell:after {
+	z-index: 2;
+	position: absolute;
+	content: "";
+	left: 0;
+	right: 0;
+	top: 0;
+	bottom: 0;
+	background: var(--accent-subtle);
+	pointer-events: none;
+}
+
+.slash-menu {
+	background-color: var(--surface-raised);
+	border: 1px solid var(--glass-border);
+	border-radius: var(--radius-md);
+	box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+	padding: var(--spacing-xs);
+	width: 200px;
+}
+
+.slash-menu-header {
+	font-size: 0.7rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	color: var(--text-muted);
+	padding: var(--spacing-sm);
+}
+
+.slash-menu-item {
+	display: flex;
+	align-items: center;
+	gap: var(--spacing-sm);
+	padding: var(--spacing-sm) var(--spacing-md);
+	border-radius: var(--radius-sm);
+	cursor: pointer;
+	transition: background-color 0.2s;
+	font-size: 0.9rem;
+}
+
+.slash-menu-item:hover {
+	background-color: var(--accent-subtle);
+}
+
+.slash-menu-icon {
+	color: var(--text-secondary);
+	width: 20px;
+	text-align: center;
+}
+
+.latex-node-view {
+	transition: background-color 0.2s;
+	border-radius: var(--radius-sm);
+}
+
+.latex-node-view:hover {
+	background-color: var(--surface-felt);
+}
+
+.latex-editor {
+	background-color: var(--surface-felt);
+	border: 1px solid var(--glass-border);
+	padding: var(--spacing-md);
+	font-family: monospace;
+	color: var(--accent);
+	border-radius: var(--radius-sm);
+}

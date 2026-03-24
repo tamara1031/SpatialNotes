@@ -1,47 +1,22 @@
-import { CodeHighlightNode, CodeNode } from "@lexical/code";
-import { AutoLinkNode, LinkNode } from "@lexical/link";
-import {
-	$createListItemNode,
-	$createListNode,
-	ListItemNode,
-	ListNode,
-} from "@lexical/list";
-import { LexicalComposer } from "@lexical/react/LexicalComposer";
-import { ContentEditable } from "@lexical/react/LexicalContentEditable";
-import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
-import { HistoryPlugin } from "@lexical/react/LexicalHistoryPlugin";
-import { HorizontalRuleNode } from "@lexical/react/LexicalHorizontalRuleNode";
-import { ListPlugin } from "@lexical/react/LexicalListPlugin";
-import { MarkdownShortcutPlugin } from "@lexical/react/LexicalMarkdownShortcutPlugin";
-import { OnChangePlugin } from "@lexical/react/LexicalOnChangePlugin";
-import { RichTextPlugin } from "@lexical/react/LexicalRichTextPlugin";
-import { TablePlugin } from "@lexical/react/LexicalTablePlugin";
-import {
-	$createHeadingNode,
-	$createQuoteNode,
-	HeadingNode,
-	QuoteNode,
-} from "@lexical/rich-text";
-import {
-	$createTableCellNode,
-	$createTableNode,
-	$createTableRowNode,
-	TableCellNode,
-	TableNode,
-	TableRowNode,
-} from "@lexical/table";
-import {
-	$createParagraphNode,
-	$createTextNode,
-	$getRoot,
-	type EditorState,
-} from "lexical";
-import type React from "react";
-import { useCallback, useMemo } from "react";
-import { $createImageNode, ImageNode } from "../nodes/ImageNode";
-import { $createLaTeXNode, LaTeXNode } from "../nodes/LaTeXNode";
-import { SlashCommandPlugin } from "../plugins/SlashCommandPlugin";
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import { EditorState } from "prosemirror-state";
+import { EditorView } from "prosemirror-view";
+import { keymap } from "prosemirror-keymap";
+import { history, undo, redo } from "prosemirror-history";
+import { baseKeymap } from "prosemirror-commands";
+import { inputRules, smartQuotes, ellipsis, emDash, textblockTypeInputRule, wrappingInputRule } from "prosemirror-inputrules";
+import { dropCursor } from "prosemirror-dropcursor";
+import { gapCursor } from "prosemirror-gapcursor";
+import { tableEditing, columnResizing } from "prosemirror-tables";
+import { schema } from "./schema";
+import { blockIdPlugin } from "../index";
+import { LaTeXNodeView } from "./nodes/LaTeXNodeView";
 import type { MarkdownElement } from "../types";
+
+import "prosemirror-view/style/prosemirror.css";
+import "prosemirror-tables/style/tables.css";
+import "prosemirror-gapcursor/style/gapcursor.css";
+import "./styles.css";
 
 export interface MarkdownViewProps {
 	activeNodeId: string;
@@ -52,169 +27,188 @@ export interface MarkdownViewProps {
 	elementFactory: any;
 }
 
-const theme = {
-	paragraph: "editor-paragraph",
-	heading: {
-		h1: "editor-heading-h1",
-		h2: "editor-heading-h2",
-		h3: "editor-heading-h3",
-	},
-	list: {
-		ul: "editor-list-ul",
-		ol: "editor-list-ol",
-	},
-	table: "editor-table",
-	tableRow: "editor-table-row",
-	tableCell: "editor-table-cell",
-	code: "editor-code",
-};
-
-import { showNotification } from "../../../../apps/web/src/store/notificationStore";
-
-function onError(error: Error) {
-	console.error(error);
-	showNotification(`Editor Error: ${error.message}`, "error");
-}
+const markdownInputRules = inputRules({
+	rules: [
+		...smartQuotes,
+		ellipsis,
+		emDash,
+		textblockTypeInputRule(/^#\s$/, schema.nodes.heading, { level: 1 }),
+		textblockTypeInputRule(/^##\s$/, schema.nodes.heading, { level: 2 }),
+		textblockTypeInputRule(/^###\s$/, schema.nodes.heading, { level: 3 }),
+		wrappingInputRule(/^\s*>\s$/, schema.nodes.blockquote),
+		wrappingInputRule(/^(\d+)\.\s$/, schema.nodes.ordered_list),
+		wrappingInputRule(/^\s*([-+*])\s$/, schema.nodes.bullet_list),
+		textblockTypeInputRule(/^```$/, schema.nodes.code_block),
+	],
+});
 
 export const MarkdownView: React.FC<MarkdownViewProps> = ({
 	elements,
 	onCommand,
 }) => {
-	const initialConfig = useMemo(
-		() => ({
-			namespace: "MarkdownEditor",
-			theme,
-			onError,
-			nodes: [
-				LaTeXNode,
-				ImageNode,
-				HeadingNode,
-				QuoteNode,
-				ListNode,
-				ListItemNode,
-				TableNode,
-				TableRowNode,
-				TableCellNode,
-				LinkNode,
-				AutoLinkNode,
-				CodeNode,
-				CodeHighlightNode,
-				HorizontalRuleNode,
-			],
-			editorState: () => {
-				const root = $getRoot();
-				if (root.getFirstChild() === null) {
-					if (elements.length === 0) {
-						const paragraph = $createParagraphNode();
-						paragraph.append($createTextNode(""));
-						root.append(paragraph);
-					} else {
-						for (const el of elements) {
-							switch (el.type) {
-								case "HEADING": {
-									const heading = $createHeadingNode(
-										`h${el.metadata.level || 1}` as any,
-									);
-									heading.append($createTextNode(el.metadata.content || ""));
-									root.append(heading);
-									break;
-								}
-								case "LIST": {
-									const list = $createListNode(
-										el.metadata.listType === "bullet" ? "bullet" : "number",
-									);
-									const listItem = $createListItemNode();
-									listItem.append($createTextNode(el.metadata.content || ""));
-									list.append(listItem);
-									root.append(list);
-									break;
-								}
-								case "IMAGE": {
-									const imageNode = $createImageNode(
-										el.metadata.src || "",
-										el.metadata.alt || "",
-									);
-									root.append(imageNode);
-									break;
-								}
-								case "TABLE": {
-									const tableNode = $createTableNode();
-									const rows = el.metadata.rows || [[]];
-									for (const row of rows) {
-										const tableRow = $createTableRowNode();
-										for (const cell of row) {
-											const tableCell = $createTableCellNode(0);
-											tableCell.append($createTextNode(cell));
-											tableRow.append(tableCell);
-										}
-										tableNode.append(tableRow);
-									}
-									root.append(tableNode);
-									break;
-								}
-								case "LATEX": {
-									const latexNode = $createLaTeXNode(
-										el.metadata.content || "",
-										false,
-									);
-									root.append(latexNode);
-									break;
-								}
-								default: {
-									const paragraph = $createParagraphNode();
-									paragraph.append($createTextNode(el.metadata.content || ""));
-									root.append(paragraph);
-								}
-							}
+	const editorRef = useRef<HTMLDivElement>(null);
+	const viewRef = useRef<EditorView | null>(null);
+	const [showSlashMenu, setShowSlashMenu] = useState(false);
+	const [slashMenuPos, setSlashMenuPos] = useState({ top: 0, left: 0 });
+
+	const createInitialDoc = useCallback((initialElements: MarkdownElement[]) => {
+		if (initialElements.length === 0) {
+			return schema.nodes.doc.createAndFill(null, [
+				schema.nodes.paragraph.createAndFill()!,
+			])!;
+		}
+		const nodes = initialElements.map((el) => {
+			const typeName = el.metadata.kind?.toLowerCase() || "paragraph";
+			const nodeType = schema.nodes[typeName] || schema.nodes.paragraph;
+			const content = el.content ? [schema.text(el.content)] : [];
+			return nodeType.createAndFill(el.metadata, content)!;
+		});
+		return schema.nodes.doc.createAndFill(null, nodes)!;
+	}, []);
+
+	useEffect(() => {
+		if (!editorRef.current || viewRef.current) return;
+
+		const state = EditorState.create({
+			doc: createInitialDoc(elements),
+			plugins: [
+				blockIdPlugin,
+				markdownInputRules,
+				keymap(baseKeymap),
+				keymap({
+					"Mod-z": undo,
+					"Mod-y": redo,
+					"Mod-Shift-z": redo,
+				}),
+				history(),
+				dropCursor(),
+				gapCursor(),
+				columnResizing(),
+				tableEditing(),
+				keymap({
+					"/": (state, dispatch) => {
+						const { from, to } = state.selection;
+						if (from !== to) return false;
+						
+						const coords = viewRef.current?.coordsAtPos(from);
+						if (coords) {
+							setSlashMenuPos({ top: coords.bottom, left: coords.left });
+							setShowSlashMenu(true);
 						}
-					}
+						return false;
+					},
+					Escape: () => {
+						setShowSlashMenu(false);
+						return false;
+					},
+				}),
+			],
+		});
+
+		const view = new EditorView(editorRef.current, {
+			state,
+			nodeViews: {
+				latex(node, view, getPos) {
+					return new LaTeXNodeView(node, view, getPos);
+				},
+			},
+			dispatchTransaction(tr) {
+				const newState = view.state.apply(tr);
+				view.updateState(newState);
+
+				if (tr.docChanged) {
+					const updatedElements = mapDocToElements(newState.doc);
+					onCommand({ type: "UPDATE_ELEMENTS", payload: updatedElements });
 				}
 			},
-		}),
-		[elements],
-	);
+		});
 
-	const onChange = useCallback(
-		(editorState: EditorState) => {
-			editorState.read(() => {
-				const root = $getRoot();
-				const children = root.getChildren();
-				// Map children to MarkdownElements
-				const updatedElements: MarkdownElement[] = children.map(
-					(node, index) => {
-						// This is a simplified mapping for now
-						return {
-							id: `node-${index}`, // Ideally we'd use stable IDs
-							type: "PARAGRAPH",
-							parentId: null,
-							metadata: { content: node.getTextContent() },
-							updatedAt: Date.now(),
-						} as MarkdownElement;
-					},
-				);
-				onCommand({ type: "UPDATE_ELEMENTS", payload: updatedElements });
+		viewRef.current = view;
+
+		return () => {
+			view.destroy();
+			viewRef.current = null;
+		};
+	}, []);
+
+	const mapDocToElements = (doc: any): MarkdownElement[] => {
+		const elements: MarkdownElement[] = [];
+		doc.forEach((node: any) => {
+			elements.push({
+				id: node.attrs.id,
+				type: mapProseMirrorTypeToElement(node.type.name) as any,
+				parentId: null,
+				content: node.textContent,
+				metadata: {
+					...node.attrs,
+					kind: node.type.name.toUpperCase(),
+				},
+				updatedAt: Date.now(),
 			});
-		},
-		[onCommand],
-	);
+		});
+		return elements;
+	};
+
+	const mapProseMirrorTypeToElement = (pmType: string): string => {
+		switch (pmType) {
+			case "paragraph": return "PARAGRAPH";
+			case "heading": return "HEADING";
+			case "table": return "TABLE";
+			case "image": return "IMAGE";
+			case "latex": return "LATEX";
+			case "code_block": return "CODE";
+			default: return "PARAGRAPH";
+		}
+	};
+
+	const insertBlock = (type: string) => {
+		if (!viewRef.current) return;
+		const { state, dispatch } = viewRef.current;
+		const { tr } = state;
+		
+		let node;
+		switch(type) {
+			case "h1": node = schema.nodes.heading.createAndFill({ level: 1 }); break;
+			case "h2": node = schema.nodes.heading.createAndFill({ level: 2 }); break;
+			case "table": node = schema.nodes.table.createAndFill(); break;
+			case "latex": node = schema.nodes.latex.createAndFill(); break;
+			default: node = schema.nodes.paragraph.createAndFill();
+		}
+
+		if (node) {
+			dispatch(tr.replaceSelectionWith(node).scrollIntoView());
+		}
+		setShowSlashMenu(false);
+		viewRef.current.focus();
+	};
 
 	return (
-		<LexicalComposer initialConfig={initialConfig}>
-			<div className="editor-container">
-				<RichTextPlugin
-					contentEditable={<ContentEditable className="editor-input" />}
-					placeholder={
-						<div className="editor-placeholder">Enter some text...</div>
-					}
-					ErrorBoundary={LexicalErrorBoundary}
-				/>
-				<ListPlugin />
-				<TablePlugin />
-				<HistoryPlugin />
-				<MarkdownShortcutPlugin />
-				<SlashCommandPlugin />
-				<OnChangePlugin onChange={onChange} />
-			</div>
-		</LexicalComposer>
+		<div className="editor-container relative overflow-auto h-full">
+			<div ref={editorRef} className="ProseMirror-editor focus:outline-none min-h-full" />
+			
+			{showSlashMenu && (
+				<div 
+					className="slash-menu absolute z-50"
+					style={{ 
+						top: slashMenuPos.top + 5, 
+						left: Math.min(slashMenuPos.left, window.innerWidth - 220) 
+					}}
+				>
+					<div className="slash-menu-header">Insert Block</div>
+					<div className="slash-menu-item" onClick={() => insertBlock("h1")}>
+						<span className="slash-menu-icon">#</span> Heading 1
+					</div>
+					<div className="slash-menu-item" onClick={() => insertBlock("h2")}>
+						<span className="slash-menu-icon">##</span> Heading 2
+					</div>
+					<div className="slash-menu-item" onClick={() => insertBlock("table")}>
+						<span className="slash-menu-icon">田</span> Table
+					</div>
+					<div className="slash-menu-item" onClick={() => insertBlock("latex")}>
+						<span className="slash-menu-icon">Σ</span> LaTeX
+					</div>
+				</div>
+			)}
+		</div>
 	);
 };

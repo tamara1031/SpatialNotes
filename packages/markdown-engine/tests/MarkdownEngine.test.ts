@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MarkdownEngine } from "../src/index";
-import { type MarkdownElement, MarkdownTool } from "../src/types";
+import type { MarkdownElement } from "../src/types";
 
 // Mock the Worker
 vi.stubGlobal(
@@ -8,7 +8,6 @@ vi.stubGlobal(
 	class {
 		onmessage: any;
 		postMessage(data: any) {
-			// Simulate immediate initialization
 			if (data.type === "INIT") {
 				setTimeout(() => {
 					this.onmessage({ data: { type: "DONE", id: data.id } });
@@ -19,10 +18,14 @@ vi.stubGlobal(
 	},
 );
 
+vi.mock("nanoid", () => ({
+	nanoid: () => "mock-id",
+}));
+
 describe("MarkdownEngine", () => {
 	let engine: MarkdownEngine;
 	const elementFactory = vi.fn((type, parentId, metadata) => ({
-		id: "test-id",
+		id: "mock-id",
 		type,
 		parentId,
 		metadata,
@@ -34,11 +37,11 @@ describe("MarkdownEngine", () => {
 		engine = new MarkdownEngine(800, 600, elementFactory);
 	});
 
-	it("should initialize with correct status", () => {
+	it("should initialize with correct status", async () => {
 		const onAction = vi.fn();
 		engine.onAction(onAction);
 
-		vi.runAllTimers();
+		await vi.runAllTimersAsync();
 
 		expect(onAction).toHaveBeenCalledWith(
 			expect.objectContaining({ type: "STATUS", payload: "READY" }),
@@ -51,7 +54,8 @@ describe("MarkdownEngine", () => {
 				id: "1",
 				type: "PARAGRAPH",
 				parentId: "node-1",
-				metadata: { content: "Hello" },
+				content: "Hello",
+				metadata: { kind: "PARAGRAPH" },
 				updatedAt: 123,
 			},
 		];
@@ -60,6 +64,6 @@ describe("MarkdownEngine", () => {
 		const state = engine.getState();
 
 		expect(state.elements).toHaveLength(1);
-		expect(state.elements[0].metadata.content).toBe("Hello");
+		expect(state.elements[0].content).toBe("Hello");
 	});
 });

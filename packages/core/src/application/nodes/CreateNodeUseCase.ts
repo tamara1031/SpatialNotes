@@ -20,6 +20,7 @@ export interface CreateNodeInput {
 	name: string;
 	type: string; // "chapter" | "notebook" or others
 	userId: string;
+	metadata?: any;
 }
 
 export class CreateNodeUseCase {
@@ -42,7 +43,7 @@ export class CreateNodeUseCase {
 			type as any,
 			input.parentId,
 			input.userId,
-			{},
+			input.metadata || {},
 			input.name,
 		);
 

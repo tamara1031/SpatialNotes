@@ -48,8 +48,14 @@ export const SidebarView: React.FC = () => {
 		return filterTree(tree);
 	}, [tree, searchQuery]);
 
-	const handleCreateNode = async (type: "CHAPTER" | "NOTEBOOK") => {
-		const name = type === "CHAPTER" ? "New Chapter" : "New Notebook";
+	const handleCreateNode = async (
+		type: "CHAPTER" | "NOTEBOOK",
+		metadata: any = {},
+	) => {
+		const name =
+			type === "CHAPTER"
+				? "New Chapter"
+				: `New ${metadata.engineType === "MARKDOWN" ? "Markdown" : "Notebook"}`;
 
 		const repository = new YjsNodeRepository(doc);
 		const useCase = new CreateNodeUseCase(repository, vaultManager);
@@ -77,6 +83,7 @@ export const SidebarView: React.FC = () => {
 				type: type.toLowerCase() as "chapter" | "notebook",
 				parentId,
 				userId: currentUser?.id || "anonymous",
+				metadata,
 			});
 		} catch (e) {
 			showNotification(

@@ -5,7 +5,7 @@ import { lockVault } from "../../store/vaultStore";
 import { ChapterIcon, FileIcon, PlusIcon, SearchIcon } from "../shared/Icons";
 
 export const SidebarHeader: React.FC<{
-	onCreateNode: (type: "CHAPTER" | "NOTEBOOK") => void;
+	onCreateNode: (type: "CHAPTER" | "NOTEBOOK", metadata?: any) => void;
 	onSearch: (query: string) => void;
 	searchQuery: string;
 }> = ({ onCreateNode, onSearch, searchQuery }) => {
@@ -108,13 +108,20 @@ export const SidebarHeader: React.FC<{
 										{
 											type: "NOTEBOOK" as const,
 											icon: <FileIcon size={14} />,
-											label: "New Notebook",
+											label: "New Canvas",
+											metadata: { engineType: "CANVAS" },
 										},
-									].map((item) => (
+										{
+											type: "NOTEBOOK" as const,
+											icon: <FileIcon size={14} />,
+											label: "New Markdown",
+											metadata: { engineType: "MARKDOWN" },
+										},
+									].map((item, idx) => (
 										<button
-											key={item.type}
+											key={`${item.type}-${idx}`}
 											onClick={() => {
-												onCreateNode(item.type);
+												onCreateNode(item.type, (item as any).metadata);
 												setShowCreateMenu(false);
 											}}
 											title={item.label}

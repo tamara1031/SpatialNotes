@@ -1,12 +1,13 @@
 // @vitest-environment jsdom
 
+import "./setup";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { MarkdownView } from "../src/ui/MarkdownView";
 
-describe("MarkdownView", () => {
+describe("MarkdownView Slash Command", () => {
 	afterEach(() => {
 		cleanup();
 	});
@@ -24,14 +25,15 @@ describe("MarkdownView", () => {
 			/>,
 		);
 
-		const editor = screen.getByRole("textbox");
-		await user.type(editor, "/");
+		const editor = document.querySelector(".ProseMirror") as HTMLElement;
+		await user.click(editor);
+		await user.keyboard("/");
 
-		// Should find the slash menu (we'll implement this)
+		// Should find the slash menu by class name or text
 		await waitFor(
 			() => {
-				const menu = screen.queryByRole("menu");
-				expect(menu).not.toBeNull();
+				const menuHeader = screen.queryByText("Insert Block");
+				expect(menuHeader).not.toBeNull();
 			},
 			{ timeout: 3000 },
 		);
