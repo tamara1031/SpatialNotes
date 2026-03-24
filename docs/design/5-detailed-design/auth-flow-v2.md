@@ -1,6 +1,6 @@
 # Authentication Flow V2 Design
 
-This document details the reorganized authentication flow, ensuring a robust separation between static Astro pages and the dynamic React-driven Vault.
+This document details the reorganized authentication flow, ensuring a robust separation between static Astro pages and the dynamic React-driven Notes.
 
 ## Diagrams
 
@@ -12,6 +12,6 @@ This document details the reorganized authentication flow, ensuring a robust sep
 ## Implementation Strategy
 
 1.  **Refactor `index.astro`**: Ensure the redirect guard is laser-focused and doesn't interfere with other pages.
-2.  **Refactor `vault.astro`**: Ensure it ONLY renders when the URL is `/vault/` and handles its own auth check gracefully.
+2.  **Refactor `notes.astro`**: Ensure it ONLY renders when the URL is `/notes/` and handles its own auth check gracefully.
 3.  **Refactor `DesktopApp.tsx`**: Add a more robust "initialization" state that prevents jumping back to landing page.
 4.  **Simplify Routing**: Avoid complex Astro configuration if possible; stick to standard file-based routing and simple location redirects.

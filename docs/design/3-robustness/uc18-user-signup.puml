@@ -7,11 +7,11 @@ boundary "SignupPage (/signup/)" as signup
 control "AuthActions" as actions
 control "RegisterVaultUseCase" as uc
 entity "LocalStorage" as storage
-boundary "VaultPage (/vault/)" as vault
+boundary "NotesPage (/notes/)" as notes
 
 guest -> signup : Input Credentials
 signup -> actions : signup(email, pw)
 actions -> uc : execute({email, pw})
 uc -> storage : setItem("session_token", token)
-actions -> vault : Redirect to /vault/
+actions -> notes : Redirect to /notes/
 @enduml

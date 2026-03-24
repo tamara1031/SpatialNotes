@@ -28,7 +28,7 @@ export const SignupForm: React.FC<SignupFormProps> = ({ redirectPath }) => {
         e.preventDefault();
         const success = await execute(email, password);
         if (success !== undefined) {
-            window.location.href = redirectPath || "/vault/";
+            window.location.href = redirectPath || "/notes/";
         }
     };
 

@@ -20,17 +20,17 @@ test.describe("Astro Auth Flow & Redirection", () => {
         // Should STILL be on root
         await expect(page).toHaveURL(/\/$/);
 
-        // Wait for client-side script to show Go to Vault button
-        await expect(page.locator("text=Go to Vault").first()).toBeVisible();
+        // Wait for client-side script to show Go to Notes button
+        await expect(page.locator("text=Go to Notes").first()).toBeVisible();
     });
 
-    test("Authenticated user should be redirected from /signin/ to /vault/", async ({ page }) => {
+    test("Authenticated user should be redirected from /signin/ to /notes/", async ({ page }) => {
         await page.goto("/signin/");
         await page.evaluate(() => {
             localStorage.setItem("session_token", "test-token");
         });
         await page.goto("/signin/");
-        await expect(page).toHaveURL(/\/vault\/?$/);
+        await expect(page).toHaveURL(/\/notes\/?$/);
     });
 
     test("Deep link to /signin/ should work for guests", async ({ page }) => {

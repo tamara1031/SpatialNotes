@@ -1,5 +1,5 @@
 import type { NodeRecord } from "../domain/types.js";
-import type { IStore } from "./common/IStore.js";
+import type { IKeyValueStore } from "./common/IStore.js";
 
 export abstract class Command {
 	abstract execute(): void;
@@ -7,7 +7,7 @@ export abstract class Command {
 
 export class CreateElementCommand extends Command {
 	constructor(
-		private readonly storage: IStore<NodeRecord>,
+		private readonly storage: IKeyValueStore<NodeRecord>,
 		private readonly record: NodeRecord,
 	) {
 		super();
@@ -20,7 +20,7 @@ export class CreateElementCommand extends Command {
 
 export class DeleteElementCommand extends Command {
 	constructor(
-		private readonly storage: IStore<any>,
+		private readonly storage: IKeyValueStore<any>,
 		private readonly id: string,
 	) {
 		super();
@@ -33,7 +33,7 @@ export class DeleteElementCommand extends Command {
 
 export class UpdateElementsCommand extends Command {
 	constructor(
-		private readonly storage: IStore<NodeRecord>,
+		private readonly storage: IKeyValueStore<NodeRecord>,
 		private readonly updates: NodeRecord[],
 	) {
 		super();
@@ -50,7 +50,7 @@ export class UpdateElementsCommand extends Command {
 
 export class UpdateNodeCommand extends Command {
 	constructor(
-		private readonly storage: IStore<NodeRecord>,
+		private readonly storage: IKeyValueStore<NodeRecord>,
 		private readonly update: Partial<NodeRecord> & { id: string },
 	) {
 		super();

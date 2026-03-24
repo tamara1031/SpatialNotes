@@ -20,8 +20,8 @@ test.describe("Markdown Notebook Lifecycle", () => {
 
 		// Wait for the success message or redirection
 		console.log("Waiting for redirection after signup...");
-		await expect(page).toHaveURL(/\/vault\/?$/, { timeout: 30000 });
-		console.log("Redirected to vault successfully.");
+		await expect(page).toHaveURL(/\/notes\/?$/, { timeout: 30000 });
+		console.log("Redirected to notes successfully.");
 
 		// Wait for overlays to clear
 		await expect(page.locator("text=Setup your Vault")).not.toBeVisible({ timeout: 10000 });

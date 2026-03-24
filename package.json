@@ -7,13 +7,13 @@
 		"dev:web": "pnpm --filter web dev",
 		"dev:server": "mkdir -p bin && mkdir -p apps/server/cmd/server/dist && touch apps/server/cmd/server/dist/.gitkeep && go build -o bin/dev-server apps/server/cmd/server/main.go && ./bin/dev-server",
 		"build": "pnpm build:wasm && pnpm build:markdown-wasm && pnpm build:engine-core && pnpm build:core && pnpm build:web && pnpm build:server",
-		"build:wasm": "cd packages/canvas-engine/packages/canvas-wasm && npx wasm-pack build --target web --out-dir dist",
-		"build:markdown-wasm": "cd packages/markdown-engine/packages/markdown-wasm && npx wasm-pack build --target web --out-dir dist",
+		"build:wasm": "cd packages/canvas-wasm && npx wasm-pack build --target web --out-dir dist",
+		"build:markdown-wasm": "cd packages/markdown-wasm && npx wasm-pack build --target web --out-dir dist",
 		"build:core": "pnpm --filter @spatial-notes/core build",
 		"build:engine-core": "pnpm --filter engine-core build",
 		"build:web": "pnpm --filter web build",
 		"build:server": "mkdir -p apps/server/cmd/server/dist && touch apps/server/cmd/server/dist/.gitkeep && go build -o apps/server/bin/server apps/server/cmd/server/main.go",
-		"lint": "pnpm --filter web run lint 2>/dev/null || echo 'web: no lint script'",
+		"lint": "biome check .",
 		"format:check": "pnpm --filter web run format:check 2>/dev/null || echo 'web: no format script'",
 		"test": "pnpm --filter canvas-engine test && pnpm --filter web test",
 		"test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
@@ -22,6 +22,6 @@
 		"@biomejs/biome": "^2.4.8",
 		"@playwright/test": "^1.58.2",
 		"npm-run-all": "^4.1.5",
-		"typescript": "^5.9.3"
+		"typescript": "^6.0.2"
 	}
 }

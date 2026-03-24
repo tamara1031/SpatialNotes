@@ -104,11 +104,11 @@ dev: build-wasm ## [DEV] Run Frontend (Astro) and Backend (Go) concurrently
 
 build-wasm: ## [DEV] Build Rust/Wasm module
 	@echo "$(GREEN)Compiling Rust/Wasm cores...$(RESET)"
-	@cd $(PACKAGES_DIR)/canvas-engine/packages/canvas-wasm && wasm-pack build --target web --out-dir dist
-	@cd $(PACKAGES_DIR)/markdown-engine/packages/markdown-wasm && wasm-pack build --target web --out-dir dist
+	@cd $(PACKAGES_DIR)/canvas-wasm && wasm-pack build --target web --out-dir dist
+	@cd $(PACKAGES_DIR)/markdown-wasm && wasm-pack build --target web --out-dir dist
 	@# Ensure types are correctly exported for TS
-	@[ -f $(PACKAGES_DIR)/canvas-engine/packages/canvas-wasm/dist/canvas_wasm.d.ts ] || echo "$(YELLOW)Warning: canvas d.ts not found$(RESET)"
-	@[ -f $(PACKAGES_DIR)/markdown-engine/packages/markdown-wasm/dist/markdown_wasm.d.ts ] || echo "$(YELLOW)Warning: markdown d.ts not found$(RESET)"
+	@[ -f $(PACKAGES_DIR)/canvas-wasm/dist/canvas_wasm.d.ts ] || echo "$(YELLOW)Warning: canvas d.ts not found$(RESET)"
+	@[ -f $(PACKAGES_DIR)/markdown-wasm/dist/markdown_wasm.d.ts ] || echo "$(YELLOW)Warning: markdown d.ts not found$(RESET)"
 
 # --- Production Build ---
 .PHONY: build build-server build-web sync-assets

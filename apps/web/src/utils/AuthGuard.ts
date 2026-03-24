@@ -12,7 +12,7 @@ export const enforceAuthStatus = (mode: "public" | "private") => {
     // Use trailingSlash: "always" compatible checks
     const isRoot = path === "/" || path === "";
     const isAuthPage = path.includes("/signin") || path.includes("/signup");
-    const isVaultPage = path.includes("/vault");
+    const isNotesPage = path.includes("/notes/");
 
     console.debug(`[AuthGuard] Mode: ${mode}, Token: ${hasToken}, Path: ${path}`);
 
@@ -20,8 +20,8 @@ export const enforceAuthStatus = (mode: "public" | "private") => {
         // If on public pages and authenticated, we DON'T automatically redirect from root anymore
         // Only redirect if they are on an auth page but already have a token
         if (hasToken && isAuthPage) {
-            console.log("[AuthGuard] Authenticated user on auth page, redirecting to /vault/");
-            window.location.href = "/vault/";
+            console.log("[AuthGuard] Authenticated user on auth page, redirecting to /notes/");
+            window.location.href = "/notes/";
         }
     } else if (mode === "private") {
         // If on private pages and NOT authenticated, go to signin

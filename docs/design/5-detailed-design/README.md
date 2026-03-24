@@ -1,8 +1,22 @@
 # Detailed Design
 
-Detailed design artifacts translate robustness diagrams into implementation-ready class and sequence diagrams.
+Detailed design artifacts translate robustness diagrams into implementation-ready class and sequence diagrams, and provide comprehensive documentation for each core domain.
 
-## 1. Sequence Diagrams
+## 1. Core Domain Detailed Design
+
+- [**Canvas Engine**](./canvas-engine.md): Infinite canvas, Rust/Wasm core, spatial hashing, and stroke lifecycle.
+- [**Markdown Engine**](./markdown-engine.md): WYSIWYG editing, GFM support, KaTeX integration, and Yjs block-based sync.
+- [**Authentication & E2EE**](./auth-e2ee.md): Zero-Knowledge Vault, key derivation, hybrid encryption, and secure signup/signin.
+- [**Synchronization & Persistence**](./sync-persistence.md): Yjs synchronization, local-first (IndexedDB), and debounced sync logic.
+
+## 2. Domain Models & Technical Notes
+
+- [Nodes Domain](./nodes-domain.md)
+- [Auth Domain](./auth-domain.md)
+- [Vault Domain](./vault-domain.md)
+- [Authentication Flow V2 Summary](./auth-flow-v2.md)
+
+## 3. Sequence & Interaction Diagrams
 
 - [UC1: Real-time Sync](./uc1-sync.puml)
 - [UC2: Gesture Erasure](./uc2-erasure.puml)
@@ -18,10 +32,6 @@ Detailed design artifacts translate robustness diagrams into implementation-read
 - [Auth: Login Success & Redirect](./auth-login-success-sequence.puml)
 - [Engine: Low-level Engine Interaction](./engine-interaction-sequence.puml)
 
-## 2. Class Diagrams
+## 4. Class Diagrams
 
 - [Unified Class Diagram](./unified-class-diagram.puml)
-
-## 3. Implementation Notes
-
-- [Authentication Flow V2 Summary](./auth-flow-v2.md)

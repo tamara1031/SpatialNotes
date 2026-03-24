@@ -1,3 +1,4 @@
+import type { IDomainEvent } from "../events/DomainEventBus";
 import {
 	type CanvasElementVisitor,
 	CircularReferenceError,
@@ -8,11 +9,11 @@ import { NodeDeletedEvent, NodeRenamedEvent } from "./events";
 
 export abstract class Node {
 	protected parent: Node | null = null;
-	private _domainEvents: any[] = [];
+	private _domainEvents: IDomainEvent[] = [];
 
 	constructor(protected record: NodeRecord) {}
 
-	get domainEvents(): any[] {
+	get domainEvents(): IDomainEvent[] {
 		return [...this._domainEvents];
 	}
 
@@ -20,7 +21,7 @@ export abstract class Node {
 		this._domainEvents = [];
 	}
 
-	protected addDomainEvent(event: any): void {
+	protected addDomainEvent(event: IDomainEvent): void {
 		this._domainEvents.push(event);
 	}
 

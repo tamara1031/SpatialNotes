@@ -30,30 +30,30 @@ Verify the landing page presentation and the authentication flow (Sign-in/Sign-u
     4. Click "Sign In" button in Header.
     5. Verify modal appears with "Welcome Back" title.
 
-### 2.2.1 "Go to Vault" Visibility
+### 2.2.1 "Go to Notes" Visibility
 - **Objective**: Ensure authenticated users see a way into the app.
 - **Steps**:
     1. Manually set a valid `session_token` in localStorage.
     2. Navigate to `/`.
-- **Expectation**: "Sign In/Sign Up" buttons are replaced or supplemented by a "Go to Vault" button.
+- **Expectation**: "Sign In/Sign Up" buttons are replaced or supplemented by a "Go to Notes" button.
 
 ### 2.3 Registration Flow (Automated - Playwright)
 - **Objective**: Verify end-to-end registration.
 - **Steps**:
     1. Fill registration form with new email/password.
     2. Click "Register".
-    3. Verify redirection to `/vault/`.
+    3. Verify redirection to `/notes/`.
     4. Verify user can create a new node in the workspace.
 
-### 2.4 Login Flow (Automated - Playwright)
-- **Objective**: Verify returning user login.
-- **Steps**:
+    ### 2.4 Login Flow (Automated - Playwright)
+    - **Objective**: Verify returning user login.
+    - **Steps**:
     1. Registration first (to ensure user exists).
     2. Go back to `/`.
     3. Click "Sign In".
     4. Fill credentials.
     5. Verify redirection and data persistence.
 
-## 3. Tooling
-- **Frontend**: Vitest for store transitions.
-- **E2E**: Playwright for cross-window and flow verification.
+    ## 3. Tooling
+    - **Frontend**: Vitest for store transitions.
+    - **E2E**: Playwright for cross-window and flow verification.

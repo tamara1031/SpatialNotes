@@ -26,9 +26,12 @@ export const DesktopApp: React.FC = () => {
 		if (isInitialized && (appState === "email" || appState === "setup")) {
 			// If we are in DesktopApp but state is still email/setup, 
 			// it means no valid vault session was found/resumed.
-			// Redirect back to landing to avoid "forced signup" feeling.
-			console.warn("[DesktopApp] Vault not ready, redirecting to landing.");
-			window.location.href = "/";
+			// Redirect back to landing ONLY if there is truly no session token in localStorage.
+			const token = localStorage.getItem("session_token");
+			if (!token) {
+				console.warn("[DesktopApp] Vault not ready and no session, redirecting to landing.");
+				window.location.href = "/";
+			}
 		}
 	}, [isInitialized, appState]);
 
