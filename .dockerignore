@@ -10,8 +10,6 @@ yarn-error.log*
 # Rust / Wasm – only exclude target dirs and old pkg paths; keep dist/ inside packages
 target/
 **/*.rs.bk
-# Old canvas-wasm paths (now nested under canvas-engine)
-packages/canvas-wasm/
 
 # Web build output (Go embeds from a copy, not from source)
 apps/web/dist/

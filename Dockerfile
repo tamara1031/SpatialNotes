@@ -6,22 +6,22 @@ RUN apt-get update && apt-get install -y binaryen curl && \
 
 WORKDIR /app
 
-# canvas-wasm (nested under canvas-engine)
-COPY packages/canvas-engine/packages/canvas-wasm/Cargo.toml \
-     packages/canvas-engine/packages/canvas-wasm/Cargo.lock \
-     ./packages/canvas-engine/packages/canvas-wasm/
-COPY packages/canvas-engine/packages/canvas-wasm/src/ \
-     ./packages/canvas-engine/packages/canvas-wasm/src/
-RUN cd packages/canvas-engine/packages/canvas-wasm && \
+# wasm-builder
+COPY packages/canvas-wasm/Cargo.toml \
+     packages/canvas-wasm/Cargo.lock \
+     ./packages/canvas-wasm/
+COPY packages/canvas-wasm/src/ \
+     ./packages/canvas-wasm/src/
+RUN cd packages/canvas-wasm && \
      wasm-pack build --target web --out-dir dist
 
-# markdown-wasm (nested under markdown-engine)
-COPY packages/markdown-engine/packages/markdown-wasm/Cargo.toml \
-     packages/markdown-engine/packages/markdown-wasm/Cargo.lock \
-     ./packages/markdown-engine/packages/markdown-wasm/
-COPY packages/markdown-engine/packages/markdown-wasm/src/ \
-     ./packages/markdown-engine/packages/markdown-wasm/src/
-RUN cd packages/markdown-engine/packages/markdown-wasm && \
+# wasm-builder
+COPY packages/markdown-wasm/Cargo.toml \
+     packages/markdown-wasm/Cargo.lock \
+     ./packages/markdown-wasm/
+COPY packages/markdown-wasm/src/ \
+     ./packages/markdown-wasm/src/
+RUN cd packages/markdown-wasm && \
      wasm-pack build --target web --out-dir dist
 
 # Stage 2: Web Builder (Node.js)
@@ -38,11 +38,11 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/core/package.json ./packages/core/
 COPY packages/canvas-engine/package.json ./packages/canvas-engine/
-COPY packages/canvas-engine/packages/canvas-wasm/package.json \
-     ./packages/canvas-engine/packages/canvas-wasm/
+COPY packages/canvas-wasm/package.json \
+     ./packages/canvas-wasm/
 COPY packages/markdown-engine/package.json ./packages/markdown-engine/
-COPY packages/markdown-engine/packages/markdown-wasm/package.json \
-     ./packages/markdown-engine/packages/markdown-wasm/
+COPY packages/markdown-wasm/package.json \
+     ./packages/markdown-wasm/
 COPY packages/engine-core/package.json ./packages/engine-core/
 
 # Install dependencies
@@ -54,11 +54,11 @@ COPY apps/web/ ./apps/web/
 
 # Copy built WASM artifacts from Stage 1
 COPY --from=wasm-builder \
-     /app/packages/canvas-engine/packages/canvas-wasm/dist/ \
-     ./packages/canvas-engine/packages/canvas-wasm/dist/
+     /app/packages/canvas-wasm/dist/ \
+     ./packages/canvas-wasm/dist/
 COPY --from=wasm-builder \
-     /app/packages/markdown-engine/packages/markdown-wasm/dist/ \
-     ./packages/markdown-engine/packages/markdown-wasm/dist/
+     /app/packages/markdown-wasm/dist/ \
+     ./packages/markdown-wasm/dist/
 
 # Build core packages first
 RUN pnpm build:core
