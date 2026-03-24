@@ -2,16 +2,14 @@
 interface Props {
     mode: "signin" | "signup";
 }
-
-const mode = Astro.props.mode;
 ---
 
 <h2 class="title">
-    {mode === "signin" ? "Welcome Back" : "Join SpatialNotes"}
+    {Astro.props.mode === "signin" ? "Welcome Back" : "Join SpatialNotes"}
 </h2>
 <p class="subtitle">
     {
-        mode === "signin"
+        Astro.props.mode === "signin"
             ? "Sign in to access your vault."
             : "Create a zero-knowledge encrypted vault."
     }

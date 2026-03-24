@@ -24,8 +24,9 @@ export const VaultUnlockOverlay: React.FC = () => {
 		setError(null);
 		try {
 			await signin(password);
-		} catch (err: any) {
-			setError(err.message || "Failed to unlock vault");
+		} catch (err) {
+			const error = err as Error;
+			setError(error.message || "Failed to unlock vault");
 		} finally {
 			setIsLoading(false);
 		}

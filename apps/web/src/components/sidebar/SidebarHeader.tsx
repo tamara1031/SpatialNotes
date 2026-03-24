@@ -40,6 +40,7 @@ export const SidebarHeader: React.FC<{
 				</span>
 				<div style={{ display: "flex", gap: "8px" }}>
 					<button
+						type="button"
 						onClick={() => lockVault()}
 						title="Lock Vault"
 						style={{
@@ -60,6 +61,7 @@ export const SidebarHeader: React.FC<{
 					</button>
 					<div style={{ position: "relative" }}>
 						<button
+							type="button"
 							onClick={() => setShowCreateMenu(!showCreateMenu)}
 							title="Create new"
 							style={{
@@ -104,6 +106,7 @@ export const SidebarHeader: React.FC<{
 											type: "CHAPTER" as const,
 											icon: <ChapterIcon size={14} />,
 											label: "New Chapter",
+											metadata: {},
 										},
 										{
 											type: "NOTEBOOK" as const,
@@ -117,11 +120,12 @@ export const SidebarHeader: React.FC<{
 											label: "New Markdown",
 											metadata: { engineType: "MARKDOWN" },
 										},
-									].map((item, idx) => (
+									].map((item) => (
 										<button
-											key={`${item.type}-${idx}`}
+											key={item.label}
+											type="button"
 											onClick={() => {
-												onCreateNode(item.type, (item as any).metadata);
+												onCreateNode(item.type, item.metadata);
 												setShowCreateMenu(false);
 											}}
 											title={item.label}
@@ -144,6 +148,14 @@ export const SidebarHeader: React.FC<{
 													"var(--accent-subtle)";
 											}}
 											onMouseOut={(e) => {
+												(e.currentTarget as HTMLElement).style.background =
+													"none";
+											}}
+											onFocus={(e) => {
+												(e.currentTarget as HTMLElement).style.background =
+													"var(--accent-subtle)";
+											}}
+											onBlur={(e) => {
 												(e.currentTarget as HTMLElement).style.background =
 													"none";
 											}}

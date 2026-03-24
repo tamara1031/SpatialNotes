@@ -8,13 +8,20 @@ import { useNoteHistory } from "../hooks/useNoteHistory";
 import { useNoteMode } from "../hooks/useNoteMode";
 import { useSync, useSyncMap } from "../hooks/useSync";
 import { resetYDoc } from "../store/noteStore";
+import { useStore } from "@nanostores/react";
 import {
 	removeNotification,
 	showNotification,
 } from "../store/notificationStore";
+import { $currentUser } from "../store/vaultStore";
 import { NoteHeader } from "./NoteHeader";
 
+interface EngineRef {
+	handleKeyDown?: (e: KeyboardEvent) => boolean;
+}
+
 export const NoteViewShell: React.FC = () => {
+	const currentUser = useStore($currentUser as any);
 	const { activeNodeId } = useNoteMode();
 	const [_engineStatus, setEngineStatus] = useState<
 		"LOADING" | "READY" | "ERROR"
@@ -29,7 +36,7 @@ export const NoteViewShell: React.FC = () => {
 		}
 	}, [activeNodeId]);
 
-	const engineRef = useRef<any>(null);
+	const engineRef = useRef<EngineRef>(null);
 
 	const { elementsMap, nodesMap, undoManager } = useSync();
 	const elements = useSyncMap(elementsMap);
@@ -167,7 +174,7 @@ export const NoteViewShell: React.FC = () => {
 							<EngineView
 								ref={engineRef}
 								activeNodeId={activeNodeId}
-								elements={Object.values(elements) as any}
+								elements={Object.values(elements) as NodeRecord[]}
 								onCommand={handleCommand}
 								onAction={handleAction}
 								onUndo={undo}
@@ -177,13 +184,14 @@ export const NoteViewShell: React.FC = () => {
 								elementFactory={(
 									type: string,
 									parentId: string,
-									metadata: any,
+									metadata: Record<string, unknown>,
 								) =>
 									NodeFactory.createRecord(
 										type as any,
 										parentId,
+										currentUser?.id || "anonymous",
 										metadata,
-									) as any
+									) as NodeRecord
 								}
 							/>
 						);

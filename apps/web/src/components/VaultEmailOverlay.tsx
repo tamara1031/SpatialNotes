@@ -19,9 +19,10 @@ export const VaultEmailOverlay: React.FC = () => {
 		setError(null);
 		try {
 			await identifyUser(email);
-		} catch (err: any) {
-			console.error("[VaultEmailOverlay] Error:", err);
-			setError(err.message || "Failed to identify user");
+		} catch (err) {
+			const error = err as Error;
+			console.error("[VaultEmailOverlay] Error:", error);
+			setError(error.message || "Failed to identify user");
 		} finally {
 			setIsLoading(false);
 		}

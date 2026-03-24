@@ -115,7 +115,8 @@ export const SidebarNodeItem = memo<{
 	return (
 		<div>
 			{isDragOver && dropPosition === "above" && <DropIndicator isVisible />}
-			<div
+			<button
+				type="button"
 				draggable={!isEditing}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
@@ -129,6 +130,9 @@ export const SidebarNodeItem = memo<{
 				}}
 				style={{
 					display: "flex",
+					width: "calc(100% - 12px)",
+					border: "none",
+					textAlign: "left",
 					alignItems: "center",
 					gap: "8px",
 					padding: "7px 12px",
@@ -149,10 +153,20 @@ export const SidebarNodeItem = memo<{
 				}}
 			>
 				{canHaveChildren ? (
-					<span
+					<button
+						type="button"
 						onClick={toggleExpand}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								toggleExpand(e as any);
+							}
+						}}
 						style={{
 							display: "flex",
+							border: "none",
+							background: "none",
+							padding: 0,
 							cursor: "pointer",
 							opacity: 0.5,
 							flexShrink: 0,
@@ -163,7 +177,7 @@ export const SidebarNodeItem = memo<{
 						) : (
 							<ChevronRightIcon size={14} />
 						)}
-					</span>
+					</button>
 				) : (
 					<span style={{ width: "14px", flexShrink: 0 }} />
 				)}
@@ -213,6 +227,7 @@ export const SidebarNodeItem = memo<{
 							overflow: "hidden",
 							textOverflow: "ellipsis",
 							whiteSpace: "nowrap",
+							color: "inherit",
 						}}
 					>
 						{node.name}
@@ -220,14 +235,25 @@ export const SidebarNodeItem = memo<{
 				)}
 
 				{isSelected && !isEditing && (
-					<span
+					<button
+						type="button"
 						onClick={(e) => {
 							e.stopPropagation();
 							onDelete(node.id);
 						}}
+						onKeyDown={(e) => {
+							if (e.key === "Enter" || e.key === " ") {
+								e.preventDefault();
+								e.stopPropagation();
+								onDelete(node.id);
+							}
+						}}
 						title="Delete node"
 						style={{
 							display: "flex",
+							border: "none",
+							background: "none",
+							padding: 0,
 							cursor: "pointer",
 							opacity: 0.4,
 							transition: "opacity 0.15s",
@@ -239,11 +265,17 @@ export const SidebarNodeItem = memo<{
 						onMouseOut={(e) => {
 							(e.currentTarget as HTMLElement).style.opacity = "0.4";
 						}}
+						onFocus={(e) => {
+							(e.currentTarget as HTMLElement).style.opacity = "0.8";
+						}}
+						onBlur={(e) => {
+							(e.currentTarget as HTMLElement).style.opacity = "0.4";
+						}}
 					>
 						<TrashIcon size={14} color="var(--danger)" />
-					</span>
+					</button>
 				)}
-			</div>
+			</button>
 
 			{isDragOver && dropPosition === "below" && <DropIndicator isVisible />}
 

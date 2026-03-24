@@ -141,6 +141,8 @@ export const SidebarView: React.FC = () => {
 			/>
 
 			<div
+				role="group"
+				aria-label="Notes list drop zone"
 				style={{ flex: 1, overflowY: "auto", padding: "6px 0" }}
 				onDragOver={(e) => {
 					e.preventDefault();

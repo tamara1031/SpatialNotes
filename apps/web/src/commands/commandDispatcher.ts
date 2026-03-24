@@ -1,12 +1,19 @@
-import * as Commands from "@spatial-notes/core";
+import {
+	type NodeRecord,
+	CreateElementCommand,
+	DeleteElementCommand,
+	UpdateElementsCommand,
+	UpdateNodeCommand,
+} from "@spatial-notes/core";
 import type { Map as YMap } from "yjs";
+import { YjsStoreAdapter } from "../infrastructure/storage/YjsStoreAdapter";
 
 /**
  * Context required for executing domain commands on the Yjs doc.
  */
 export interface CommandContext {
 	elementsMap: YMap<any>;
-	nodesMap: YMap<any>;
+	nodesMap: YMap<NodeRecord>;
 }
 
 /**
@@ -15,33 +22,44 @@ export interface CommandContext {
  */
 export const dispatchCommand = (
 	type: string,
-	payload: any,
+	payload: unknown,
 	context: CommandContext,
 ) => {
-	const { elementsMap, nodesMap } = context;
+	const elementsStore = new YjsStoreAdapter(context.elementsMap);
+	const nodesStore = new YjsStoreAdapter(context.nodesMap);
 
 	switch (type) {
 		case "CREATE":
-			new Commands.CreateElementCommand(elementsMap, payload).execute();
+			new CreateElementCommand(elementsStore, payload as NodeRecord).execute();
 			break;
 		case "DELETE":
-			new Commands.DeleteElementCommand(
-				elementsMap,
-				payload.id || payload,
+			new DeleteElementCommand(
+				elementsStore,
+				(payload as any).id || (payload as string),
 			).execute();
 			break;
 		case "UPDATE_ELEMENTS":
-			new Commands.UpdateElementsCommand(elementsMap, payload).execute();
+			new UpdateElementsCommand(
+				elementsStore,
+				payload as NodeRecord[],
+			).execute();
 			break;
 		case "UPDATE_NODE":
-			new Commands.UpdateNodeCommand(nodesMap, payload).execute();
+			new UpdateNodeCommand(
+				nodesStore,
+				payload as Partial<NodeRecord> & { id: string },
+			).execute();
 			break;
 		case "BATCH":
-			elementsMap.doc?.transact(() => {
+			context.elementsMap.doc?.transact(() => {
 				const subCommands = Array.isArray(payload) ? payload : [];
-				subCommands.forEach((subCmd: any) => {
-					dispatchCommand(subCmd.type, subCmd.payload, context);
-				});
+				for (const subCmd of subCommands) {
+					dispatchCommand(
+						(subCmd as any).type,
+						(subCmd as any).payload,
+						context,
+					);
+				}
 			});
 			break;
 		default:
