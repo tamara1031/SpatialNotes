@@ -1,3 +1,4 @@
+import { useStore } from "@nanostores/react";
 import { NodeFactory, type NodeRecord } from "@spatial-notes/core";
 import type React from "react";
 import { Suspense, useCallback, useEffect, useRef, useState } from "react";
@@ -8,7 +9,6 @@ import { useNoteHistory } from "../hooks/useNoteHistory";
 import { useNoteMode } from "../hooks/useNoteMode";
 import { useSync, useSyncMap } from "../hooks/useSync";
 import { resetYDoc } from "../store/noteStore";
-import { useStore } from "@nanostores/react";
 import {
 	removeNotification,
 	showNotification,
@@ -51,10 +51,7 @@ export const NoteViewShell: React.FC = () => {
 			? 100
 			: 5000;
 
-	const { syncStatus, syncNow } = useEncryptedSync(
-		activeNodeId,
-		debounceTime,
-	);
+	const { syncStatus, syncNow } = useEncryptedSync(activeNodeId, debounceTime);
 	const { handleCommand } = useNoteCommands(activeNodeId, () => {
 		// Yjs observer in useEncryptedSync will handle the actual data push.
 		// We just need to ensure the UI shows "unsaved" immediately if desired,

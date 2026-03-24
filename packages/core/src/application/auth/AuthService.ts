@@ -33,7 +33,9 @@ export class AuthService {
 	}
 
 	private notify(): void {
-		this.listeners.forEach((l) => l(this.currentUser));
+		this.listeners.forEach((l) => {
+			l(this.currentUser);
+		});
 	}
 
 	/**

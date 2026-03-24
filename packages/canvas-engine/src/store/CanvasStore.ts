@@ -192,7 +192,9 @@ export class CanvasStore {
 				this.emitCommand("REDO");
 				break;
 			case "BATCH":
-				action.payload.forEach((a) => this.dispatch(a));
+				action.payload.forEach((a) => {
+					this.dispatch(a);
+				});
 				break;
 		}
 	}
@@ -204,7 +206,9 @@ export class CanvasStore {
 	emitCommand(type: string, payload?: any) {
 		const action = { type, payload };
 		this.emit("COMMAND_EMITTED", action);
-		this.actionListeners.forEach((l) => l(action));
+		this.actionListeners.forEach((l) => {
+			l(action);
+		});
 	}
 
 	subscribe(listener: () => void) {
@@ -229,10 +233,14 @@ export class CanvasStore {
 	}
 
 	private notify() {
-		this.listeners.forEach((l) => l());
+		this.listeners.forEach((l) => {
+			l();
+		});
 	}
 
 	private emit(type: string, payload: any) {
-		this.eventListeners.get(type)?.forEach((l) => l(payload));
+		this.eventListeners.get(type)?.forEach((l) => {
+			l(payload);
+		});
 	}
 }

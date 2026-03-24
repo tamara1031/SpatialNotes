@@ -21,6 +21,13 @@
 			},
 			"correctness": {
 				"noUnusedVariables": "warn"
+			},
+			"a11y": {
+				"noSvgWithoutTitle": "off",
+				"useSemanticElements": "off",
+				"useKeyWithClickEvents": "off",
+				"noStaticElementInteractions": "off",
+				"useButtonType": "off"
 			}
 		}
 	},

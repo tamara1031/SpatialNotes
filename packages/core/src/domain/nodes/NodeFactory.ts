@@ -22,8 +22,8 @@ export class NodeFactory {
 		NodeFactory.register("ELEMENT_TEXT", TextElement);
 	}
 
-	static register(type: string, constructor: NodeConstructor): void {
-		NodeFactory.registry.set(type, constructor);
+	static register(type: string, NodeCtor: NodeConstructor): void {
+		NodeFactory.registry.set(type, NodeCtor);
 	}
 
 	static create(record: NodeRecord): Node {

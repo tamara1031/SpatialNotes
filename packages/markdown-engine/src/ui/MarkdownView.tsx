@@ -184,7 +184,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 		const { state, dispatch } = viewRef.current;
 		const { tr } = state;
 
-		let node;
+		let node: any;
 		switch (type) {
 			case "h1":
 				node = schema.nodes.heading.createAndFill({ level: 1 });

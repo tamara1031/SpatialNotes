@@ -317,7 +317,9 @@ export class CanvasEngine
 		try {
 			const text = await navigator.clipboard.readText();
 			const commands = this.clipboardService.pasteClipboard(text);
-			commands.forEach((cmd) => this.store.emitCommand(cmd.type, cmd.payload));
+			commands.forEach((cmd) => {
+				this.store.emitCommand(cmd.type, cmd.payload);
+			});
 		} catch (e) {
 			console.error("Failed to paste", e);
 		}
@@ -337,7 +339,9 @@ export class CanvasEngine
 		status: "LOADING" | "READY" | "ERROR",
 		message?: string,
 	) {
-		this.statusListeners.forEach((l) => l(status, message));
+		this.statusListeners.forEach((l) => {
+			l(status, message);
+		});
 	}
 
 	private async syncToWasm(elements: CanvasElement[]) {

@@ -1,7 +1,7 @@
 import {
-	type NodeRecord,
 	CreateElementCommand,
 	DeleteElementCommand,
+	type NodeRecord,
 	UpdateElementsCommand,
 	UpdateNodeCommand,
 } from "@spatial-notes/core";
