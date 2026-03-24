@@ -9,6 +9,15 @@ export async function authenticate(
 ) {
 	console.log(`Authenticating with email: ${email}`);
 
+	// Ensure we are on a page where the auth overlay can appear
+	if (
+		page.url() === "about:blank" ||
+		page.url().includes("/signup") ||
+		page.url().includes("/signin")
+	) {
+		await page.goto("/notes/");
+	}
+
 	// 1. Enter email
 	const emailInput = page.locator('input[placeholder="Email Address"]');
 	await emailInput.waitFor({ state: "visible", timeout: 20000 });
@@ -78,4 +87,12 @@ export function getUniqueNodeId() {
 }
 
 export const bypassAuthAndSetup = authenticate;
-export const setupE2EAuthBypass = async (page: Page) => {};
+export const setupE2EAuthBypass = async (page: Page) => {
+	// We need to be on the domain to set localStorage
+	if (page.url() === "about:blank") {
+		await page.goto("/");
+	}
+	await page.evaluate(() => {
+		localStorage.setItem("session_token", "test-bypass-token");
+	});
+};

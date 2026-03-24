@@ -1,4 +1,4 @@
-import { type User, UserEntity } from "../../domain/user/User";
+import type { User } from "../../domain/user/User";
 
 /**
  * Interface for session storage (can be implemented with localStorage or memory)
@@ -43,10 +43,14 @@ export class AuthService {
 		this.currentUser = user;
 		this.sessionToken = token;
 		this.sessionStorage.setItem("session_token", token);
-		this.sessionStorage.setItem("spatial_notes_last_user", user.email || user.id);
+		this.sessionStorage.setItem(
+			"spatial_notes_last_user",
+			user.email || user.id,
+		);
 
 		// Store user data for persistence
-		const usersJson = this.sessionStorage.getItem("spatial_notes_users") || "[]";
+		const usersJson =
+			this.sessionStorage.getItem("spatial_notes_users") || "[]";
 		const users = JSON.parse(usersJson);
 		const existingIndex = users.findIndex((u: any) => u.email === user.email);
 		if (existingIndex >= 0) {
@@ -77,12 +81,17 @@ export class AuthService {
 
 	private loadSession(): void {
 		this.sessionToken = this.sessionStorage.getItem("session_token");
-		const lastUserEmail = this.sessionStorage.getItem("spatial_notes_last_user");
+		const lastUserEmail = this.sessionStorage.getItem(
+			"spatial_notes_last_user",
+		);
 
 		if (this.sessionToken && lastUserEmail) {
-			const usersJson = this.sessionStorage.getItem("spatial_notes_users") || "[]";
+			const usersJson =
+				this.sessionStorage.getItem("spatial_notes_users") || "[]";
 			const users = JSON.parse(usersJson);
-			const user = users.find((u: any) => u.email === lastUserEmail || u.id === lastUserEmail);
+			const user = users.find(
+				(u: any) => u.email === lastUserEmail || u.id === lastUserEmail,
+			);
 			if (user) {
 				this.currentUser = user;
 			}

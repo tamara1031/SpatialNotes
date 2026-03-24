@@ -27,18 +27,18 @@ export class WebGPURenderer implements CanvasRenderer {
 	}
 
 	unmount() {
-		if (this.canvas && this.canvas.parentElement) {
+		if (this.canvas?.parentElement) {
 			this.canvas.parentElement.removeChild(this.canvas);
 		}
 		this.canvas = null;
 		this.gateway = null;
 	}
 
-	render(state: CanvasState) {
+	render(_state: CanvasState) {
 		// In the final version, this will call wasmEngine.render()
 	}
 
-	renderInteraction(state: CanvasState) {
+	renderInteraction(_state: CanvasState) {
 		// Interaction rendering
 	}
 
@@ -57,7 +57,7 @@ export class WebGPURenderer implements CanvasRenderer {
 		}
 	}
 
-	async exportToSVG(state: CanvasState): Promise<string> {
+	async exportToSVG(_state: CanvasState): Promise<string> {
 		return "";
 	}
 }

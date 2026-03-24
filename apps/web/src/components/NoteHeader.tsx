@@ -173,7 +173,10 @@ export const NoteHeader: React.FC<NoteHeaderProps> = ({
 								strokeWidth="3"
 								strokeLinecap="round"
 								strokeLinejoin="round"
+								role="img"
+								aria-labelledby="lock-icon-title"
 							>
+								<title id="lock-icon-title">End-to-End Encryption Active</title>
 								<rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
 								<path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
 							</svg>

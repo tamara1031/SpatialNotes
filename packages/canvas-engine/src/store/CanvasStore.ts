@@ -224,8 +224,8 @@ export class CanvasStore {
 		if (!this.eventListeners.has(type)) {
 			this.eventListeners.set(type, new Set());
 		}
-		this.eventListeners.get(type)!.add(listener);
-		return () => this.eventListeners.get(type)!.delete(listener);
+		this.eventListeners.get(type)?.add(listener);
+		return () => this.eventListeners.get(type)?.delete(listener);
 	}
 
 	private notify() {

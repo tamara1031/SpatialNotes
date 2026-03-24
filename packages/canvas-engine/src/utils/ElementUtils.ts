@@ -79,16 +79,6 @@ export class ElementUtils {
 			.filter((u): u is { id: string; changes: any } => u !== null);
 	}
 
-	private static isPointNearPath(
-		x: number,
-		y: number,
-		path: number[],
-		threshold: number,
-	): boolean {
-		// ... (remaining if needed, but likely not)
-		return false;
-	}
-
 	/**
 	 * Clips coordinates to the paper boundary based on layout mode.
 	 */

@@ -38,7 +38,7 @@ export class PanningTool implements Tool {
 	}
 
 	onPointerUp(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
 	): void {

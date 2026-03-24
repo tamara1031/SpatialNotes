@@ -27,7 +27,7 @@ export class EraserService {
 		}
 	}
 
-	private handleStandardErasure(hitIds: string[], state: any): void {
+	private handleStandardErasure(hitIds: string[], _state: any): void {
 		this.store.dispatch({ type: "DELETE_ELEMENTS", payload: hitIds });
 	}
 
@@ -76,7 +76,7 @@ export class EraserService {
 	}
 
 	private applyOptimisticPrecisionUpdates(
-		currentElements: CanvasElement[],
+		_currentElements: CanvasElement[],
 		updates: any[],
 	): void {
 		const deletedIds = updates

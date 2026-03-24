@@ -1,7 +1,7 @@
-import { Schema, type NodeSpec, type MarkSpec } from "prosemirror-model";
+import OrderedMap from "orderedmap";
+import { type MarkSpec, type NodeSpec, Schema } from "prosemirror-model";
 import { addListNodes } from "prosemirror-schema-list";
 import { tableNodes } from "prosemirror-tables";
-import OrderedMap from "orderedmap";
 
 const baseNodes: { [name: string]: NodeSpec } = {
 	doc: {
@@ -192,7 +192,7 @@ const allNodes = listNodes.append(
 				},
 				setDOMAttr(value, attrs) {
 					if (value)
-						attrs.style = (attrs.style || "") + `background-color: ${value};`;
+						attrs.style = `${attrs.style || ""}background-color: ${value};`;
 				},
 			},
 		},

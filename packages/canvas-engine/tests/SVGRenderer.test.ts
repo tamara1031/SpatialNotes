@@ -11,7 +11,7 @@ describe("SVGRenderer", () => {
 	let container: HTMLDivElement;
 	let renderer: SVGRenderer;
 	let mockStore: any;
-	let mockBridge: any;
+	let _mockBridge: any;
 
 	beforeEach(() => {
 		container = document.createElement("div");
@@ -60,6 +60,6 @@ describe("SVGRenderer", () => {
 		// svgElement should have overflow: visible
 		const svgElement = container.querySelector("svg");
 		expect(svgElement).toBeDefined();
-		expect(svgElement!.style.overflow).toBe("visible");
+		expect(svgElement?.style.overflow).toBe("visible");
 	});
 });

@@ -1,6 +1,6 @@
 import { PanningTool } from "./tools/PanningTool";
 import type { InteractionContext, Tool } from "./tools/Tool";
-import { CanvasElement, type CanvasTool } from "./types";
+import type { CanvasTool } from "./types";
 
 export class InteractionManager {
 	private tools: Map<CanvasTool, Tool> = new Map();

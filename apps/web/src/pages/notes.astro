@@ -1,12 +1,10 @@
 ---
-import { DesktopApp } from "../components/DesktopApp";
-import { NotificationIsland } from "../components/shared/NotificationIsland";
 import Shell from "../layouts/Shell.astro";
+import { DesktopApp } from "../components/DesktopApp";
 ---
 
 <Shell title="SpatialNotes">
 	<DesktopApp client:only="react" />
-	<NotificationIsland client:only="react" />
 </Shell>
 
 <script>

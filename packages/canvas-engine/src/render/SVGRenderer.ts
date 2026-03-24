@@ -1,7 +1,7 @@
 import katex from "katex";
 import type { WorkerGateway } from "../bridge/WorkerGateway";
 import type { CanvasState } from "../store/CanvasStore";
-import { type CanvasElement, CanvasTool } from "../types";
+import type { CanvasElement } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
 import { pointsToCatmullRomPath } from "../utils/path-smoothing";
 import type { CanvasRenderer } from "./Renderer";
@@ -354,7 +354,7 @@ export class SVGRenderer implements CanvasRenderer {
 		}
 		if (styleStr) path.setAttribute("style", styleStr);
 
-		this.elementsGroup!.appendChild(path);
+		this.elementsGroup?.appendChild(path);
 	}
 
 	private renderImage(
@@ -376,7 +376,7 @@ export class SVGRenderer implements CanvasRenderer {
 			? "2px solid var(--accent, #0078ff)"
 			: "1px solid rgba(255,255,255,0.06)";
 		if (isSelected) img.style.opacity = "0.8";
-		this.htmlElementsLayer!.appendChild(img);
+		this.htmlElementsLayer?.appendChild(img);
 	}
 
 	private renderText(
@@ -425,7 +425,7 @@ export class SVGRenderer implements CanvasRenderer {
 			this.setupTextarea(el, div, content);
 		}
 
-		this.htmlElementsLayer!.appendChild(div);
+		this.htmlElementsLayer?.appendChild(div);
 	}
 
 	private setupTextarea(
@@ -464,7 +464,7 @@ export class SVGRenderer implements CanvasRenderer {
 			}
 		});
 
-		this.htmlElementsLayer!.appendChild(textarea);
+		this.htmlElementsLayer?.appendChild(textarea);
 		setTimeout(() => {
 			textarea.focus();
 			textarea.select();

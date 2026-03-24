@@ -36,7 +36,7 @@ export class MarkdownWorkerGateway {
 		const id = this.nextId++;
 		return new Promise((resolve, reject) => {
 			this.pendingRequests.set(id, { resolve, reject });
-			this.worker!.postMessage({ type, payload, id });
+			this.worker?.postMessage({ type, payload, id });
 		});
 	}
 

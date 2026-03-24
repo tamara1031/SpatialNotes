@@ -3,7 +3,7 @@ import type { InteractionContext, Tool } from "./Tool";
 
 export class EraserTool implements Tool {
 	async onPointerDown(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	) {
@@ -12,7 +12,7 @@ export class EraserTool implements Tool {
 	}
 
 	async onPointerMove(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	) {
@@ -21,9 +21,9 @@ export class EraserTool implements Tool {
 	}
 
 	async onPointerUp(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
-		coords: { x: number; y: number },
+		_coords: { x: number; y: number },
 	) {
 		// Finalize worker interaction
 		await ctx.gateway.pointerUp();

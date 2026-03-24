@@ -7,5 +7,5 @@ export const $currentUserEmail = atom<string | null>(null);
 export const $saltAuth = atom<Uint8Array | null>(null);
 export const $saltEncryption = atom<Uint8Array | null>(null);
 export const $sessionToken = atom<string | null>(
-    typeof window !== "undefined" ? localStorage.getItem("session_token") : null,
+	typeof window !== "undefined" ? localStorage.getItem("session_token") : null,
 );

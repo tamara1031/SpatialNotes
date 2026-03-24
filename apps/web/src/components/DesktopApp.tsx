@@ -1,11 +1,20 @@
 import { useStore } from "@nanostores/react";
 import { AnimatePresence, motion } from "framer-motion";
-import React, { useEffect, useState, Suspense, lazy } from "react";
+import type React from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { $appState, checkVaultStatus } from "../store/vaultStore";
 import { ErrorBoundary } from "./shared/ErrorBoundary";
 
-const NoteViewShell = lazy(() => import("./NoteViewShell").then(module => ({ default: module.NoteViewShell })));
-const SidebarView = lazy(() => import("./sidebar/SidebarView").then(module => ({ default: module.SidebarView })));
+const NoteViewShell = lazy(() =>
+	import("./NoteViewShell").then((module) => ({
+		default: module.NoteViewShell,
+	})),
+);
+const SidebarView = lazy(() =>
+	import("./sidebar/SidebarView").then((module) => ({
+		default: module.SidebarView,
+	})),
+);
 
 import { VaultSetupOverlay } from "./setup/VaultSetupOverlay";
 import { UserSelector } from "./UserSelector";
@@ -24,12 +33,14 @@ export const DesktopApp: React.FC = () => {
 
 	useEffect(() => {
 		if (isInitialized && (appState === "email" || appState === "setup")) {
-			// If we are in DesktopApp but state is still email/setup, 
+			// If we are in DesktopApp but state is still email/setup,
 			// it means no valid vault session was found/resumed.
 			// Redirect back to landing ONLY if there is truly no session token in localStorage.
 			const token = localStorage.getItem("session_token");
 			if (!token) {
-				console.warn("[DesktopApp] Vault not ready and no session, redirecting to landing.");
+				console.warn(
+					"[DesktopApp] Vault not ready and no session, redirecting to landing.",
+				);
 				window.location.href = "/";
 			}
 		}
@@ -37,15 +48,17 @@ export const DesktopApp: React.FC = () => {
 
 	if (!isInitialized) {
 		return (
-			<div style={{
-				position: "fixed",
-				inset: 0,
-				background: "var(--surface)",
-				color: "var(--text-muted)",
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center"
-			}}>
+			<div
+				style={{
+					position: "fixed",
+					inset: 0,
+					background: "var(--surface)",
+					color: "var(--text-muted)",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+				}}
+			>
 				Connecting to Vault...
 			</div>
 		);

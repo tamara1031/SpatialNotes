@@ -60,6 +60,7 @@ export const NotificationIsland: React.FC = () => {
 						</span>
 						{n.onUndo && (
 							<button
+								type="button"
 								onClick={() => handleUndo(n)}
 								style={{
 									background: "none",
@@ -76,6 +77,10 @@ export const NotificationIsland: React.FC = () => {
 									(e.currentTarget.style.background = "var(--accent-subtle)")
 								}
 								onMouseOut={(e) => (e.currentTarget.style.background = "none")}
+								onFocus={(e) =>
+									(e.currentTarget.style.background = "var(--accent-subtle)")
+								}
+								onBlur={(e) => (e.currentTarget.style.background = "none")}
 							>
 								Undo
 							</button>

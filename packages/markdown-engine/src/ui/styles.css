@@ -46,7 +46,8 @@
 	overflow: hidden;
 }
 
-.ProseMirror td, .ProseMirror th {
+.ProseMirror td,
+.ProseMirror th {
 	vertical-align: top;
 	box-sizing: border-box;
 	position: relative;
@@ -81,7 +82,7 @@
 	background-color: var(--surface-raised);
 	border: 1px solid var(--glass-border);
 	border-radius: var(--radius-md);
-	box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 	padding: var(--spacing-xs);
 	width: 200px;
 }

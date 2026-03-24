@@ -16,7 +16,7 @@ import { NoteHeader } from "./NoteHeader";
 
 export const NoteViewShell: React.FC = () => {
 	const { activeNodeId } = useNoteMode();
-	const [engineStatus, setEngineStatus] = useState<
+	const [_engineStatus, setEngineStatus] = useState<
 		"LOADING" | "READY" | "ERROR"
 	>("LOADING");
 	const errorNotificationId = useRef<string | null>(null);

@@ -11,11 +11,7 @@ import { useMemo, useState } from "react";
 import { useSync } from "../../hooks/useSync";
 import { $activeNodeId, $nodeTree, type TreeNode } from "../../store/nodes";
 import { showNotification } from "../../store/notificationStore";
-import {
-	$currentUser,
-	authService,
-	vaultManager,
-} from "../../store/vaultStore";
+import { $currentUser, vaultManager } from "../../store/vaultStore";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNodeItem } from "./SidebarNodeItem";
 

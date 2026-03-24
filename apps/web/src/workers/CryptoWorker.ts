@@ -46,7 +46,11 @@ self.onmessage = (event: MessageEvent) => {
 	self.postMessage({ id, error: `Unknown message type: ${type}` });
 };
 
-async function encryptCompressed(id: string, data: Uint8Array, key: CryptoKey) {
+async function _encryptCompressed(
+	id: string,
+	data: Uint8Array,
+	key: CryptoKey,
+) {
 	try {
 		// 1. Compress
 		const compressedStream = new Response(data as any).body?.pipeThrough(
@@ -79,7 +83,7 @@ async function encryptCompressed(id: string, data: Uint8Array, key: CryptoKey) {
 	}
 }
 
-async function decryptDecompressed(
+async function _decryptDecompressed(
 	id: string,
 	data: Uint8Array,
 	iv: Uint8Array,
@@ -116,7 +120,7 @@ async function decryptDecompressed(
 	}
 }
 
-async function encrypt(id: string, data: any, key: CryptoKey) {
+async function _encrypt(id: string, data: any, key: CryptoKey) {
 	try {
 		const iv = globalThis.crypto.getRandomValues(new Uint8Array(12));
 		const encryptedBuffer = await globalThis.crypto.subtle.encrypt(
@@ -139,7 +143,7 @@ async function encrypt(id: string, data: any, key: CryptoKey) {
 	}
 }
 
-async function decrypt(id: string, data: any, iv: any, key: CryptoKey) {
+async function _decrypt(id: string, data: any, iv: any, key: CryptoKey) {
 	try {
 		const decryptedBuffer = await globalThis.crypto.subtle.decrypt(
 			{ name: "AES-GCM", iv: iv as any },

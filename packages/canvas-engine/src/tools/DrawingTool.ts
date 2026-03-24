@@ -4,7 +4,7 @@ import type { InteractionContext, Tool } from "./Tool";
 
 export class DrawingTool implements Tool {
 	async onPointerDown(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	) {
@@ -25,7 +25,7 @@ export class DrawingTool implements Tool {
 	}
 
 	async onPointerMove(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	) {
@@ -45,16 +45,16 @@ export class DrawingTool implements Tool {
 	}
 
 	async onPointerUp(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
-		coords: { x: number; y: number },
+		_coords: { x: number; y: number },
 	) {
 		const state = ctx.store.getState();
 		if (!state.isInteracting) return;
 
 		// Finalize stroke in worker and get results
 		const result = await ctx.gateway.pointerUp();
-		if (result && result.boundingBox) {
+		if (result?.boundingBox) {
 			const state = ctx.store.getState();
 			const config =
 				state.activeTool === CanvasTool.HIGHLIGHTER

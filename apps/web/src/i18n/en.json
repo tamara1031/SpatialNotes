@@ -1,15 +1,15 @@
 {
-  "landing": {
-    "title": "A Spatial Canvas for",
-    "accent": "Your Deep Thoughts.",
-    "description": "SpatialNotes combines the freedom of a digital canvas with the power of Hybrid E2EE security. Choose between seamless Standard notes or Zero-Knowledge E2EE vaults. Organize, draw, and write without boundaries or compromises.",
-    "createVault": "Create Your Vault",
-    "seeFeatures": "See Features",
-    "goToVault": "Go to Vault"
-  },
-  "features": {
-    "title": "Built for Deep Work",
-    "subtitle": "Powerful tools designed to keep you in the flow."
-  },
-  "footer": "SpatialNotes. All rights reserved. Zero-Knowledge. Open Source."
+	"landing": {
+		"title": "A Spatial Canvas for",
+		"accent": "Your Deep Thoughts.",
+		"description": "SpatialNotes combines the freedom of a digital canvas with the power of Hybrid E2EE security. Choose between seamless Standard notes or Zero-Knowledge E2EE vaults. Organize, draw, and write without boundaries or compromises.",
+		"createVault": "Create Your Vault",
+		"seeFeatures": "See Features",
+		"goToVault": "Go to Vault"
+	},
+	"features": {
+		"title": "Built for Deep Work",
+		"subtitle": "Powerful tools designed to keep you in the flow."
+	},
+	"footer": "SpatialNotes. All rights reserved. Zero-Knowledge. Open Source."
 }

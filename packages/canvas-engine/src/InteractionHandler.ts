@@ -1,6 +1,5 @@
 import type { InteractionManager } from "./InteractionManager";
 import type { CanvasStore } from "./store/CanvasStore";
-import { CanvasTool } from "./types";
 
 /**
  * Handles all DOM-level interactions (pointer, wheel, keyboard).
@@ -9,7 +8,6 @@ import { CanvasTool } from "./types";
 export class InteractionHandler {
 	private container: HTMLElement | null = null;
 	private wheelHandler: (e: WheelEvent) => void;
-	private keydownHandler: (e: KeyboardEvent) => void;
 
 	constructor(
 		private interactionManager: InteractionManager,

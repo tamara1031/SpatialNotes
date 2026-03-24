@@ -2,11 +2,7 @@ import { useStore } from "@nanostores/react";
 import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
 import { useState } from "react";
-import {
-	$appState,
-	$currentUserEmail,
-	signup,
-} from "../../store/vaultStore";
+import { $appState, $currentUserEmail, signup } from "../../store/vaultStore";
 
 export const VaultSetupOverlay: React.FC = () => {
 	const appState = useStore($appState);
@@ -96,7 +92,6 @@ export const VaultSetupOverlay: React.FC = () => {
 							placeholder="Master Password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}
-							autoFocus
 							style={{
 								width: "100%",
 								background: "rgba(0,0,0,0.3)",

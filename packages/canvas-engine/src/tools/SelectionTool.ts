@@ -67,7 +67,7 @@ export class SelectionTool implements Tool {
 	}
 
 	onPointerMove(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	) {
@@ -95,9 +95,9 @@ export class SelectionTool implements Tool {
 	}
 
 	onPointerUp(
-		e: PointerEvent,
+		_e: PointerEvent,
 		ctx: InteractionContext,
-		coords: { x: number; y: number },
+		_coords: { x: number; y: number },
 	) {
 		const state = ctx.store.getState();
 		if (state.isDraggingSelection) {
@@ -135,7 +135,7 @@ export class SelectionTool implements Tool {
 		});
 	}
 
-	onDoubleClick(e: MouseEvent, ctx: InteractionContext) {
+	onDoubleClick(_e: MouseEvent, ctx: InteractionContext) {
 		const state = ctx.store.getState();
 
 		ctx.gateway.getElementAt(0, 0).then((hitId) => {

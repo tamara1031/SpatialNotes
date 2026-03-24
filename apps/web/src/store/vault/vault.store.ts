@@ -7,10 +7,10 @@ export const $vaultState = atom(vaultManager.getState());
 export const $isLocked = computed($vaultState, (state) => state.isLocked);
 
 export const updateVaultState = () => {
-    $vaultState.set(vaultManager.getState());
+	$vaultState.set(vaultManager.getState());
 };
 
 export const lockVaultInternal = () => {
-    vaultManager.lock();
-    updateVaultState();
+	vaultManager.lock();
+	updateVaultState();
 };

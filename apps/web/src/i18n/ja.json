@@ -1,14 +1,14 @@
 {
-  "landing": {
-    "title": "思考のための",
-    "accent": "空間キャンバス。",
-    "description": "SpatialNotesは、デジタルキャンバスの自由さとHybrid E2EEセキュリティの強力さを兼ね備えています。シームレスな標準ノートか、ゼロ知識E2EEのVaultから選択できます。境界や妥協なく、整理し、描き、記述しましょう。",
-    "createVault": "Vaultを作成",
-    "seeFeatures": "機能を見る"
-  },
-  "features": {
-    "title": "ディープワークのために構築",
-    "subtitle": "フロー状態を維持するために設計された強力なツール。"
-  },
-  "footer": "SpatialNotes. All rights reserved. ゼロ知識。オープンソース。"
+	"landing": {
+		"title": "思考のための",
+		"accent": "空間キャンバス。",
+		"description": "SpatialNotesは、デジタルキャンバスの自由さとHybrid E2EEセキュリティの強力さを兼ね備えています。シームレスな標準ノートか、ゼロ知識E2EEのVaultから選択できます。境界や妥協なく、整理し、描き、記述しましょう。",
+		"createVault": "Vaultを作成",
+		"seeFeatures": "機能を見る"
+	},
+	"features": {
+		"title": "ディープワークのために構築",
+		"subtitle": "フロー状態を維持するために設計された強力なツール。"
+	},
+	"footer": "SpatialNotes. All rights reserved. ゼロ知識。オープンソース。"
 }

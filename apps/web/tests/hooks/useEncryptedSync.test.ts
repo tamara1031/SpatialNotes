@@ -18,7 +18,7 @@ vi.mock("../../src/store/noteStore", async () => {
 		resetYDoc: vi.fn(),
 		syncService: {
 			ydoc,
-			applyUpdate: vi.fn((update, origin) => {
+			applyUpdate: vi.fn((update, _origin) => {
 				Y.applyUpdate(ydoc, update);
 			}),
 		},

@@ -126,8 +126,8 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 			color: "rgba(255,235,59,0.3)",
 			width: 10.0,
 		});
-		const [layoutMode, setLayoutMode] = useState<CanvasLayoutMode>("SINGLE");
-		const [orientation, setOrientation] =
+		const [layoutMode, _setLayoutMode] = useState<CanvasLayoutMode>("SINGLE");
+		const [orientation, _setOrientation] =
 			useState<CanvasOrientation>("PORTRAIT");
 		const [showSettings, setShowSettings] = useState(false);
 

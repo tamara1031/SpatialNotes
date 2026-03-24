@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import * as Y from "yjs";
-import { Folder } from "../../src/core";
 
 describe("Collaborative Move (SC-S1)", () => {
 	it("should reflect node move from Client A on Client B", () => {

@@ -42,7 +42,7 @@ export class WorkerGateway {
 		const id = this.nextId++;
 		return new Promise((resolve, reject) => {
 			this.pendingRequests.set(id, { resolve, reject });
-			this.worker!.postMessage({ type, payload, id }, transfer || []);
+			this.worker?.postMessage({ type, payload, id }, transfer || []);
 		});
 	}
 

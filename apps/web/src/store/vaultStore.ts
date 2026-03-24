@@ -1,31 +1,31 @@
-import { AuthService } from "@spatial-notes/core";
 import { atom, computed } from "nanostores";
 import { api } from "../utils/api";
 import { nodesMap, syncService } from "./noteStore";
 import { showNotification } from "./notificationStore";
 
-// --- Modular Imports ---
-export * from "./vault/vault.store.base";
-export * from "./vault/vault.store";
 export * from "./auth/auth.actions";
 export { authService } from "./auth/auth.service";
 export { domainSyncService } from "./sync/SyncService";
+export * from "./vault/vault.store";
+// --- Modular Imports ---
+export * from "./vault/vault.store.base";
 
+import { cryptoService, cryptoWorker, identifyUser } from "./auth/auth.actions";
+import { lockVaultInternal } from "./vault/vault.store";
 // --- Facade Re-exports and Legacy Support ---
 import {
 	$appState,
 	$currentUserEmail,
-	$sessionToken,
 	$saltAuth,
-	$saltEncryption
+	$saltEncryption,
+	$sessionToken,
 } from "./vault/vault.store.base";
-import { vaultManager, updateVaultState, lockVaultInternal } from "./vault/vault.store";
-import { identifyUser, cryptoService, cryptoWorker } from "./auth/auth.actions";
-export { identifyUser, cryptoService, cryptoWorker };
+
+export { cryptoService, cryptoWorker, identifyUser };
 
 import { authService } from "./auth/auth.service";
 export const $currentUser = atom<any>(null);
-authService.subscribe(user => $currentUser.set(user));
+authService.subscribe((user) => $currentUser.set(user));
 
 /**
  * Checks the vault status on initialization, looking for previous user sessions.
@@ -37,6 +37,8 @@ export const checkVaultStatus = async () => {
 	const lastUser = localStorage.getItem("spatial_notes_last_user");
 	if (lastUser) {
 		await identifyUser(lastUser);
+	} else {
+		$appState.set("email");
 	}
 };
 

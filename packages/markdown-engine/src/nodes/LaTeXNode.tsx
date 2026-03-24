@@ -1,14 +1,12 @@
 import katex from "katex";
 import {
 	DecoratorNode,
-	DOMConversionMap,
-	DOMConversionOutput,
 	type LexicalNode,
 	type NodeKey,
 	type SerializedLexicalNode,
 	type Spread,
 } from "lexical";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import "katex/dist/katex.min.css";
 
 export type SerializedLaTeXNode = Spread<

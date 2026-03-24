@@ -4,8 +4,7 @@ import {
 	MenuOption,
 	useBasicTypeaheadTriggerMatch,
 } from "@lexical/react/LexicalTypeaheadMenuPlugin";
-import { TextNode } from "lexical";
-import React, { useCallback, useEffect, useState } from "react";
+import { useCallback } from "react";
 
 class SlashOption extends MenuOption {
 	title: string;
@@ -26,7 +25,7 @@ const OPTIONS = [
 export function SlashCommandPlugin() {
 	const [editor] = useLexicalComposerContext();
 	const onSelectOption = useCallback(
-		(option: SlashOption) => {
+		(_option: SlashOption) => {
 			editor.update(() => {
 				// Handle insertion logic here
 			});

@@ -180,7 +180,6 @@ export const SidebarNodeItem = memo<{
 
 				{isEditing ? (
 					<input
-						autoFocus
 						value={editedName}
 						onChange={(e) => setEditedName(e.target.value)}
 						onBlur={handleCommit}

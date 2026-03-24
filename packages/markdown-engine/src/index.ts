@@ -1,30 +1,21 @@
 import type { ElementFactory, EngineInterface } from "engine-core";
-import { EditorState, Transaction } from "prosemirror-state";
-import { EditorView } from "prosemirror-view";
-import { schema } from "./ui/schema";
+import { nanoid } from "nanoid";
+import type { Node } from "prosemirror-model";
+/**
+ * ProseMirror Plugin to ensure all top-level blocks have a stable ID.
+ */
+import { EditorState, Plugin } from "prosemirror-state";
+import type { EditorView } from "prosemirror-view";
 import { MarkdownWorkerGateway } from "./bridge/MarkdownWorkerGateway";
 import type {
 	MarkdownElement,
 	MarkdownEngineContext,
 	MarkdownViewport,
 } from "./types";
-import { nanoid } from "nanoid";
-import { keymap } from "prosemirror-keymap";
-import { history, undo, redo } from "prosemirror-history";
-import { baseKeymap } from "prosemirror-commands";
-import { inputRules, smartQuotes, ellipsis, emDash, SEMIDASH } from "prosemirror-inputrules";
-import { dropCursor } from "prosemirror-dropcursor";
-import { gapCursor } from "prosemirror-gapcursor";
-import { tableEditing, columnResizing } from "prosemirror-tables";
-import { Node } from "prosemirror-model";
-
-/**
- * ProseMirror Plugin to ensure all top-level blocks have a stable ID.
- */
-import { Plugin } from "prosemirror-state";
+import { schema } from "./ui/schema";
 
 export const blockIdPlugin = new Plugin({
-	appendTransaction(transactions, oldState, newState) {
+	appendTransaction(_transactions, _oldState, newState) {
 		const tr = newState.tr;
 		let modified = false;
 
@@ -51,9 +42,9 @@ export class MarkdownEngine
 	private view: EditorView | null = null;
 
 	constructor(
-		width: number,
-		height: number,
-		elementFactory: ElementFactory<MarkdownElement>,
+		_width: number,
+		_height: number,
+		_elementFactory: ElementFactory<MarkdownElement>,
 	) {
 		this.gateway = new MarkdownWorkerGateway();
 
@@ -74,7 +65,7 @@ export class MarkdownEngine
 			});
 	}
 
-	mount(container: HTMLElement) {
+	mount(_container: HTMLElement) {
 		// Initialization of the view is typically handled by the React component
 		// but we expose the logic if needed.
 	}
@@ -121,7 +112,7 @@ export class MarkdownEngine
 		}
 	}
 
-	updateContext(context: MarkdownEngineContext) {
+	updateContext(_context: MarkdownEngineContext) {
 		// Handle read-only mode etc.
 	}
 
@@ -139,15 +130,13 @@ export class MarkdownEngine
 		}
 	}
 
-	handleKeyDown(e: KeyboardEvent): boolean {
+	handleKeyDown(_e: KeyboardEvent): boolean {
 		// ProseMirror handles its own keys, but we could intercept here
 		return false;
 	}
 
 	async exportToSVG(): Promise<string> {
-		const markdown = this.elements
-			.map((el) => el.content)
-			.join("\n\n");
+		const markdown = this.elements.map((el) => el.content).join("\n\n");
 		const html = await this.gateway.renderHtml(markdown);
 		return `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${html}</div></foreignObject></svg>`;
 	}
@@ -157,7 +146,7 @@ export class MarkdownEngine
 	 */
 	mapDocToElements(doc: Node): MarkdownElement[] {
 		const elements: MarkdownElement[] = [];
-		doc.forEach((node, offset, index) => {
+		doc.forEach((node, _offset, _index) => {
 			const type = this.mapProseMirrorTypeToElement(node.type.name);
 			if (!type) return;
 
@@ -187,13 +176,20 @@ export class MarkdownEngine
 
 	private mapProseMirrorTypeToElement(pmType: string): string | null {
 		switch (pmType) {
-			case "paragraph": return "PARAGRAPH";
-			case "heading": return "HEADING";
-			case "table": return "TABLE";
-			case "image": return "IMAGE";
-			case "latex": return "LATEX";
-			case "code_block": return "CODE";
-			default: return "PARAGRAPH";
+			case "paragraph":
+				return "PARAGRAPH";
+			case "heading":
+				return "HEADING";
+			case "table":
+				return "TABLE";
+			case "image":
+				return "IMAGE";
+			case "latex":
+				return "LATEX";
+			case "code_block":
+				return "CODE";
+			default:
+				return "PARAGRAPH";
 		}
 	}
 

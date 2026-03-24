@@ -25,8 +25,8 @@ describe("WorkerGateway White-box Tests", () => {
 	});
 
 	it("should assign unique incrementing IDs to each request", async () => {
-		const promise1 = bridge.init(100, 100);
-		const promise2 = bridge.getStrokePath();
+		const _promise1 = bridge.init(100, 100);
+		const _promise2 = bridge.getStrokePath();
 
 		expect(mockWorker.postMessage).toHaveBeenCalledTimes(2);
 

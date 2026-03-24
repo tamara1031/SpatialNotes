@@ -7,7 +7,7 @@ import { smooth_stroke_svg } from "canvas-wasm";
 export const pointsToCatmullRomPath = (points: number[]): string => {
 	try {
 		return smooth_stroke_svg(points);
-	} catch (e) {
+	} catch (_e) {
 		console.warn("Wasm smoothing failed, returning raw points path");
 		if (points.length < 4) return "";
 		let d = `M ${points[0]} ${points[1]}`;

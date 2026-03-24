@@ -1,4 +1,4 @@
-import React, { Component, type ErrorInfo, type ReactNode } from "react";
+import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
 	children?: ReactNode;
@@ -41,7 +41,13 @@ export class ErrorBoundary extends Component<Props, State> {
 						}}
 					>
 						<h2>Something went wrong.</h2>
-						<details style={{ whiteSpace: "pre-wrap", marginTop: "1rem", color: "var(--text-muted)" }}>
+						<details
+							style={{
+								whiteSpace: "pre-wrap",
+								marginTop: "1rem",
+								color: "var(--text-muted)",
+							}}
+						>
 							{this.state.error?.toString()}
 						</details>
 						<button

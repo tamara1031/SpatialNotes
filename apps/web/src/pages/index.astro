@@ -4,8 +4,6 @@ import Navbar from "../components/landing/Navbar.astro";
 import Hero from "../components/landing/Hero.astro";
 import Features from "../components/landing/Features.astro";
 import en from "../i18n/en.json";
-
-// Redirect if logged in
 ---
 
 <Shell title="SpatialNotes - Your Secure Spatial Canvas">
@@ -16,7 +14,8 @@ import en from "../i18n/en.json";
             <Features />
         </main>
         <footer class="footer" role="contentinfo">
-            &copy; {new Date().getFullYear()} {en.footer}
+            &copy; {new Date().getFullYear()}
+            {en.footer}
         </footer>
     </div>
 </Shell>
