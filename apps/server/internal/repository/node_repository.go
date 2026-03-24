@@ -97,6 +97,17 @@ func (r *NodeRepository) Delete(ctx context.Context, id, userID string) error {
 	return err
 }
 
+func (r *NodeRepository) DeleteMany(ctx context.Context, ids []string, userID string) error {
+	if len(ids) == 0 {
+		return nil
+	}
+	_, err := r.db.NewUpdate().Table("notebook_nodes").
+		Set("is_deleted = 1").
+		Where("id IN (?) AND user_id = ?", bun.In(ids), userID).
+		Exec(ctx)
+	return err
+}
+
 func (r *NodeRepository) DeleteByNodeID(ctx context.Context, nodeId, userID string) error {
 	// In the hybrid element-less model, this might delete children elements if they exist.
 	_, err := r.db.NewUpdate().Table("notebook_nodes").
