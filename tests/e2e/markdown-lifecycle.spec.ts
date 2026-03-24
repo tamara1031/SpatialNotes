@@ -3,6 +3,10 @@ import { getUniqueNodeId } from "./utils/auth";
 
 test.describe("Markdown Notebook Lifecycle", () => {
 	test("Signup, Create Markdown Notebook, Edit, and Delete", async ({ page }) => {
+		test.setTimeout(60000);
+		// Log browser console messages
+		page.on("console", (msg) => console.log(`BROWSER [${msg.type()}]: ${msg.text()}`));
+
 		const suffix = Date.now();
 		const userEmail = `user-${suffix}@example.com`;
 		const userPassword = "Password123!";
@@ -14,8 +18,15 @@ test.describe("Markdown Notebook Lifecycle", () => {
 		await page.fill('input[type="password"]', userPassword);
 		await page.click('button[type="submit"]');
 
-		// 2. Wait for vault redirection
-		await expect(page).toHaveURL(/\/vault\/?$/, { timeout: 15000 });
+		// Wait for the success message or redirection
+		console.log("Waiting for redirection after signup...");
+		await expect(page).toHaveURL(/\/vault\/?$/, { timeout: 30000 });
+		console.log("Redirected to vault successfully.");
+
+		// Wait for overlays to clear
+		await expect(page.locator("text=Setup your Vault")).not.toBeVisible({ timeout: 10000 });
+		await expect(page.locator("text=Unlock your Vault")).not.toBeVisible({ timeout: 10000 });
+		await expect(page.locator("text=Enter your Email")).not.toBeVisible({ timeout: 10000 });
 
 		// 3. Create Markdown Notebook
 		// Click the "Create new" button

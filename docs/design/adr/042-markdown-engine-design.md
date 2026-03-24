@@ -1,7 +1,7 @@
 # ADR-042: Markdown Engine Design and Synchronization Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Context
 As part of ADR-030 (Single-user Multi-engine Architecture), the system must support a `markdown-engine` alongside the `canvas-engine`. This engine needs to handle structured text, LaTeX rendering (ADR-006), and efficient synchronization within the `NoteViewShell`.
