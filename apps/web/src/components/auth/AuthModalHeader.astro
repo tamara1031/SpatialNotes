@@ -1,9 +1,9 @@
 ---
 interface Props {
-	mode: "signin" | "signup";
+    mode: "signin" | "signup";
 }
 
-const { mode } = Astro.props;
+const mode = Astro.props.mode;
 ---
 
 <h2 class="title">

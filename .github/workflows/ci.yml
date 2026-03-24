@@ -57,10 +57,12 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build Wasm
+      - name: Build Packages (Wasm + Core)
         run: |
           pnpm build:wasm
           pnpm build:markdown-wasm
+          pnpm build:engine-core
+          pnpm build:core
 
       - name: Run Unit Tests
         run: pnpm test
