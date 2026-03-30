@@ -40,13 +40,13 @@ test.describe("Astro Auth Flow & Redirection", () => {
 	test("Deep link to /signin/ should work for guests", async ({ page }) => {
 		await page.goto("/signin/");
 		await expect(page).toHaveURL(/\/signin\/?$/);
-		await expect(page.locator("h2")).toContainText("Welcome Back");
+		await expect(page.locator("h2").first()).toContainText("Welcome Back");
 	});
 
 	test("Deep link to /signup/ should work for guests", async ({ page }) => {
 		await page.goto("/signup/");
 		await expect(page).toHaveURL(/\/signup\/?$/);
-		await expect(page.locator("h2")).toContainText("Join SpatialNotes");
+		await expect(page.locator("h2").first()).toContainText("Join SpatialNotes");
 	});
 
 	test("Clicking 'Sign Up' link on Sign In page should navigate to /signup/", async ({
