@@ -1,17 +1,13 @@
 import { expect, test } from "@playwright/test";
-import {
-	bypassAuthAndSetup,
-	getUniqueNodeId,
-	setupE2EAuthBypass,
-} from "./utils/auth";
+import { bypassAuthAndSetup, getUniqueNodeId } from "./utils/auth";
 
 test.describe("Canvas Features (UC3, UC4)", () => {
 	let testNodeId = "";
-	let testNodeName = "";
+	let _testNodeName = "";
 
 	test.beforeEach(async ({ page }) => {
 		testNodeId = getUniqueNodeId();
-		testNodeName = `Test Notebook ${testNodeId}`;
+		_testNodeName = `Test Notebook ${testNodeId}`;
 		await bypassAuthAndSetup(page);
 		const createNewBtn = page.locator('button[title="Create new"]');
 		await createNewBtn.waitFor({ state: "visible", timeout: 10000 });

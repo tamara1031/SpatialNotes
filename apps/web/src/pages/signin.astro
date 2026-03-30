@@ -1,9 +1,9 @@
 ---
+// Redirect if logged in (Client-side check is easier for now without middleware)
+import { SigninForm } from "../components/auth/SigninForm";
 import AuthModalHeader from "../components/auth/AuthModalHeader.astro";
 import AuthModalToggle from "../components/auth/AuthModalToggle.astro";
-import { SigninForm } from "../components/auth/SigninForm";
 import Shell from "../layouts/Shell.astro";
-// Redirect if logged in (Client-side check is easier for now without middleware)
 ---
 
 <Shell title="Sign In - SpatialNotes">

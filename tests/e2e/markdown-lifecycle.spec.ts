@@ -13,7 +13,7 @@ test.describe("Markdown Notebook Lifecycle", () => {
 
 		const suffix = Date.now();
 		const userEmail = `user-${suffix}@example.com`;
-		const userPassword = "Password123!";
+		const _userPassword = "Password123!";
 		const notebookName = `Markdown Note ${suffix}`;
 
 		// 1. Signup

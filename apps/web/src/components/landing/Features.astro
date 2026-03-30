@@ -5,105 +5,125 @@ const features = [
 	{
 		title: "End-to-End Encryption",
 		description:
-			"Your notes are encrypted before they even leave your device. No one else can read them.",
+			"Your notes are encrypted in the browser before they ever touch our servers. We can't read your data, even if we wanted to.",
 		icon: "🔒",
 	},
 	{
-		title: "Spatial Canvas",
+		title: "Infinite Spatial Canvas",
 		description:
-			"Infinite whiteboard to map out complex ideas, draw diagrams, and connect thoughts.",
-		icon: "🎨",
+			"Organize your thoughts visually without boundaries. Zoom, pan, and connect ideas naturally.",
+		icon: "🗺️",
 	},
 	{
-		title: "Markdown Support",
+		title: "Rich Markdown Support",
 		description:
-			"Structure your thoughts with full Markdown and LaTeX support for technical work.",
+			"Write quickly with familiar markdown syntax, rendered beautifully in real-time as you type.",
 		icon: "📝",
 	},
 	{
-		title: "Real-time Sync",
+		title: "High-Performance Wasm",
 		description:
-			"Collaborate and sync across all your devices with zero-friction reliability.",
+			"Powered by Rust and WebAssembly, providing native-like performance for drawing and document processing.",
 		icon: "⚡",
+	},
+	{
+		title: "Local-First Architecture",
+		description:
+			"Work offline seamlessly. Your data syncs automatically in the background when you reconnect.",
+		icon: "💾",
+	},
+	{
+		title: "Real-time Collaboration",
+		description:
+			"Share securely with your team. See cursors and edits happen instantly across the globe.",
+		icon: "🤝",
 	},
 ];
 ---
 
 <section id="features" class="features-section">
-    <div class="header">
-        <h2>{en.features.title}</h2>
-        <p>{en.features.subtitle}</p>
-    </div>
+    <div class="container">
+        <h2 class="section-title">{en.features.title}</h2>
+        <p class="section-subtitle">{en.features.subtitle}</p>
 
-    <div class="grid">
-        {
-            features.map((f) => (
-                <div class="card">
-                    <div class="icon">{f.icon}</div>
-                    <h3>{f.title}</h3>
-                    <p>{f.description}</p>
-                </div>
-            ))
-        }
+        <div class="grid">
+            {
+                features.map((feature) => (
+                    <div class="feature-card glass-panel">
+                        <div class="feature-icon">{feature.icon}</div>
+                        <h3 class="feature-title">{feature.title}</h3>
+                        <p class="feature-description">{feature.description}</p>
+                    </div>
+                ))
+            }
+        </div>
     </div>
 </section>
 
 <style>
     .features-section {
         padding: 6rem 2rem;
+        background: var(--surface-raised);
+    }
+
+    .container {
         max-width: 1200px;
         margin: 0 auto;
     }
 
-    .header {
+    .section-title {
         text-align: center;
-        margin-bottom: 4rem;
-    }
-
-    h2 {
-        font-size: 2.5rem;
-        font-weight: 800;
+        font-size: clamp(2rem, 5vw, 3rem);
         margin-bottom: 1rem;
+        color: var(--text-primary);
     }
 
-    p {
+    .section-subtitle {
+        text-align: center;
+        font-size: 1.25rem;
         color: var(--text-secondary);
+        margin-bottom: 4rem;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
     }
 
     .grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 2rem;
     }
 
-    .card {
-        background: var(--glass-bg);
-        border: 1px solid var(--glass-border);
-        border-radius: var(--radius-lg);
+    .feature-card {
         padding: 2.5rem;
-        backdrop-filter: blur(var(--blur));
-        transition:
-            transform 0.3s ease,
-            border-color 0.3s ease;
+        border-radius: var(--radius-lg);
+        transition: transform 0.2s;
     }
 
-    .card:hover {
+    .feature-card:hover {
         transform: translateY(-5px);
-        border-color: var(--accent);
     }
 
-    .icon {
+    .feature-icon {
         font-size: 2.5rem;
         margin-bottom: 1.5rem;
+        background: var(--surface);
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 1rem;
+        border: 1px solid var(--glass-border);
     }
 
-    h3 {
-        font-size: 1.5rem;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
+    .feature-title {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: var(--text-primary);
     }
 
-    .card p {
+    .feature-description {
         color: var(--text-secondary);
         line-height: 1.6;
     }

@@ -1,6 +1,5 @@
 import type { ElementFactory } from "engine-core";
 import type React from "react";
-import { lazy } from "react";
 
 /**
  * Common props passed to every engine view.

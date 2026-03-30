@@ -1,7 +1,7 @@
 import { useStore } from "@nanostores/react";
 import { NodeFactory, type NodeRecord } from "@spatial-notes/core";
 import type React from "react";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getEngineView } from "../engines/engineRegistry";
 import { useEncryptedSync } from "../hooks/useEncryptedSync";
 import { useNoteCommands } from "../hooks/useNoteCommands";

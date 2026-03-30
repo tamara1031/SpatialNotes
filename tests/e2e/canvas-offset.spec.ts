@@ -1,15 +1,11 @@
 import { expect, test } from "@playwright/test";
-import {
-	bypassAuthAndSetup,
-	getUniqueNodeId,
-	setupE2EAuthBypass,
-} from "./utils/auth";
+import { bypassAuthAndSetup, getUniqueNodeId } from "./utils/auth";
 
 test("Canvas Drawing: Correct position after panning and zooming", async ({
 	page,
 }) => {
 	const nodeId = getUniqueNodeId();
-	const nodeName = `Notebook Panned ${nodeId}`;
+	const _nodeName = `Notebook Panned ${nodeId}`;
 
 	await bypassAuthAndSetup(page);
 

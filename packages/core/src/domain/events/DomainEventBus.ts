@@ -6,7 +6,13 @@ export interface IDomainEvent<T = any> {
 
 export type DomainEventHandler<T = any> = (event: IDomainEvent<T>) => void;
 
-export class DomainEventBus {
+export interface IDomainEventBus {
+	publish(event: IDomainEvent): void;
+	subscribe(type: string, handler: DomainEventHandler): () => void;
+	clear(): void;
+}
+
+export class DomainEventBus implements IDomainEventBus {
 	private handlers = new Map<string, DomainEventHandler[]>();
 
 	publish(event: IDomainEvent): void {

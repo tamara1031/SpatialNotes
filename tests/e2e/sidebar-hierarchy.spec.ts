@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { bypassAuthAndSetup, setupE2EAuthBypass } from "./utils/auth";
+import { bypassAuthAndSetup } from "./utils/auth";
 
 test("Sidebar Hierarchy: Live Data", async ({ page }) => {
 	page.on("console", (msg) => console.log("PAGE LOG:", msg.text()));

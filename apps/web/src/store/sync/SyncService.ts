@@ -41,7 +41,10 @@ export class SyncService {
 		// Node move
 		globalEventBus.subscribe(NODE_MOVED, (event: any) => {
 			const { id, parentId } = event.payload;
-			const command = new UpdateNodeCommand(this.nodesAdapter, { id, parentId });
+			const command = new UpdateNodeCommand(this.nodesAdapter, {
+				id,
+				parentId,
+			});
 			command.execute();
 		});
 	}
