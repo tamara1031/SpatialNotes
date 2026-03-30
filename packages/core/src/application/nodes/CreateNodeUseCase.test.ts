@@ -6,7 +6,8 @@ describe("CreateNodeUseCase", () => {
 	it("should throw error if vault is locked", async () => {
 		const repo = { save: vi.fn() } as any;
 		const vault = { getStatus: () => VaultStatus.Locked() } as any;
-		const useCase = new CreateNodeUseCase(repo, vault);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new CreateNodeUseCase(repo, vault, mockEventBus);
 
 		await expect(
 			useCase.execute({
@@ -21,7 +22,8 @@ describe("CreateNodeUseCase", () => {
 	it("should save a new node if vault is unlocked", async () => {
 		const repo = { save: vi.fn() } as any;
 		const vault = { getStatus: () => VaultStatus.Unlocked() } as any;
-		const useCase = new CreateNodeUseCase(repo, vault);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new CreateNodeUseCase(repo, vault, mockEventBus);
 
 		await useCase.execute({
 			parentId: "p1",
@@ -34,5 +36,6 @@ describe("CreateNodeUseCase", () => {
 		const savedNode = repo.save.mock.calls[0][0];
 		expect(savedNode.name).toBe("My Notebook");
 		expect(savedNode.type).toBe("NOTEBOOK");
+		expect(mockEventBus.publish).toHaveBeenCalled();
 	});
 });

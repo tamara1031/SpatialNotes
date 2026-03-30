@@ -1,4 +1,4 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
+import type { IDomainEventBus } from "../../domain/events/DomainEventBus";
 import { NodeCreatedEvent } from "../../domain/nodes/events";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository";
 import { NodeFactory } from "../../domain/nodes/NodeFactory";
@@ -27,6 +27,7 @@ export class CreateNodeUseCase {
 	constructor(
 		private readonly nodeRepository: INodeRepository,
 		private readonly vaultStatusProvider: IVaultStatusProvider,
+		private readonly eventBus: IDomainEventBus,
 	) {}
 
 	async execute(input: CreateNodeInput): Promise<void> {
@@ -51,6 +52,6 @@ export class CreateNodeUseCase {
 		await this.nodeRepository.save(node);
 
 		// Publish event
-		globalEventBus.publish(new NodeCreatedEvent(record));
+		this.eventBus.publish(new NodeCreatedEvent(record));
 	}
 }

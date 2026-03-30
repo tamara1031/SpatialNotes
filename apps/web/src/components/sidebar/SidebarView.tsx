@@ -2,6 +2,7 @@ import { useStore } from "@nanostores/react";
 import {
 	CreateNodeUseCase,
 	DeleteNodeUseCase,
+	globalEventBus,
 	MoveNodeUseCase,
 	RenameNodeUseCase,
 	YjsNodeRepository,
@@ -54,7 +55,11 @@ export const SidebarView: React.FC = () => {
 				: `New ${metadata.engineType === "MARKDOWN" ? "Markdown" : "Notebook"}`;
 
 		const repository = new YjsNodeRepository(doc);
-		const useCase = new CreateNodeUseCase(repository, vaultManager);
+		const useCase = new CreateNodeUseCase(
+			repository,
+			vaultManager,
+			globalEventBus,
+		);
 
 		const findNodeInTree = (
 			nodes: TreeNode[],
@@ -93,7 +98,7 @@ export const SidebarView: React.FC = () => {
 	const handleDeleteNode = async (id: string) => {
 		if (!currentUser) return;
 		const repository = new YjsNodeRepository(doc);
-		const useCase = new DeleteNodeUseCase(repository);
+		const useCase = new DeleteNodeUseCase(repository, globalEventBus);
 		try {
 			await useCase.execute({ id, userId: currentUser.id });
 		} catch (e) {
@@ -105,7 +110,7 @@ export const SidebarView: React.FC = () => {
 
 	const handleRenameNode = async (id: string, name: string) => {
 		const repository = new YjsNodeRepository(doc);
-		const useCase = new RenameNodeUseCase(repository);
+		const useCase = new RenameNodeUseCase(repository, globalEventBus);
 		try {
 			await useCase.execute({ id, newName: name });
 		} catch (e) {
@@ -117,7 +122,7 @@ export const SidebarView: React.FC = () => {
 
 	const handleMoveNode = async (id: string, targetParentId: string | null) => {
 		const repository = new YjsNodeRepository(doc);
-		const useCase = new MoveNodeUseCase(repository);
+		const useCase = new MoveNodeUseCase(repository, globalEventBus);
 		try {
 			await useCase.execute({ id, newParentId: targetParentId });
 		} catch (e) {

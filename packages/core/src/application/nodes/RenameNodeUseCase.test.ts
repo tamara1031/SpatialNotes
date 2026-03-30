@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus";
 import { RenameNodeUseCase } from "./RenameNodeUseCase";
 
 describe("RenameNodeUseCase", () => {
@@ -22,14 +21,14 @@ describe("RenameNodeUseCase", () => {
 			save: vi.fn().mockResolvedValue(undefined),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new RenameNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new RenameNodeUseCase(repo, mockEventBus);
 
 		await useCase.execute({ id: "n1", newName: "New Name" });
 
 		expect(mockNode.rename).toHaveBeenCalledWith("New Name");
 		expect(repo.save).toHaveBeenCalledWith(mockNode);
-		expect(publishSpy).toHaveBeenCalled();
+		expect(mockEventBus.publish).toHaveBeenCalled();
 		expect(mockNode.clearDomainEvents).toHaveBeenCalled();
 	});
 
@@ -38,7 +37,8 @@ describe("RenameNodeUseCase", () => {
 			findById: vi.fn().mockResolvedValue(null),
 		} as any;
 
-		const useCase = new RenameNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new RenameNodeUseCase(repo, mockEventBus);
 
 		await expect(
 			useCase.execute({ id: "unknown", newName: "New" }),
@@ -48,7 +48,8 @@ describe("RenameNodeUseCase", () => {
 	it("should throw error if name is empty", async () => {
 		const mockNode = { id: "n1" };
 		const repo = { findById: vi.fn().mockResolvedValue(mockNode) } as any;
-		const useCase = new RenameNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new RenameNodeUseCase(repo, mockEventBus);
 
 		await expect(useCase.execute({ id: "n1", newName: "  " })).rejects.toThrow(
 			"Name cannot be empty",

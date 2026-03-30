@@ -1,4 +1,4 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
+import type { IDomainEventBus } from "../../domain/events/DomainEventBus";
 import { NodeMovedEvent } from "../../domain/nodes/events";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository";
 import { CircularReferenceError } from "../../domain/types";
@@ -9,7 +9,10 @@ export interface MoveNodeInput {
 }
 
 export class MoveNodeUseCase {
-	constructor(private readonly nodeRepository: INodeRepository) {}
+	constructor(
+		private readonly nodeRepository: INodeRepository,
+		private readonly eventBus: IDomainEventBus,
+	) {}
 
 	async execute(input: MoveNodeInput): Promise<void> {
 		const node = await this.nodeRepository.findById(input.id);
@@ -32,7 +35,7 @@ export class MoveNodeUseCase {
 		node.move(input.newParentId);
 		await this.nodeRepository.save(node);
 
-		globalEventBus.publish(
+		this.eventBus.publish(
 			new NodeMovedEvent({ id: input.id, parentId: input.newParentId }),
 		);
 	}

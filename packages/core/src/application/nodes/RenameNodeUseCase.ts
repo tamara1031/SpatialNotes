@@ -1,4 +1,4 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
+import type { IDomainEventBus } from "../../domain/events/DomainEventBus";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository";
 
 export interface RenameNodeInput {
@@ -7,7 +7,10 @@ export interface RenameNodeInput {
 }
 
 export class RenameNodeUseCase {
-	constructor(private readonly nodeRepository: INodeRepository) {}
+	constructor(
+		private readonly nodeRepository: INodeRepository,
+		private readonly eventBus: IDomainEventBus,
+	) {}
 
 	async execute(input: RenameNodeInput): Promise<void> {
 		const node = await this.nodeRepository.findById(input.id);
@@ -24,7 +27,7 @@ export class RenameNodeUseCase {
 
 		// Publish collected domain events
 		for (const event of node.domainEvents) {
-			globalEventBus.publish(event);
+			this.eventBus.publish(event);
 		}
 		node.clearDomainEvents();
 	}

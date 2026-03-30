@@ -4,6 +4,7 @@ import {
 	globalEventBus,
 	NODE_CREATED,
 	NODE_DELETED,
+	NODE_MOVED,
 	NODE_RENAMED,
 	UpdateNodeCommand,
 } from "@spatial-notes/core";
@@ -34,6 +35,13 @@ export class SyncService {
 				this.nodesAdapter,
 				event.payload,
 			);
+			command.execute();
+		});
+
+		// Node move
+		globalEventBus.subscribe(NODE_MOVED, (event: any) => {
+			const { id, parentId } = event.payload;
+			const command = new UpdateNodeCommand(this.nodesAdapter, { id, parentId });
 			command.execute();
 		});
 	}

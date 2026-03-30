@@ -1,51 +1,54 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus";
 import { DeleteNodeUseCase } from "./DeleteNodeUseCase";
 
 describe("DeleteNodeUseCase", () => {
-	it("should delete a node and its descendants and publish events", async () => {
-		const mockNode = {
-			id: "n1",
+	it("should delete node and children if user is authorized", async () => {
+		const mockRoot = {
+			id: "root",
 			userId: "u1",
 			delete: vi.fn(),
 			domainEvents: [
-				{ type: "node.deleted", payload: { id: "n1" }, occurredAt: Date.now() },
+				{
+					type: "node.deleted",
+					payload: { id: "root" },
+					occurredAt: Date.now(),
+				},
 			],
 			clearDomainEvents: vi.fn(),
 		};
-
 		const mockChild = {
-			id: "n2",
+			id: "c1",
 			userId: "u1",
 			delete: vi.fn(),
 			domainEvents: [
-				{ type: "node.deleted", payload: { id: "n2" }, occurredAt: Date.now() },
+				{ type: "node.deleted", payload: { id: "c1" }, occurredAt: Date.now() },
 			],
 			clearDomainEvents: vi.fn(),
 		};
 
 		const repo = {
-			findById: vi.fn().mockImplementation((id) => {
-				if (id === "n1") return Promise.resolve(mockNode);
-				if (id === "n2") return Promise.resolve(mockChild);
-				return Promise.resolve(null);
+			findById: vi.fn().mockImplementation(async (id) => {
+				if (id === "root") return mockRoot;
+				if (id === "c1") return mockChild;
+				return null;
 			}),
-			findByParentId: vi.fn().mockImplementation((parentId) => {
-				if (parentId === "n1") return Promise.resolve([mockChild]);
-				return Promise.resolve([]);
+			findByParentId: vi.fn().mockImplementation(async (pid) => {
+				if (pid === "root") return [mockChild];
+				return [];
 			}),
-			save: vi.fn().mockResolvedValue(undefined),
+			save: vi.fn(),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new DeleteNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new DeleteNodeUseCase(repo, mockEventBus);
 
-		await useCase.execute({ id: "n1", userId: "u1" });
+		await useCase.execute({ id: "root", userId: "u1" });
 
-		expect(mockNode.delete).toHaveBeenCalled();
+		expect(mockRoot.delete).toHaveBeenCalled();
 		expect(mockChild.delete).toHaveBeenCalled();
 		expect(repo.save).toHaveBeenCalledTimes(2);
-		expect(publishSpy).toHaveBeenCalledTimes(2);
+		expect(mockEventBus.publish).toHaveBeenCalledTimes(2);
+		expect(mockRoot.clearDomainEvents).toHaveBeenCalled();
 	});
 
 	it("should throw error if node not found", async () => {
@@ -53,27 +56,24 @@ describe("DeleteNodeUseCase", () => {
 			findById: vi.fn().mockResolvedValue(null),
 		} as any;
 
-		const useCase = new DeleteNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new DeleteNodeUseCase(repo, mockEventBus);
 
 		await expect(
 			useCase.execute({ id: "unknown", userId: "u1" }),
 		).rejects.toThrow("Node not found: unknown");
 	});
 
-	it("should throw error if unauthorized", async () => {
-		const mockNode = {
-			id: "n1",
-			userId: "other",
-		};
-
+	it("should throw error if user is unauthorized", async () => {
 		const repo = {
-			findById: vi.fn().mockResolvedValue(mockNode),
+			findById: vi.fn().mockResolvedValue({ id: "n1", userId: "owner" }),
 		} as any;
 
-		const useCase = new DeleteNodeUseCase(repo);
+		const mockEventBus = { publish: vi.fn() } as any;
+		const useCase = new DeleteNodeUseCase(repo, mockEventBus);
 
-		await expect(useCase.execute({ id: "n1", userId: "u1" })).rejects.toThrow(
-			"Unauthorized to delete this node",
-		);
+		await expect(
+			useCase.execute({ id: "n1", userId: "hacker" }),
+		).rejects.toThrow("Unauthorized to delete this node");
 	});
 });
