@@ -117,8 +117,10 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 	useEffect(() => {
 		if (!editorRef.current || viewRef.current) return;
 
+		const doc = createInitialDoc(elements);
+
 		const state = EditorState.create({
-			doc: createInitialDoc(elements),
+			doc,
 			plugins: [
 				blockIdPlugin,
 				markdownInputRules,
@@ -155,6 +157,9 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 
 		const view = new EditorView(editorRef.current, {
 			state,
+			attributes: {
+				class: "ProseMirror",
+			},
 			nodeViews: {
 				latex(node, view, getPos) {
 					return new LaTeXNodeView(node, view, getPos);

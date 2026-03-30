@@ -1,8 +1,7 @@
 import { SyncService } from "@spatial-notes/core";
 import { atom } from "nanostores";
 
-// --- UI State ---
-export const $activeNodeId = atom<string | null>(null);
+import { $activeNodeId } from "./nodes";
 
 if (typeof window !== "undefined") {
 	(window as any).$activeNodeId = $activeNodeId;
