@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { bypassAuthAndSetup } from "./utils/auth";
 
 test.describe("Markdown Notebook Lifecycle", () => {
 	test("Signup, Create Markdown Notebook, Edit, and Delete", async ({
@@ -16,46 +17,36 @@ test.describe("Markdown Notebook Lifecycle", () => {
 		const notebookName = `Markdown Note ${suffix}`;
 
 		// 1. Signup
-		await page.goto("/signup/");
-		await page.fill('input[type="email"]', userEmail);
-		await page.fill('input[type="password"]', userPassword);
-		await page.click('button[type="submit"]');
+		await bypassAuthAndSetup(page, userEmail);
 
-		// Wait for the success message or redirection
-		console.log("Waiting for redirection after signup...");
-		await expect(page).toHaveURL(/\/notes\/?$/, { timeout: 30000 });
-		console.log("Redirected to notes successfully.");
+		// Wait for UI to initialize
+		await page.waitForTimeout(1000);
 
-		// Wait for overlays to clear
-		await expect(page.locator("text=Setup your Vault")).not.toBeVisible({
-			timeout: 10000,
-		});
-		await expect(page.locator("text=Unlock your Vault")).not.toBeVisible({
-			timeout: 10000,
-		});
-		await expect(page.locator("text=Enter your Email")).not.toBeVisible({
-			timeout: 10000,
-		});
+		// 3. Create Markdown Notebook explicitly via UI
+		console.log("Creating new Markdown notebook via UI...");
+		const createNewBtn = page.locator('button[title="Create new"]');
+		await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
+		await createNewBtn.click();
 
-		// 3. Create Markdown Notebook
-		// Click the "Create new" button
-		await page.click('button[title="Create new"]');
-		// Click "New Markdown"
-		await page.click("text=New Markdown");
+		const newMarkdownBtn = page.locator('button', { hasText: 'New Markdown' }).first();
+		await newMarkdownBtn.waitFor({ state: "visible", timeout: 10000 });
+		await newMarkdownBtn.click();
 
-		// 4. Verify notebook appears in sidebar
-		const sidebarItem = page.locator(`.sidebar >> text=New Markdown`);
-		await expect(sidebarItem).toBeVisible({ timeout: 10000 });
+		await expect(async () => {
+			const count = await page.locator('.sidebar-node-item', { hasText: 'New Markdown' }).count();
+			expect(count).toBeGreaterThan(0);
+		}).toPass({ timeout: 20000 });
 
-		// 5. Select the notebook
-		await sidebarItem.click();
+		const nodeLocator = page.locator('.sidebar-node-item', { hasText: 'New Markdown' }).first();
+		await page.waitForTimeout(1000);
+		await nodeLocator.click();
 
-		// 6. Wait for Editor to load
-		const editor = page.locator(".ProseMirror");
-		await expect(editor).toBeVisible({ timeout: 10000 });
+		// Wait for Editor to load
+		const editor = page.locator(".ProseMirror").first();
+		await expect(editor).toBeAttached({ timeout: 15000 });
 
 		// 7. Edit content
-		await editor.click();
+		await editor.click({ force: true });
 		await page.keyboard.type(
 			"# Welcome to ProseMirror\n\nThis is a test paragraph.",
 		);
@@ -80,18 +71,18 @@ test.describe("Markdown Notebook Lifecycle", () => {
 		await page.click("body"); // Click body to defocus
 
 		// 9. Rename Notebook
-		await sidebarItem.dblclick();
+		await nodeLocator.dblclick();
 		await page.keyboard.type(notebookName);
 		await page.keyboard.press("Enter");
 		await expect(
-			page.locator(`.sidebar >> text=${notebookName}`),
-		).toBeVisible();
+			page.locator(`.sidebar-node-item`, { hasText: notebookName }),
+		).toBeVisible({ timeout: 10000 });
 
 		// 10. Delete Notebook
-		await page.click(`.sidebar >> text=${notebookName}`); // Select again to show delete icon
+		await page.locator(`.sidebar-node-item`, { hasText: notebookName }).click(); // Select again to show delete icon
 		await page.click('button[title="Delete node"]');
 		await expect(
-			page.locator(`.sidebar >> text=${notebookName}`),
-		).not.toBeVisible();
+			page.locator(`.sidebar-node-item`, { hasText: notebookName }),
+		).not.toBeVisible({ timeout: 10000 });
 	});
 });

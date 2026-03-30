@@ -24,20 +24,15 @@ export interface EngineViewProps {
  * Lazy-loading engine registry.
  * Each engine is its own dynamic import chunk — zero cost until first use.
  */
+import { CanvasView } from "canvas-engine";
+import { MarkdownView } from "markdown-engine";
+
 export const EngineRegistry: Record<
 	string,
-	React.LazyExoticComponent<React.FC<EngineViewProps>>
+	React.ComponentType<EngineViewProps>
 > = {
-	CANVAS: lazy(() =>
-		import("canvas-engine").then((m) => ({
-			default: m.CanvasView as React.FC<EngineViewProps>,
-		})),
-	),
-	MARKDOWN: lazy(() =>
-		import("markdown-engine").then((m) => ({
-			default: m.MarkdownView as React.FC<EngineViewProps>,
-		})),
-	),
+	CANVAS: CanvasView as React.FC<EngineViewProps>,
+	MARKDOWN: MarkdownView as React.FC<EngineViewProps>,
 };
 
 /**

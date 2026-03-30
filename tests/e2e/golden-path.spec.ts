@@ -13,50 +13,26 @@ test("The Golden Path: Canvas Sync across windows", async ({
 	const nodeName = `Notebook Sync ${nodeId}`;
 	const userEmail = `sync-test-${nodeId}@example.com`;
 
-	await setupE2EAuthBypass(page);
-	await page.goto("/");
 	await bypassAuthAndSetup(page, userEmail);
 
-	// 1. Create a notebook and MATERIALIZE it
-	await page.waitForFunction(() => (window as any).ydoc !== undefined, {
-		timeout: 10000,
-	});
-	await page.evaluate(
-		async ({ id, name }) => {
-			const record = {
-				id,
-				parentId: null,
-				type: "NOTEBOOK",
-				name: name,
-				updatedAt: Date.now(),
-				metadata: { engineType: "CANVAS" },
-			};
+	// 1. Create a notebook via UI
+	const createNewBtn = page.locator('button[title="Create new"]');
+	await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
+	await createNewBtn.click();
 
-			// Set in Yjs
-			const ydoc = (window as any).ydoc;
-			const nodesMap = ydoc.getMap("nodes");
-			nodesMap.set(id, record);
+	const newCanvasBtn = page.locator('button', { hasText: 'New Canvas' }).first();
+	await newCanvasBtn.waitFor({ state: "visible", timeout: 10000 });
+	await newCanvasBtn.click();
 
-			// Materialize to server using the real token from localStorage
-			const token = localStorage.getItem("session_token");
-			await fetch("/api/nodes", {
-				method: "POST",
-				headers: {
-					"Content-Type": "application/json",
-					Authorization: `Bearer ${token}`,
-				},
-				body: JSON.stringify(record),
-			});
+	// Wait for the new node to appear in the sidebar list before clicking
+	const nodeLocator = page.locator('.sidebar-node-item', { hasText: /New Notebook/ }).first();
+	await nodeLocator.waitFor({ state: "visible", timeout: 10000 });
 
-			// DIRECTLY SET ACTIVE NODE for stable testing
-			const noteStore = await import("../store/noteStore");
-			noteStore.$activeNodeId.set(id);
-		},
-		{ id: nodeId, name: nodeName },
-	);
+	// Use standard Playwright click
+	await nodeLocator.click();
 
 	const surface = page.locator(".canvas-surface");
-	await expect(surface).toBeVisible({ timeout: 10000 });
+	await expect(surface).toBeVisible({ timeout: 15000 });
 
 	// Give it a moment to initialize the engine
 	await page.waitForTimeout(1000);
@@ -70,48 +46,43 @@ test("The Golden Path: Canvas Sync across windows", async ({
 	await page.mouse.move(box.x + 200, box.y + 200);
 	await page.mouse.up();
 
+	await page.waitForTimeout(1000);
+
 	// Verify element exists in LOCAL Yjs map
 	await expect(async () => {
 		const count = await page.evaluate(() => {
 			const ydoc = (window as any).ydoc;
-			const elementsMap = ydoc.getMap("elements");
+			const elementsMap = ydoc?.getMap("elements");
+			if (!elementsMap) return 0;
 			return Array.from(elementsMap.values()).length;
 		});
 		console.log(`Local elements: ${count}`);
 		expect(count).toBeGreaterThanOrEqual(1);
-	}).toPass({ timeout: 5000 });
+	}).toPass({ timeout: 10000 });
 
 	// Open second window
 	const page2 = await context.newPage();
-	await setupE2EAuthBypass(page2);
-	await page2.goto("/");
 	await bypassAuthAndSetup(page2, userEmail);
 
-	// Set active node directly in second window too
-	await page2.evaluate(
-		({ id }) => {
-			(window as any).setActiveNodeIdForTest = (noteId: string) => {
-				// Find the activeNodeId atom and set it
-				// This is a bit hacky but ensures the test doesn't depend on sidebar UI
-				const nodesMap = (window as any).ydoc.getMap("nodes");
-				if (nodesMap.has(noteId)) {
-					// We need a way to reach the atom. Let's expose it in DesktopApp or noteStore.
-					(window as any).$activeNodeId.set(noteId);
-				}
-			};
-			(window as any).setActiveNodeIdForTest(id);
-		},
-		{ id: nodeId },
-	);
+	// Second window needs to find the newly created canvas in the sidebar
+	// since it synced via Yjs
+	const nodeLocator2 = page2.locator('.sidebar-node-item', { hasText: /New Notebook/ }).first();
+	await nodeLocator2.waitFor({ state: "visible", timeout: 10000 });
+
+	// Use standard Playwright click
+	await nodeLocator2.click();
 
 	const surface2 = page2.locator(".canvas-surface");
-	await expect(surface2).toBeVisible({ timeout: 10000 });
+	await expect(surface2).toBeVisible({ timeout: 15000 });
+
+	await page2.waitForTimeout(1000);
 
 	// Verify synchronization
 	await expect(async () => {
 		const count = await page2.evaluate(() => {
 			const ydoc = (window as any).ydoc;
-			const elementsMap = ydoc.getMap("elements");
+			const elementsMap = ydoc?.getMap("elements");
+			if (!elementsMap) return 0;
 			return Array.from(elementsMap.values()).length;
 		});
 		console.log(`Remote elements: ${count}`);

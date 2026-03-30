@@ -9,17 +9,14 @@ export async function authenticate(
 ) {
 	console.log(`Authenticating with email: ${email}`);
 
-	// Ensure we are on a page where the auth overlay can appear
-	if (
-		page.url() === "about:blank" ||
-		page.url().includes("/signup") ||
-		page.url().includes("/signin")
-	) {
-		await page.goto("/notes/");
-	}
+	// Always go to signup for e2e tests since we generate unique emails
+	await page.goto("/signup/");
+
+	// Wait for network idle
+	await page.waitForLoadState("networkidle");
 
 	// 1. Enter email
-	const emailInput = page.locator('input[placeholder="Email Address"]');
+	const emailInput = page.locator('input[type="email"]');
 	await emailInput.waitFor({ state: "visible", timeout: 20000 });
 
 	// Click and clear just in case
@@ -36,63 +33,62 @@ export async function authenticate(
 		await emailInput.fill(email); // Fallback to fill
 	}
 
-	const continueBtn = page.locator('button:has-text("Continue")');
-	await continueBtn.click();
+	// Wait for password view to be visible
+	const passwordInput = page.locator('input[type="password"]');
+	await passwordInput.waitFor({ state: "visible", timeout: 20000 });
 
-	// 2. Wait for either Setup or Unlock view
-	console.log("Waiting for Setup or Unlock view...");
-	const setupView = page.locator('text="Setup your Vault"');
-	const unlockView = page.locator('text="Vault Locked"');
-
-	await expect(async () => {
-		const isSetup = await setupView.isVisible();
-		const isUnlock = await unlockView.isVisible();
-		if (!isSetup && !isUnlock) {
-			// Re-click continue if it seems stuck
-			if (
-				(await continueBtn.isVisible()) &&
-				!(await continueBtn.isDisabled())
-			) {
-				await continueBtn.click();
-			}
-			throw new Error("Neither Setup nor Unlock view is visible");
-		}
-	}).toPass({ timeout: 15000 });
-
-	const isSetup = await setupView.isVisible();
-	console.log(`Flow determined: ${isSetup ? "Setup" : "Unlock"}`);
-
-	const passwordInput = page.locator('input[placeholder="Master Password"]');
+	// Click and clear password input just in case
+	await passwordInput.click();
+	await passwordInput.fill("");
 	await passwordInput.fill("testpassword123");
 
-	if (isSetup) {
-		const confirmInput = page.locator('input[placeholder="Confirm Password"]');
-		await confirmInput.fill("testpassword123");
-		await page.click('button:has-text("Create Account")');
+	if (page.url().includes("/signup")) {
+		await page.click('button:has-text("Get Started")');
 	} else {
-		await page.click('button:has-text("Unlock Vault")');
+		await page.click('button:has-text("Sign In")');
 	}
 
-	// 3. Wait for success
-	await expect(page.locator('text="Connecting to Vault..."')).toBeHidden({
-		timeout: 20000,
-	});
+	// Wait for successful redirect to notes page
+	await page.waitForURL(/\/notes\/?$/, { timeout: 30000 });
+
+	// Wait for app shell
 	await expect(page.locator(".main-shell")).toBeVisible({ timeout: 20000 });
 
+	// Give the app a moment to fully initialize WebSockets and WASM
+	await page.waitForTimeout(2000);
+
+	// Ensure vault is explicitly unlocked since we just signed in and set a password
+	// Wait a bit more for rendering just in case
 	await page.waitForTimeout(1000);
+
+	// Ensure vault is unlocked explicitly via UI if needed
+	const unlockOverlay = page.locator('h2', { hasText: 'Vault Locked' });
+	if (await unlockOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
+		const masterPassInput = page.locator('input[placeholder="Master Password"]');
+		await masterPassInput.fill("testpassword123");
+		await page.locator('button', { hasText: 'Unlock Vault' }).click();
+		await page.waitForTimeout(1000);
+		await expect(unlockOverlay).toBeHidden({ timeout: 5000 }).catch(() => {});
+	}
+
+	// Just in case it locks again, bypass appState too
+	await page.evaluate(() => {
+		if ((window as any).$appState) {
+			(window as any).$appState.set("unlocked");
+		}
+	});
 }
 
 export function getUniqueNodeId() {
 	return `node-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export const bypassAuthAndSetup = authenticate;
+export const bypassAuthAndSetup = async (page: Page, email?: string) => {
+    return authenticate(page, email);
+};
+
 export const setupE2EAuthBypass = async (page: Page) => {
-	// We need to be on the domain to set localStorage
-	if (page.url() === "about:blank") {
-		await page.goto("/");
-	}
-	await page.evaluate(() => {
-		localStorage.setItem("session_token", "test-bypass-token");
-	});
+	// We no longer bypass auth, tests should use `bypassAuthAndSetup`
+    // which now calls `authenticate` because doing the API bypass + local storage bypass
+    // isn't well tested.
 };

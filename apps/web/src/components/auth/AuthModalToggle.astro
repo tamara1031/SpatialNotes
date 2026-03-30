@@ -5,9 +5,9 @@ interface Props {
 
 const { mode } = Astro.props;
 const isSignin = mode === "signin";
-const _targetUrl = isSignin ? "/signup" : "/signin";
-const _text = isSignin ? "Don't have an account?" : "Already have an account?";
-const _actionText = isSignin ? "Sign Up" : "Sign In";
+const targetUrl = isSignin ? "/signup/" : "/signin/";
+const text = isSignin ? "Don't have an account?" : "Already have an account?";
+const actionText = isSignin ? "Sign Up" : "Sign In";
 ---
 
 <div class="toggle-container">

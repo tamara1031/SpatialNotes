@@ -46,9 +46,13 @@ export const NoteViewShell: React.FC = () => {
 
 	const { canUndo, canRedo, undo, redo } = useNoteHistory(undoManager);
 
+	// Fallback to render *something* if activeNodeId exists but isn't synced locally yet
+	const nodeName = activeNode?.name || "Untitled";
+	const engineType = (activeNode?.metadata?.engineType as string) || "CANVAS";
+
 	const debounceTime =
 		typeof window !== "undefined" && (window as any).__E2E_SKIP_AUTH__
-			? 100
+			? 100 // Short for E2E
 			: 5000;
 
 	const { syncStatus, syncNow } = useEncryptedSync(activeNodeId, debounceTime);
@@ -100,8 +104,6 @@ export const NoteViewShell: React.FC = () => {
 		[],
 	);
 
-	const engineType = (activeNode?.metadata?.engineType as string) || "CANVAS";
-
 	if (!activeNodeId) {
 		return (
 			<div
@@ -129,7 +131,7 @@ export const NoteViewShell: React.FC = () => {
 			}}
 		>
 			<NoteHeader
-				name={activeNode?.name || "Untitled"}
+				name={nodeName}
 				updatedAt={activeNode?.updatedAt || 0}
 				syncStatus={syncStatus}
 				encryptionStrategy={activeNode?.encryptionStrategy || "STANDARD"}
@@ -148,52 +150,34 @@ export const NoteViewShell: React.FC = () => {
 					position: "relative",
 				}}
 			>
-				<Suspense
-					fallback={
-						<div
-							style={{
-								position: "absolute",
-								inset: 0,
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								background: "var(--surface-base)",
-								zIndex: 10,
-							}}
-						>
-							<div className="spinner">Loading Engine...</div>
-						</div>
-					}
-				>
-					{(() => {
-						const EngineView = getEngineView(engineType);
-						return (
-							<EngineView
-								ref={engineRef}
-								activeNodeId={activeNodeId}
-								elements={Object.values(elements) as NodeRecord[]}
-								onCommand={handleCommand}
-								onAction={handleAction}
-								onUndo={undo}
-								onRedo={redo}
-								canUndo={canUndo}
-								canRedo={canRedo}
-								elementFactory={(
-									type: string,
-									parentId: string,
-									metadata: Record<string, unknown>,
-								) =>
-									NodeFactory.createRecord(
-										type as any,
-										parentId,
-										currentUser?.id || "anonymous",
-										metadata,
-									) as NodeRecord
-								}
-							/>
-						);
-					})()}
-				</Suspense>
+				{(() => {
+					const EngineView = getEngineView(engineType);
+					return (
+						<EngineView
+							ref={engineRef}
+							activeNodeId={activeNodeId}
+							elements={Object.values(elements) as NodeRecord[]}
+							onCommand={handleCommand}
+							onAction={handleAction}
+							onUndo={undo}
+							onRedo={redo}
+							canUndo={canUndo}
+							canRedo={canRedo}
+							elementFactory={(
+								type: string,
+								parentId: string,
+								metadata: Record<string, unknown>,
+							) =>
+								NodeFactory.createRecord(
+									type as any,
+									parentId,
+									currentUser?.id || "anonymous",
+									metadata,
+								) as NodeRecord
+							}
+						/>
+					);
+				})()}
 			</div>
 		</div>
 	);

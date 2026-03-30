@@ -81,6 +81,8 @@ export const SidebarView: React.FC = () => {
 				userId: currentUser?.id || "anonymous",
 				metadata,
 			});
+			// Give the local nanostores a chance to update
+			await new Promise((resolve) => setTimeout(resolve, 50));
 		} catch (e) {
 			showNotification(
 				`Failed to create ${type.toLowerCase()}: ${e instanceof Error ? e.message : "Unknown error"}`,
