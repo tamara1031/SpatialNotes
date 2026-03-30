@@ -115,14 +115,38 @@ export const SidebarNodeItem = memo<{
 	return (
 		<div>
 			{isDragOver && dropPosition === "above" && <DropIndicator isVisible />}
-			<button
-				type="button"
+			<div
+				className="sidebar-node-item"
+				role="button"
+				tabIndex={0}
 				draggable={!isEditing}
+				title={node.name}
+				aria-label={node.name}
 				onDragStart={handleDragStart}
 				onDragOver={handleDragOver}
 				onDragLeave={handleDragLeave}
 				onDrop={handleDrop}
-				onClick={() => onSelect(node.id)}
+				onPointerDown={(e) => {
+					// Make sure we only trigger selection if the click isn't hitting inner buttons
+					if ((e.target as HTMLElement).closest('button')) {
+						return;
+					}
+					e.preventDefault();
+					onSelect(node.id);
+				}}
+				onClick={(e) => {
+					if ((e.target as HTMLElement).closest('button')) {
+						return;
+					}
+					e.preventDefault();
+					onSelect(node.id);
+				}}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						onSelect(node.id);
+					}
+				}}
 				onDoubleClick={(e) => {
 					e.stopPropagation();
 					setIsEditing(true);
@@ -219,6 +243,8 @@ export const SidebarNodeItem = memo<{
 					/>
 				) : (
 					<span
+					className="sidebar-node-name"
+					title={node.name}
 						style={{
 							flex: 1,
 							minWidth: 0,
@@ -275,7 +301,7 @@ export const SidebarNodeItem = memo<{
 						<TrashIcon size={14} color="var(--danger)" />
 					</button>
 				)}
-			</button>
+			</div>
 
 			{isDragOver && dropPosition === "below" && <DropIndicator isVisible />}
 
