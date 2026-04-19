@@ -1,6 +1,6 @@
-import type { NodeRecord } from "@spatial-notes/core";
 import type React from "react";
 import { memo, useState } from "react";
+import type { TreeNode } from "../../store/nodes";
 import {
 	ChapterIcon,
 	ChevronDownIcon,
@@ -8,10 +8,6 @@ import {
 	FileIcon,
 	TrashIcon,
 } from "../shared/Icons";
-
-export interface TreeNode extends NodeRecord {
-	children: TreeNode[];
-}
 
 /* ─── Drop Indicator ─── */
 const DropIndicator: React.FC<{ isVisible: boolean }> = ({ isVisible }) => (
