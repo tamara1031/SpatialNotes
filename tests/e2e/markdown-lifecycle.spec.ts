@@ -28,16 +28,22 @@ test.describe("Markdown Notebook Lifecycle", () => {
 		await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
 		await createNewBtn.click();
 
-		const newMarkdownBtn = page.locator('button', { hasText: 'New Markdown' }).first();
+		const newMarkdownBtn = page
+			.locator("button", { hasText: "New Markdown" })
+			.first();
 		await newMarkdownBtn.waitFor({ state: "visible", timeout: 10000 });
 		await newMarkdownBtn.click();
 
 		await expect(async () => {
-			const count = await page.locator('.sidebar-node-item', { hasText: 'New Markdown' }).count();
+			const count = await page
+				.locator(".sidebar-node-item", { hasText: "New Markdown" })
+				.count();
 			expect(count).toBeGreaterThan(0);
 		}).toPass({ timeout: 20000 });
 
-		const nodeLocator = page.locator('.sidebar-node-item', { hasText: 'New Markdown' }).first();
+		const nodeLocator = page
+			.locator(".sidebar-node-item", { hasText: "New Markdown" })
+			.first();
 		await page.waitForTimeout(1000);
 		await nodeLocator.click();
 

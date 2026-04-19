@@ -17,12 +17,16 @@ test.describe("Canvas Features (UC3, UC4)", () => {
 		await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
 		await createNewBtn.click();
 
-		const newCanvasBtn = page.locator('button', { hasText: 'New Canvas' }).first();
+		const newCanvasBtn = page
+			.locator("button", { hasText: "New Canvas" })
+			.first();
 		await newCanvasBtn.waitFor({ state: "visible", timeout: 10000 });
 		await newCanvasBtn.click();
 
 		// Wait for the new node to appear in the sidebar list before clicking
-		const nodeLocator = page.locator('.sidebar-node-item', { hasText: /New (Canvas|Notebook)/ }).first();
+		const nodeLocator = page
+			.locator(".sidebar-node-item", { hasText: /New (Canvas|Notebook)/ })
+			.first();
 		await nodeLocator.waitFor({ state: "visible", timeout: 10000 });
 
 		// Use standard Playwright click

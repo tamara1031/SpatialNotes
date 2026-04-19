@@ -62,13 +62,17 @@ export async function authenticate(
 	await page.waitForTimeout(1000);
 
 	// Ensure vault is unlocked explicitly via UI if needed
-	const unlockOverlay = page.locator('h2', { hasText: 'Vault Locked' });
+	const unlockOverlay = page.locator("h2", { hasText: "Vault Locked" });
 	if (await unlockOverlay.isVisible({ timeout: 2000 }).catch(() => false)) {
-		const masterPassInput = page.locator('input[placeholder="Master Password"]');
+		const masterPassInput = page.locator(
+			'input[placeholder="Master Password"]',
+		);
 		await masterPassInput.fill("testpassword123");
-		await page.locator('button', { hasText: 'Unlock Vault' }).click();
+		await page.locator("button", { hasText: "Unlock Vault" }).click();
 		await page.waitForTimeout(1000);
-		await expect(unlockOverlay).toBeHidden({ timeout: 5000 }).catch(() => {});
+		await expect(unlockOverlay)
+			.toBeHidden({ timeout: 5000 })
+			.catch(() => {});
 	}
 
 	// Just in case it locks again, bypass appState too
@@ -84,11 +88,11 @@ export function getUniqueNodeId() {
 }
 
 export const bypassAuthAndSetup = async (page: Page, email?: string) => {
-    return authenticate(page, email);
+	return authenticate(page, email);
 };
 
 export const setupE2EAuthBypass = async (page: Page) => {
 	// We no longer bypass auth, tests should use `bypassAuthAndSetup`
-    // which now calls `authenticate` because doing the API bypass + local storage bypass
-    // isn't well tested.
+	// which now calls `authenticate` because doing the API bypass + local storage bypass
+	// isn't well tested.
 };

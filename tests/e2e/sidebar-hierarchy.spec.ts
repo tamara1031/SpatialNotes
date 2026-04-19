@@ -28,7 +28,7 @@ test("Sidebar Hierarchy: Live Data", async ({ page }) => {
 			metadata: {},
 			userId: authUser.id,
 			encryptionStrategy: "STANDARD",
-			nonce: ""
+			nonce: "",
 		};
 		const n1 = {
 			id: "n1",
@@ -41,7 +41,7 @@ test("Sidebar Hierarchy: Live Data", async ({ page }) => {
 			metadata: {},
 			userId: authUser.id,
 			encryptionStrategy: "STANDARD",
-			nonce: ""
+			nonce: "",
 		};
 		nodesMap.set("f1", f1);
 		nodesMap.set("n1", n1);

@@ -20,12 +20,16 @@ test("The Golden Path: Canvas Sync across windows", async ({
 	await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
 	await createNewBtn.click();
 
-	const newCanvasBtn = page.locator('button', { hasText: 'New Canvas' }).first();
+	const newCanvasBtn = page
+		.locator("button", { hasText: "New Canvas" })
+		.first();
 	await newCanvasBtn.waitFor({ state: "visible", timeout: 10000 });
 	await newCanvasBtn.click();
 
 	// Wait for the new node to appear in the sidebar list before clicking
-	const nodeLocator = page.locator('.sidebar-node-item', { hasText: /New Notebook/ }).first();
+	const nodeLocator = page
+		.locator(".sidebar-node-item", { hasText: /New Notebook/ })
+		.first();
 	await nodeLocator.waitFor({ state: "visible", timeout: 10000 });
 
 	// Use standard Playwright click
@@ -66,7 +70,9 @@ test("The Golden Path: Canvas Sync across windows", async ({
 
 	// Second window needs to find the newly created canvas in the sidebar
 	// since it synced via Yjs
-	const nodeLocator2 = page2.locator('.sidebar-node-item', { hasText: /New Notebook/ }).first();
+	const nodeLocator2 = page2
+		.locator(".sidebar-node-item", { hasText: /New Notebook/ })
+		.first();
 	await nodeLocator2.waitFor({ state: "visible", timeout: 10000 });
 
 	// Use standard Playwright click

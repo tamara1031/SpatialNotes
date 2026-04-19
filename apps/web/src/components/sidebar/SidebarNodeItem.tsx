@@ -124,14 +124,14 @@ export const SidebarNodeItem = memo<{
 				onDrop={handleDrop}
 				onPointerDown={(e) => {
 					// Make sure we only trigger selection if the click isn't hitting inner buttons
-					if ((e.target as HTMLElement).closest('button')) {
+					if ((e.target as HTMLElement).closest("button")) {
 						return;
 					}
 					e.preventDefault();
 					onSelect(node.id);
 				}}
 				onClick={(e) => {
-					if ((e.target as HTMLElement).closest('button')) {
+					if ((e.target as HTMLElement).closest("button")) {
 						return;
 					}
 					e.preventDefault();
@@ -239,8 +239,8 @@ export const SidebarNodeItem = memo<{
 					/>
 				) : (
 					<span
-					className="sidebar-node-name"
-					title={node.name}
+						className="sidebar-node-name"
+						title={node.name}
 						style={{
 							flex: 1,
 							minWidth: 0,
