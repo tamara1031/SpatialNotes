@@ -29,7 +29,10 @@ describe("dispatchCommand (ADR-030, ADR-051)", () => {
 
 	it("CREATE writes a record to the elements map", () => {
 		const record = makeRecord();
-		dispatchCommand({ type: "CREATE", payload: record }, { elementsMap, nodesMap });
+		dispatchCommand(
+			{ type: "CREATE", payload: record },
+			{ elementsMap, nodesMap },
+		);
 		expect(elementsMap.get("el-1")).toEqual(record);
 	});
 
@@ -71,7 +74,11 @@ describe("dispatchCommand (ADR-030, ADR-051)", () => {
 	it("UPDATE_NODE merges into the targeted node", () => {
 		nodesMap.set(
 			"n1",
-			makeRecord({ id: "n1", type: "NOTEBOOK", encryptionStrategy: "STANDARD" }),
+			makeRecord({
+				id: "n1",
+				type: "NOTEBOOK",
+				encryptionStrategy: "STANDARD",
+			}),
 		);
 		dispatchCommand(
 			{
