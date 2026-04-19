@@ -1,17 +1,17 @@
 import type { ElementFactory } from "engine-core";
 import type React from "react";
-import { lazy } from "react";
+import type { EngineCommand } from "../commands/types";
 
 /**
- * Common props passed to every engine view.
- * Types are intentionally loose (any) at this boundary layer so
- * engine packages don't need to cross-reference each other's types.
+ * Common props passed to every engine view (ADR-030 command contract).
+ * `elements` and `elementFactory` stay loose because each engine defines its
+ * own element shape; commands flow through the typed `EngineCommand` union.
  */
 export interface EngineViewProps {
 	ref?: React.Ref<any>;
 	activeNodeId: string;
 	elements: any[];
-	onCommand: (cmd: any) => void;
+	onCommand: (cmd: EngineCommand) => void;
 	onAction?: (action: { type: string; payload?: any }) => void;
 	onUndo?: () => void;
 	onRedo?: () => void;

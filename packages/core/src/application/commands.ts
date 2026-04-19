@@ -31,18 +31,37 @@ export class DeleteElementCommand extends Command {
 	}
 }
 
+/**
+ * Applies a batch of partial updates to existing elements.
+ *
+ * Each entry in `updates` is a delta against the current record in the store
+ * (`{ id, changes }`). Missing records are skipped silently. Updates are
+ * committed inside a single store transaction.
+ */
+export interface ElementUpdate {
+	id: string;
+	changes: Partial<NodeRecord>;
+}
+
 export class UpdateElementsCommand extends Command {
 	constructor(
 		private readonly storage: IKeyValueStore<NodeRecord>,
-		private readonly updates: NodeRecord[],
+		private readonly updates: ElementUpdate[],
 	) {
 		super();
 	}
 
 	execute(): void {
 		this.storage.transact(() => {
-			for (const update of this.updates) {
-				this.storage.set(update.id, update);
+			for (const { id, changes } of this.updates) {
+				const existing = this.storage.get(id);
+				if (!existing) continue;
+				this.storage.set(id, {
+					...existing,
+					...changes,
+					metadata: { ...existing.metadata, ...(changes.metadata ?? {}) },
+					updatedAt: Date.now(),
+				});
 			}
 		});
 	}
@@ -59,7 +78,11 @@ export class UpdateNodeCommand extends Command {
 	execute(): void {
 		const existing = this.storage.get(this.update.id);
 		if (existing) {
-			this.storage.set(this.update.id, { ...existing, ...this.update });
+			this.storage.set(this.update.id, {
+				...existing,
+				...this.update,
+				updatedAt: Date.now(),
+			});
 		}
 	}
 }

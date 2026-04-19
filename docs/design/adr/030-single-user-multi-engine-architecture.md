@@ -1,7 +1,7 @@
 # ADR-030: Single-user Multi-engine Architecture
 
 ## Status
-4: Accepted
+Accepted (§3 refined in [ADR-051](./051-typed-engine-command-contract.md))
 
 ## Context
 With the removal of WebSocket synchronization for the MVP, the system now focuses on a robust single-user experience. We need to support diverse note types, starting with "Canvas" and soon adding "Markdown". The current architecture tightly couples the UI shell to the `canvas-engine`, which hinders the addition of new engine types.
@@ -19,7 +19,7 @@ The web application will implement a `NoteViewShell` component responsible for:
 Engines will implement the `EngineInterface` from the standalone `engine-core` package, ensuring a perfectly switchable (plug-and-play) architecture. The shell remains agnostic of specific engine implementations.
 
 ### 3. Direct Command Bridge
-Instead of manually mapping commands in the interaction view, engines should emit commands that match the `core` command structure (`type: CREATE | UPDATE | DELETE`, `payload: NodeRecord | UpdateRequest`). This allows the shell to apply changes directly to the Yjs store without translation logic.
+Instead of manually mapping commands in the interaction view, engines emit commands that match the `core` command structure (`type: CREATE | UPDATE_ELEMENTS | UPDATE_NODE | DELETE | BATCH`). The shell's `dispatchCommand` instantiates the corresponding `@spatial-notes/core` Command and executes it against the Yjs store — no per-engine translation. The contract is specified as a discriminated union (`EngineCommand`); see [ADR-051](./051-typed-engine-command-contract.md) for the full type and rationale.
 
 ### 4. Local-first Materialization
 Since WebSocket sync is removed, the "Materialization" to the backend database will occur via standard REST API calls triggered by local state changes (e.g., when a Yjs transaction completes or at a debounced interval).
