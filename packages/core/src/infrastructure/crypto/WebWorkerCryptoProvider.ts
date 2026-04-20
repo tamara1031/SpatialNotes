@@ -1,5 +1,5 @@
-import type { ICryptoProvider } from "../../domain/crypto/ICryptoProvider";
-import type { CryptoWorkerProxy } from "./CryptoWorkerProxy";
+import type { ICryptoProvider } from "../../domain/crypto/ICryptoProvider.js";
+import type { CryptoWorkerProxy } from "./CryptoWorkerProxy.js";
 
 /**
  * Implementation of ICryptoProvider that offloads operations to a Web Worker.

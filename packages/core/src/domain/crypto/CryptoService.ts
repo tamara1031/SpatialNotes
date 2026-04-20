@@ -1,6 +1,6 @@
-import type { CryptoWorkerProxy } from "../../infrastructure/crypto/CryptoWorkerProxy";
-import type { CryptoPayload } from "./types";
-import type { VaultManager } from "./VaultManager";
+import type { CryptoWorkerProxy } from "../../infrastructure/crypto/CryptoWorkerProxy.js";
+import type { CryptoPayload } from "./types.js";
+import type { VaultManager } from "./VaultManager.js";
 
 export class CryptoService {
 	constructor(

@@ -1,4 +1,4 @@
-import { type NodeRecord, type NodeType, ValidationError } from "../types";
+import { type NodeRecord, type NodeType, ValidationError } from "../types.js";
 import {
 	Chapter,
 	ImageElement,
@@ -6,7 +6,7 @@ import {
 	Notebook,
 	StrokeElement,
 	TextElement,
-} from "./Node";
+} from "./Node.js";
 
 export type NodeConstructor = new (record: NodeRecord) => Node;
 

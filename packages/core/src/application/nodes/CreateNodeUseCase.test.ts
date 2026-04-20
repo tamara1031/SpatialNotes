@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { VaultStatus } from "../../domain/vault/VaultStatus";
-import { CreateNodeUseCase } from "./CreateNodeUseCase";
+import { VaultStatus } from "../../domain/vault/VaultStatus.js";
+import { CreateNodeUseCase } from "./CreateNodeUseCase.js";
 
 describe("CreateNodeUseCase", () => {
 	it("should throw error if vault is locked", async () => {

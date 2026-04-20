@@ -1,7 +1,7 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import { NodeMovedEvent } from "../../domain/nodes/events";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
-import { CircularReferenceError } from "../../domain/types";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import { NodeMovedEvent } from "../../domain/nodes/events.js";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
+import { CircularReferenceError } from "../../domain/types.js";
 
 export interface MoveNodeInput {
 	id: string;

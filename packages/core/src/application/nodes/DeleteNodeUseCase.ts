@@ -1,6 +1,6 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
-import { SubtreeDeletionService } from "../../domain/nodes/SubtreeDeletionService";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
+import { SubtreeDeletionService } from "../../domain/nodes/SubtreeDeletionService.js";
 
 export interface DeleteNodeInput {
 	id: string;

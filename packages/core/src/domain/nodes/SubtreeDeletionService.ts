@@ -1,5 +1,5 @@
-import type { INodeRepository } from "./INodeRepository";
-import type { Node } from "./Node";
+import type { INodeRepository } from "./INodeRepository.js";
+import type { Node } from "./Node.js";
 
 /**
  * Domain service to handle subtree deletion logic.

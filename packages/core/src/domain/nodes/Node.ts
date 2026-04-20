@@ -1,11 +1,11 @@
-import type { IDomainEvent } from "../events/DomainEventBus";
+import type { IDomainEvent } from "../events/DomainEventBus.js";
 import {
 	type CanvasElementVisitor,
 	CircularReferenceError,
 	type EncryptionStrategy,
 	type NodeRecord,
-} from "../types";
-import { NodeDeletedEvent, NodeRenamedEvent } from "./events";
+} from "../types.js";
+import { NodeDeletedEvent, NodeRenamedEvent } from "./events.js";
 
 export abstract class Node {
 	protected parent: Node | null = null;

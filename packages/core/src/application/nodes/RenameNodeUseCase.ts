@@ -1,5 +1,5 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 
 export interface RenameNodeInput {
 	id: string;

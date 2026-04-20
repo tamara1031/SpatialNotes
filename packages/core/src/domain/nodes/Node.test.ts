@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { Chapter, Notebook } from "./Node";
-import { NodeFactory } from "./NodeFactory";
+import { Chapter, Notebook } from "./Node.js";
+import { NodeFactory } from "./NodeFactory.js";
 
 describe("Node and NodeFactory", () => {
 	const userId = "user-1";

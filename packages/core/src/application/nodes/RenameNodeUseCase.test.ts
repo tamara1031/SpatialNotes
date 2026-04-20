@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import { RenameNodeUseCase } from "./RenameNodeUseCase";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import { RenameNodeUseCase } from "./RenameNodeUseCase.js";
 
 describe("RenameNodeUseCase", () => {
 	it("should rename a node and publish collected events", async () => {
