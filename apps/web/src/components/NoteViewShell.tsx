@@ -136,9 +136,13 @@ export const NoteViewShell: React.FC = () => {
 				syncStatus={syncStatus}
 				encryptionStrategy={activeNode?.encryptionStrategy || "STANDARD"}
 				onSave={syncNow}
-				onEncryptionChange={(strategy) =>
-					handleCommand({ type: "UPDATE_ENCRYPTION", payload: strategy })
-				}
+				onEncryptionChange={(strategy) => {
+					if (!activeNodeId) return;
+					handleCommand({
+						type: "UPDATE_NODE",
+						payload: { id: activeNodeId, encryptionStrategy: strategy },
+					});
+				}}
 			/>
 
 			<div

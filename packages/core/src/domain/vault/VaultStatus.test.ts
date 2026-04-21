@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { VaultStatus } from "./VaultStatus";
+import { VaultStatus } from "./VaultStatus.js";
 
 describe("VaultStatus", () => {
 	it("should create a LOCKED state", () => {

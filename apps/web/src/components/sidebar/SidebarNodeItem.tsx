@@ -1,6 +1,6 @@
-import type { NodeRecord } from "@spatial-notes/core";
 import type React from "react";
 import { memo, useState } from "react";
+import type { TreeNode } from "../../store/nodes";
 import {
 	ChapterIcon,
 	ChevronDownIcon,
@@ -8,10 +8,6 @@ import {
 	FileIcon,
 	TrashIcon,
 } from "../shared/Icons";
-
-export interface TreeNode extends NodeRecord {
-	children: TreeNode[];
-}
 
 /* ─── Drop Indicator ─── */
 const DropIndicator: React.FC<{ isVisible: boolean }> = ({ isVisible }) => (
@@ -128,14 +124,14 @@ export const SidebarNodeItem = memo<{
 				onDrop={handleDrop}
 				onPointerDown={(e) => {
 					// Make sure we only trigger selection if the click isn't hitting inner buttons
-					if ((e.target as HTMLElement).closest('button')) {
+					if ((e.target as HTMLElement).closest("button")) {
 						return;
 					}
 					e.preventDefault();
 					onSelect(node.id);
 				}}
 				onClick={(e) => {
-					if ((e.target as HTMLElement).closest('button')) {
+					if ((e.target as HTMLElement).closest("button")) {
 						return;
 					}
 					e.preventDefault();
@@ -243,8 +239,8 @@ export const SidebarNodeItem = memo<{
 					/>
 				) : (
 					<span
-					className="sidebar-node-name"
-					title={node.name}
+						className="sidebar-node-name"
+						title={node.name}
 						style={{
 							flex: 1,
 							minWidth: 0,

@@ -18,12 +18,16 @@ test("Canvas Drawing: Correct position after panning and zooming", async ({
 	await createNewBtn.waitFor({ state: "visible", timeout: 10000 });
 	await createNewBtn.click();
 
-	const newCanvasBtn = page.locator('button', { hasText: 'New Canvas' }).first();
+	const newCanvasBtn = page
+		.locator("button", { hasText: "New Canvas" })
+		.first();
 	await newCanvasBtn.waitFor({ state: "visible", timeout: 10000 });
 	await newCanvasBtn.click();
 
 	// Wait for the new node to appear in the sidebar list before clicking
-	const nodeLocator = page.locator('.sidebar-node-item', { hasText: /New (Canvas|Notebook)/ }).first();
+	const nodeLocator = page
+		.locator(".sidebar-node-item", { hasText: /New (Canvas|Notebook)/ })
+		.first();
 	await nodeLocator.waitFor({ state: "visible", timeout: 10000 });
 
 	// Use standard Playwright click
@@ -45,7 +49,9 @@ test("Canvas Drawing: Correct position after panning and zooming", async ({
 	// 3. Pan the canvas by (100, 50)
 	await page.mouse.move(initialRect.x + 200, initialRect.y + 200);
 	await page.mouse.down({ button: "middle" });
-	await page.mouse.move(initialRect.x + 300, initialRect.y + 250, { steps: 10 });
+	await page.mouse.move(initialRect.x + 300, initialRect.y + 250, {
+		steps: 10,
+	});
 	await page.mouse.up({ button: "middle" });
 
 	// Wait for pan to settle

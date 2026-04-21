@@ -1,5 +1,5 @@
-import type { VaultManager } from "../../domain/crypto/VaultManager";
-import type { CryptoWorkerProxy } from "../../infrastructure/crypto/CryptoWorkerProxy";
+import type { VaultManager } from "../../domain/crypto/VaultManager.js";
+import type { CryptoWorkerProxy } from "../../infrastructure/crypto/CryptoWorkerProxy.js";
 
 export interface IVaultAuthGateway {
 	login(data: {

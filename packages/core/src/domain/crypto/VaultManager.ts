@@ -1,5 +1,5 @@
-import { VaultStatus } from "../vault/VaultStatus";
-import type { VaultState } from "./types";
+import { VaultStatus } from "../vault/VaultStatus.js";
+import type { VaultState } from "./types.js";
 
 export class VaultManager {
 	private isLocked: boolean = true;

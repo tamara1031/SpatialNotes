@@ -36,7 +36,7 @@ This index provides a high-level summary of the architectural decisions for **Sp
 | **027** | Engine | [Unified Undo Strategy](./027-unified-undo-strategy.md) | Bridging Canvas and Shell state for atomic undo. | Accepted |
 | **028** | Persistence | [Materialization API](./028-materialization-api.md) | Efficient reassembly of partitioned notebook data. | Accepted |
 | **029** | Engine | [Tool Strategy Pattern](./029-tool-strategy-and-unified-interaction.md) | Decoupling interaction logic into swappable Tools. | Accepted |
-| **030** | Engine | [Multi-Engine Architecture](./030-single-user-multi-engine-architecture.md) | Support for Canvas and Markdown engines in one session. | Accepted |
+| **030** | Engine | [Multi-Engine Architecture](./030-single-user-multi-engine-architecture.md) | Support for Canvas and Markdown engines in one session. | Accepted (§3 refined by ADR-051) |
 | **031** | Domain | [Flattened Hierarchy](./031-flattened-hierarchy.md) | Nesting limits to optimize performance and UX. | Accepted |
 | **032** | Persistence | [Debounced Cloud Sync](./032-debounced-periodic-sync.md) | Manual/Auto sync with clear UI status indicators. | Accepted |
 | **039** | Persistence | [<s>Local-First E2EE</s>](./039-local-first-e2ee.md) | (Superseded by ADR-045) | Superseded |
@@ -56,6 +56,7 @@ This index provides a high-level summary of the architectural decisions for **Sp
 | **048** | Domain | [Domain Event System](./048-domain-event-system.md) | Decoupled event-driven architecture for node lifecycle. | Accepted |
 | **049** | Application | [Command Storage Abstraction](./049-command-storage-abstraction.md) | Decoupling application commands from CRDT/Storage implementation. | Accepted |
 | **050** | UI | [Modular Web Store](./050-modular-web-store.md) | Breaking down monolithic store into maintainable modules. | Accepted |
+| **051** | Application | [Typed Engine Command Contract](./051-typed-engine-command-contract.md) | Discriminated union for shell/engine command boundary; refines ADR-030 §3. | Accepted |
 
 ---
 

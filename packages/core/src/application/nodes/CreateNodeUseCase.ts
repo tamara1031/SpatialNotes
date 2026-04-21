@@ -1,8 +1,8 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import { NodeCreatedEvent } from "../../domain/nodes/events";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
-import { NodeFactory } from "../../domain/nodes/NodeFactory";
-import type { VaultStatus } from "../../domain/vault/VaultStatus";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import { NodeCreatedEvent } from "../../domain/nodes/events.js";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
+import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
+import type { VaultStatus } from "../../domain/vault/VaultStatus.js";
 
 export class VaultLockedError extends Error {
 	constructor() {

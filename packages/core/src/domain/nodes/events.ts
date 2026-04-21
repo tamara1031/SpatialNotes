@@ -1,5 +1,5 @@
-import type { IDomainEvent } from "../events/DomainEventBus";
-import type { NodeRecord } from "../types";
+import type { IDomainEvent } from "../events/DomainEventBus.js";
+import type { NodeRecord } from "../types.js";
 
 export const NODE_CREATED = "node.created";
 export const NODE_RENAMED = "node.renamed";

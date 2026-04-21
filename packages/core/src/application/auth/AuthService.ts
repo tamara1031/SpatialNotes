@@ -1,4 +1,4 @@
-import type { User } from "../../domain/user/User";
+import type { User } from "../../domain/user/User.js";
 
 /**
  * Interface for session storage (can be implemented with localStorage or memory)

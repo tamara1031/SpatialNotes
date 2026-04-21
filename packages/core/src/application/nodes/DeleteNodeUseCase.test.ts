@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus";
-import { DeleteNodeUseCase } from "./DeleteNodeUseCase";
+import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import { DeleteNodeUseCase } from "./DeleteNodeUseCase.js";
 
 describe("DeleteNodeUseCase", () => {
 	it("should delete a node and its descendants and publish events", async () => {

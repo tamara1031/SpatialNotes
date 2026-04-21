@@ -7,62 +7,50 @@ import {
 } from "@spatial-notes/core";
 import type { Map as YMap } from "yjs";
 import { YjsStoreAdapter } from "../infrastructure/storage/YjsStoreAdapter";
+import type { EngineCommand } from "./types";
 
 /**
- * Context required for executing domain commands on the Yjs doc.
+ * Context required for executing engine commands against the Yjs doc.
  */
 export interface CommandContext {
-	elementsMap: YMap<any>;
+	elementsMap: YMap<NodeRecord>;
 	nodesMap: YMap<NodeRecord>;
 }
 
 /**
- * Central dispatcher for Yjs-backed domain commands.
- * Decouples the UI shell from specific command instantiation.
+ * Central dispatcher for engine-emitted commands (ADR-030).
+ *
+ * Maps each variant of the `EngineCommand` discriminated union to the
+ * corresponding `@spatial-notes/core` Command and executes it. The dispatcher
+ * owns Command instantiation and Yjs transaction boundaries; it does not
+ * translate between vocabularies.
  */
 export const dispatchCommand = (
-	type: string,
-	payload: unknown,
+	command: EngineCommand,
 	context: CommandContext,
-) => {
+): void => {
 	const elementsStore = new YjsStoreAdapter(context.elementsMap);
 	const nodesStore = new YjsStoreAdapter(context.nodesMap);
 
-	switch (type) {
+	switch (command.type) {
 		case "CREATE":
-			new CreateElementCommand(elementsStore, payload as NodeRecord).execute();
-			break;
+			new CreateElementCommand(elementsStore, command.payload).execute();
+			return;
 		case "DELETE":
-			new DeleteElementCommand(
-				elementsStore,
-				(payload as any).id || (payload as string),
-			).execute();
-			break;
+			new DeleteElementCommand(elementsStore, command.payload.id).execute();
+			return;
 		case "UPDATE_ELEMENTS":
-			new UpdateElementsCommand(
-				elementsStore,
-				payload as NodeRecord[],
-			).execute();
-			break;
+			new UpdateElementsCommand(elementsStore, command.payload).execute();
+			return;
 		case "UPDATE_NODE":
-			new UpdateNodeCommand(
-				nodesStore,
-				payload as Partial<NodeRecord> & { id: string },
-			).execute();
-			break;
+			new UpdateNodeCommand(nodesStore, command.payload).execute();
+			return;
 		case "BATCH":
 			context.elementsMap.doc?.transact(() => {
-				const subCommands = Array.isArray(payload) ? payload : [];
-				for (const subCmd of subCommands) {
-					dispatchCommand(
-						(subCmd as any).type,
-						(subCmd as any).payload,
-						context,
-					);
+				for (const sub of command.payload) {
+					dispatchCommand(sub, context);
 				}
 			});
-			break;
-		default:
-			console.warn(`Unknown command type: ${type}`);
+			return;
 	}
 };

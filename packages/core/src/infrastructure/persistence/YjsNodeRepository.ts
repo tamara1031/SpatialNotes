@@ -1,7 +1,7 @@
 import type * as Y from "yjs";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
-import type { Node } from "../../domain/nodes/Node";
-import { NodeFactory } from "../../domain/nodes/NodeFactory";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
+import type { Node } from "../../domain/nodes/Node.js";
+import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
 
 /**
  * Implementation of INodeRepository using Yjs for real-time synchronization.

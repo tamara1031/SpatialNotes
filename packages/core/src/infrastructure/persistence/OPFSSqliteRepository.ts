@@ -1,8 +1,8 @@
 import sqlite3InitModule from "@sqlite.org/sqlite-wasm";
-import type { INodeRepository } from "../../domain/nodes/INodeRepository";
-import type { Node } from "../../domain/nodes/Node";
-import { NodeFactory } from "../../domain/nodes/NodeFactory";
-import type { NodeRecord } from "../../domain/types";
+import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
+import type { Node } from "../../domain/nodes/Node.js";
+import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
+import type { NodeRecord } from "../../domain/types.js";
 
 /**
  * Experimental persistence layer using OPFS (Origin Private File System)

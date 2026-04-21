@@ -1,4 +1,4 @@
-import type { CryptoPayload } from "../../domain/crypto/types";
+import type { CryptoPayload } from "../../domain/crypto/types.js";
 
 export class CryptoWorkerProxy {
 	private worker?: Worker;
