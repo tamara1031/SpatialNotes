@@ -7,7 +7,7 @@ import { $currentUser } from "../store/vaultStore";
 import { NanostoreNodePresenter } from "./presenters/NanostoreNodePresenter";
 
 export const useSync = () => {
-	const currentUser = useStore($currentUser as any);
+	const currentUser = useStore($currentUser);
 
 	useEffect(() => {
 		if (!currentUser) return;
