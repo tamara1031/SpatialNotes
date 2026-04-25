@@ -1,16 +1,11 @@
 import { expect, test } from "@playwright/test";
-import {
-	bypassAuthAndSetup,
-	getUniqueNodeId,
-	setupE2EAuthBypass,
-} from "./utils/auth";
+import { bypassAuthAndSetup, getUniqueNodeId } from "./utils/auth";
 
 test("The Golden Path: Canvas Sync across windows", async ({
 	context,
 	page,
 }) => {
 	const nodeId = getUniqueNodeId();
-	const nodeName = `Notebook Sync ${nodeId}`;
 	const userEmail = `sync-test-${nodeId}@example.com`;
 
 	await bypassAuthAndSetup(page, userEmail);
