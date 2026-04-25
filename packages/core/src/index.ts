@@ -22,6 +22,7 @@ export * from "./domain/nodes/Node.js";
 export * from "./domain/nodes/NodeFactory.js";
 export * from "./domain/nodes/Position.js";
 export * from "./domain/types.js";
+export * from "./domain/user/User.js";
 export * from "./domain/vault/VaultStatus.js";
 
 // Infrastructure

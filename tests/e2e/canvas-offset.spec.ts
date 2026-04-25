@@ -1,16 +1,9 @@
 import { expect, test } from "@playwright/test";
-import {
-	bypassAuthAndSetup,
-	getUniqueNodeId,
-	setupE2EAuthBypass,
-} from "./utils/auth";
+import { bypassAuthAndSetup } from "./utils/auth";
 
 test("Canvas Drawing: Correct position after panning and zooming", async ({
 	page,
 }) => {
-	const nodeId = getUniqueNodeId();
-	const nodeName = `Notebook Panned ${nodeId}`;
-
 	await bypassAuthAndSetup(page);
 
 	// 1. Create a notebook via UI

@@ -90,9 +90,3 @@ export function getUniqueNodeId() {
 export const bypassAuthAndSetup = async (page: Page, email?: string) => {
 	return authenticate(page, email);
 };
-
-export const setupE2EAuthBypass = async (page: Page) => {
-	// We no longer bypass auth, tests should use `bypassAuthAndSetup`
-	// which now calls `authenticate` because doing the API bypass + local storage bypass
-	// isn't well tested.
-};

@@ -22,7 +22,7 @@ export const SidebarView: React.FC = () => {
 	const [searchQuery, setSearchQuery] = useState("");
 
 	const { doc } = useSync();
-	const currentUser = useStore($currentUser as any);
+	const currentUser = useStore($currentUser);
 
 	const filteredTree = useMemo(() => {
 		if (!searchQuery) return tree;

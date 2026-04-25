@@ -1,5 +1,4 @@
 import { SyncService } from "@spatial-notes/core";
-import { atom } from "nanostores";
 
 import { $activeNodeId } from "./nodes";
 

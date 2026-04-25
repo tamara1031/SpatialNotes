@@ -1,11 +1,13 @@
 import type { CryptoPayload } from "../../domain/crypto/types.js";
 
+interface PendingCall {
+	resolve: (value: any) => void;
+	reject: (reason?: unknown) => void;
+}
+
 export class CryptoWorkerProxy {
 	private worker?: Worker;
-	private pendingPromises: Map<
-		string,
-		{ resolve: Function; reject: Function }
-	> = new Map();
+	private pendingPromises: Map<string, PendingCall> = new Map();
 
 	constructor(worker: Worker) {
 		if (typeof Worker !== "undefined") {

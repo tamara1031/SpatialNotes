@@ -10,29 +10,19 @@ import {
 
 export type NodeConstructor = new (record: NodeRecord) => Node;
 
-export class NodeFactory {
-	private static registry = new Map<string, NodeConstructor>();
+const registry = new Map<string, NodeConstructor>();
 
-	static {
-		// Default registrations
-		NodeFactory.register("CHAPTER", Chapter);
-		NodeFactory.register("NOTEBOOK", Notebook);
-		NodeFactory.register("ELEMENT_STROKE", StrokeElement);
-		NodeFactory.register("ELEMENT_IMAGE", ImageElement);
-		NodeFactory.register("ELEMENT_TEXT", TextElement);
-	}
+export const NodeFactory = {
+	register(type: string, NodeCtor: NodeConstructor): void {
+		registry.set(type, NodeCtor);
+	},
 
-	static register(type: string, NodeCtor: NodeConstructor): void {
-		NodeFactory.registry.set(type, NodeCtor);
-	}
-
-	static create(record: NodeRecord): Node {
-		const Constructor = NodeFactory.registry.get(record.type);
+	create(record: NodeRecord): Node {
+		const Constructor = registry.get(record.type);
 		if (!Constructor) {
 			throw new ValidationError(`Unknown node type: ${record.type}`);
 		}
 
-		// Type-specific validations can still happen here or in constructors
 		if (record.type === "ELEMENT_IMAGE" && !record.metadata.src) {
 			throw new ValidationError("ELEMENT_IMAGE requires src in metadata");
 		}
@@ -44,9 +34,9 @@ export class NodeFactory {
 		}
 
 		return new Constructor(record);
-	}
+	},
 
-	static createRecord(
+	createRecord(
 		type: NodeType,
 		parentId: string | null,
 		userId: string,
@@ -66,5 +56,12 @@ export class NodeFactory {
 			isDeleted: false,
 			position: null,
 		};
-	}
-}
+	},
+};
+
+// Default registrations
+NodeFactory.register("CHAPTER", Chapter);
+NodeFactory.register("NOTEBOOK", Notebook);
+NodeFactory.register("ELEMENT_STROKE", StrokeElement);
+NodeFactory.register("ELEMENT_IMAGE", ImageElement);
+NodeFactory.register("ELEMENT_TEXT", TextElement);
