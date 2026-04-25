@@ -161,7 +161,7 @@ export abstract class CanvasElement extends Node {
 
 export class StrokeElement extends CanvasElement {
 	// Narrows the inherited `record.metadata` to the typed shape for strokes.
-	declare protected record: NodeRecord & { metadata: StrokeMetadata };
+	protected declare record: NodeRecord & { metadata: StrokeMetadata };
 
 	get points(): number[] {
 		return this.record.metadata.points;
@@ -189,7 +189,7 @@ export class StrokeElement extends CanvasElement {
 }
 
 export class ImageElement extends CanvasElement {
-	declare protected record: NodeRecord & { metadata: ImageMetadata };
+	protected declare record: NodeRecord & { metadata: ImageMetadata };
 
 	get src(): string {
 		return this.record.metadata.src;
@@ -217,7 +217,7 @@ export class ImageElement extends CanvasElement {
 }
 
 export class TextElement extends CanvasElement {
-	declare protected record: NodeRecord & { metadata: TextMetadata };
+	protected declare record: NodeRecord & { metadata: TextMetadata };
 
 	get content(): string {
 		return this.record.metadata.content;

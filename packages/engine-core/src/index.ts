@@ -61,7 +61,7 @@ export abstract class WorkerRpcClient {
 				resolve: (v) => resolve(v as T),
 				reject,
 			});
-			this.worker!.postMessage({ type, payload, id }, transfer ?? []);
+			this.worker?.postMessage({ type, payload, id }, transfer ?? []);
 		});
 	}
 
