@@ -32,11 +32,11 @@ describe("Node and NodeFactory", () => {
 		expect(node.parentId).toBe("parent-1");
 	});
 
-	it("should handle recursive deletion markers", () => {
+	it("should mark a node as deleted", () => {
 		const root = new Chapter(
 			NodeFactory.createRecord("CHAPTER", null, userId, {}, "Root"),
 		);
-		root.markDeleted();
+		root.delete();
 		expect(root.isDeleted).toBe(true);
 	});
 

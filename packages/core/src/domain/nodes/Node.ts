@@ -3,7 +3,10 @@ import {
 	type CanvasElementVisitor,
 	CircularReferenceError,
 	type EncryptionStrategy,
+	type ImageMetadata,
 	type NodeRecord,
+	type StrokeMetadata,
+	type TextMetadata,
 } from "../types.js";
 import { NodeDeletedEvent, NodeRenamedEvent } from "./events.js";
 
@@ -105,10 +108,6 @@ export abstract class Node {
 		this.addDomainEvent(new NodeDeletedEvent({ id: this.id }));
 	}
 
-	markDeleted(): void {
-		this.delete();
-	}
-
 	toRecord(): NodeRecord {
 		return JSON.parse(JSON.stringify(this.record));
 	}
@@ -155,8 +154,21 @@ export class Notebook extends Node {
 }
 
 export abstract class CanvasElement extends Node {
+	accept(visitor: CanvasElementVisitor): void {
+		visitor.visitElement(this);
+	}
+}
+
+export class StrokeElement extends CanvasElement {
+	// Narrows the inherited `record.metadata` to the typed shape for strokes.
+	declare protected record: NodeRecord & { metadata: StrokeMetadata };
+
+	get points(): number[] {
+		return this.record.metadata.points;
+	}
+
 	get zIndex(): number {
-		return this.record.metadata.z_index || 0;
+		return this.record.metadata.z_index;
 	}
 
 	get minX(): number {
@@ -174,26 +186,60 @@ export abstract class CanvasElement extends Node {
 	get maxY(): number {
 		return this.record.metadata.max_y ?? 0;
 	}
-
-	accept(visitor: CanvasElementVisitor): void {
-		visitor.visitElement(this);
-	}
-}
-
-export class StrokeElement extends CanvasElement {
-	get points(): number[] {
-		return this.record.metadata.points || [];
-	}
 }
 
 export class ImageElement extends CanvasElement {
+	declare protected record: NodeRecord & { metadata: ImageMetadata };
+
 	get src(): string {
-		return this.record.metadata.src || "";
+		return this.record.metadata.src;
+	}
+
+	get zIndex(): number {
+		return this.record.metadata.z_index;
+	}
+
+	get minX(): number {
+		return this.record.metadata.min_x ?? 0;
+	}
+
+	get minY(): number {
+		return this.record.metadata.min_y ?? 0;
+	}
+
+	get maxX(): number {
+		return this.record.metadata.max_x ?? 0;
+	}
+
+	get maxY(): number {
+		return this.record.metadata.max_y ?? 0;
 	}
 }
 
 export class TextElement extends CanvasElement {
+	declare protected record: NodeRecord & { metadata: TextMetadata };
+
 	get content(): string {
-		return this.record.metadata.content || "";
+		return this.record.metadata.content;
+	}
+
+	get zIndex(): number {
+		return this.record.metadata.z_index;
+	}
+
+	get minX(): number {
+		return this.record.metadata.min_x ?? 0;
+	}
+
+	get minY(): number {
+		return this.record.metadata.min_y ?? 0;
+	}
+
+	get maxX(): number {
+		return this.record.metadata.max_x ?? 0;
+	}
+
+	get maxY(): number {
+		return this.record.metadata.max_y ?? 0;
 	}
 }

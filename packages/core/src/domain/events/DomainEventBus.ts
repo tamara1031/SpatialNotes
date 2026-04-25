@@ -12,7 +12,15 @@ export class DomainEventBus {
 	publish(event: IDomainEvent): void {
 		const handlers = this.handlers.get(event.type) || [];
 		for (const handler of handlers) {
-			handler(event);
+			try {
+				handler(event);
+			} catch (err) {
+				// Isolate bad handlers so one subscriber cannot break the chain.
+				console.error(
+					`[DomainEventBus] handler for "${event.type}" threw:`,
+					err,
+				);
+			}
 		}
 	}
 

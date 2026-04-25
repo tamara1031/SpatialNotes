@@ -4,7 +4,7 @@ export interface BaseElement {
 	id: string;
 	type: string;
 	parentId: string | null;
-	metadata: Record<string, any>;
+	metadata: Record<string, unknown>;
 	updatedAt: number;
 	isDeleted?: boolean;
 }
@@ -12,8 +12,76 @@ export interface BaseElement {
 export type ElementFactory<E extends BaseElement = BaseElement> = (
 	type: string,
 	parentId: string,
-	metadata: any,
+	metadata: Record<string, unknown>,
 ) => E;
+
+// ── WorkerRpcClient ───────────────────────────────────────────────────────────
+
+interface WorkerResponse {
+	type: string;
+	id: number;
+	payload: unknown;
+	error?: string;
+}
+
+/**
+ * Reusable base for classes that communicate with a dedicated Web Worker via a
+ * request/response RPC protocol.
+ *
+ * Each outgoing message carries a numeric `id`; the worker echoes the same `id`
+ * back so that `request<T>()` can resolve the correct pending Promise.
+ *
+ * Subclasses pass their worker URL to `super()` and call `request<T>()` to make
+ * typed RPC calls without reimplementing the pending-map bookkeeping.
+ */
+export abstract class WorkerRpcClient {
+	private worker?: Worker;
+	private nextId = 0;
+	private readonly pending = new Map<
+		number,
+		{ resolve: (value: unknown) => void; reject: (reason: Error) => void }
+	>();
+
+	protected constructor(workerUrl: URL) {
+		if (typeof Worker !== "undefined") {
+			this.worker = new Worker(workerUrl, { type: "module" });
+			this.worker.onmessage = this.handleMessage.bind(this);
+		}
+	}
+
+	protected request<T = void>(
+		type: string,
+		payload?: unknown,
+		transfer?: Transferable[],
+	): Promise<T> {
+		if (!this.worker) return Promise.resolve(undefined as T);
+		const id = this.nextId++;
+		return new Promise<T>((resolve, reject) => {
+			this.pending.set(id, {
+				resolve: (v) => resolve(v as T),
+				reject,
+			});
+			this.worker!.postMessage({ type, payload, id }, transfer ?? []);
+		});
+	}
+
+	private handleMessage(e: MessageEvent): void {
+		const { type, id, payload, error } = e.data as WorkerResponse;
+		const entry = this.pending.get(id);
+		if (!entry) return;
+		this.pending.delete(id);
+		if (type === "ERROR" || error) {
+			entry.reject(new Error(error ?? `Worker error in ${type}`));
+		} else {
+			entry.resolve(payload);
+		}
+	}
+
+	terminate(): void {
+		this.worker?.terminate();
+		this.worker = undefined;
+	}
+}
 
 /* ─── Granular Engine Interfaces (ISP compliant) ─── */
 
