@@ -20,7 +20,7 @@ export class CreateElementCommand extends Command {
 
 export class DeleteElementCommand extends Command {
 	constructor(
-		private readonly storage: IKeyValueStore<any>,
+		private readonly storage: IKeyValueStore<NodeRecord>,
 		private readonly id: string,
 	) {
 		super();
