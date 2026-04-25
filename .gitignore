@@ -4,6 +4,7 @@ dist/
 .npm
 .pnpm-debug.log
 .astro/
+*.tsbuildinfo
 
 # Rust / Wasm
 target/
