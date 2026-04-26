@@ -67,9 +67,11 @@ export class CanvasEngine
 		this.gateway
 			.init(width, height)
 			.then(() => {
+				this.store.update({ status: "READY" });
 				this.reportStatus("READY");
 			})
 			.catch((err) => {
+				this.store.update({ status: "ERROR" });
 				this.reportStatus("ERROR", err.message);
 			});
 
