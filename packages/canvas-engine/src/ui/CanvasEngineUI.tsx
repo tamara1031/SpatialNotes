@@ -80,6 +80,23 @@ const TOOL_CONFIG = [
 	{ id: CanvasTool.SELECTOR, icon: LassoIcon, title: "Lasso (L)" },
 ];
 
+const PAGE_WIDTH_MM = 210;
+const PAGE_HEIGHT_MM = 297;
+const INFINITE_SIZE_MM = 2000;
+
+function computePageSize(
+	layoutMode: CanvasLayoutMode,
+	orientation: CanvasOrientation,
+): { width: number; height: number } {
+	if (layoutMode === "INFINITE")
+		return { width: INFINITE_SIZE_MM, height: INFINITE_SIZE_MM };
+	const landscape = orientation === "LANDSCAPE";
+	return {
+		width: landscape ? PAGE_HEIGHT_MM : PAGE_WIDTH_MM,
+		height: landscape ? PAGE_WIDTH_MM : PAGE_HEIGHT_MM,
+	};
+}
+
 export interface CanvasEngineHandle {
 	handleKeyDown(e: KeyboardEvent): boolean;
 	getState(): ReturnType<CanvasEngine["getState"]> | undefined;
@@ -147,25 +164,10 @@ export const CanvasEngineUI = forwardRef<
 		// --- Engine Lifecycle ---
 		useEffect(() => {
 			if (!engineRef.current) {
-				const PAGE_WIDTH_MM = 210;
-				const PAGE_HEIGHT_MM = 297;
-				const isLandscape = orientation === "LANDSCAPE";
-				const totalWidthMm =
-					layoutMode === "INFINITE"
-						? 2000
-						: isLandscape
-							? PAGE_HEIGHT_MM
-							: PAGE_WIDTH_MM;
-				const totalHeightMm =
-					layoutMode === "INFINITE"
-						? 2000
-						: isLandscape
-							? PAGE_WIDTH_MM
-							: PAGE_HEIGHT_MM;
-
+				const { width, height } = computePageSize(layoutMode, orientation);
 				const engine = new CanvasEngine(
-					totalWidthMm,
-					totalHeightMm,
+					width,
+					height,
 					depsRef.current.elementFactory,
 				);
 				engineRef.current = engine;
@@ -200,26 +202,12 @@ export const CanvasEngineUI = forwardRef<
 		// --- Sync State to Engine ---
 		useEffect(() => {
 			if (engineReady && engineRef.current) {
-				const isLandscape = orientation === "LANDSCAPE";
-				const PAGE_WIDTH_MM = 210;
-				const PAGE_HEIGHT_MM = 297;
-				const totalWidthMm =
-					layoutMode === "INFINITE"
-						? 2000
-						: isLandscape
-							? PAGE_HEIGHT_MM
-							: PAGE_WIDTH_MM;
-				const totalHeightMm =
-					layoutMode === "INFINITE"
-						? 2000
-						: isLandscape
-							? PAGE_WIDTH_MM
-							: PAGE_HEIGHT_MM;
+				const pageSize = computePageSize(layoutMode, orientation);
 
 				engineRef.current.update({
 					context: {
 						activeNodeId,
-						pageSize: { width: totalWidthMm, height: totalHeightMm },
+						pageSize,
 						layoutMode,
 						penConfig,
 						highlighterConfig,
@@ -376,7 +364,6 @@ export const CanvasEngineUI = forwardRef<
 
 		return (
 			<div
-				ref={ref}
 				style={{
 					flex: 1,
 					display: "flex",

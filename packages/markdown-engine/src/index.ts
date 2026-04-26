@@ -166,12 +166,15 @@ export class MarkdownEngine
 	}
 
 	private createDocFromElements(elements: MarkdownElement[]): Node {
-		const nodes: Node[] = elements.map((el) => {
+		const nodes: Node[] = elements.flatMap((el) => {
 			const typeName = el.metadata.kind?.toLowerCase() || "paragraph";
 			const nodeType = schema.nodes[typeName] || schema.nodes.paragraph;
-			return nodeType.createAndFill(el.metadata, schema.text(el.content))!;
+			const node = nodeType.createAndFill(el.metadata, schema.text(el.content));
+			return node ? [node] : [];
 		});
-		return schema.nodes.doc.createAndFill(null, nodes)!;
+		return (
+			schema.nodes.doc.createAndFill(null, nodes) ?? schema.nodes.doc.create()
+		);
 	}
 
 	private mapProseMirrorTypeToElement(pmType: string): string | null {
