@@ -12,3 +12,6 @@ dependencies:
 scripts:
   install: apm install --no-policy
   compile: apm compile
+devDependencies:
+  apm:
+  - mizchi/skills/empirical-prompt-tuning
