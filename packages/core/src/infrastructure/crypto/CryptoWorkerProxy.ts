@@ -16,8 +16,10 @@ export class CryptoWorkerProxy {
 		if (typeof Worker !== "undefined") {
 			this.worker = worker;
 			this.worker.onmessage = this.handleMessage.bind(this);
+			// Reject all pending callers if the worker crashes so they don't hang.
 			this.worker.onerror = (err) => {
 				console.error("CryptoWorker Error:", err);
+				this.rejectAllPending(new Error(`CryptoWorker crashed: ${err.message}`));
 			};
 		}
 	}
@@ -173,9 +175,13 @@ export class CryptoWorkerProxy {
 	public terminate() {
 		this.worker?.terminate();
 		this.worker = undefined;
+		this.rejectAllPending(new Error("CryptoWorker terminated"));
+	}
+
+	private rejectAllPending(reason: Error): void {
 		for (const entry of this.pendingPromises.values()) {
 			clearTimeout(entry.timer);
-			entry.reject(new Error("CryptoWorker terminated"));
+			entry.reject(reason);
 		}
 		this.pendingPromises.clear();
 	}
