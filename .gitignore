@@ -50,3 +50,7 @@ coverage/
 
 # Brainstorming
 .superpowers/
+
+
+# APM dependencies
+apm_modules/
