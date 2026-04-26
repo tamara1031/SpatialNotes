@@ -29,4 +29,6 @@ export interface CanvasEngineContext {
 	layoutMode: CanvasLayoutMode;
 	penConfig?: { color: string; width: number };
 	highlighterConfig?: { color: string; width: number };
+	activeTool?: CanvasTool;
+	command?: "EXPORT_SVG";
 }

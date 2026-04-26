@@ -6,7 +6,7 @@ import { CanvasEngineUI } from "./CanvasEngineUI";
 export interface CanvasViewProps {
 	activeNodeId: string | null;
 	elements: CanvasElement[];
-	onCommand: (cmd: any) => void;
+	onCommand: (cmd: { type: string; payload?: unknown }) => void;
 	onUndo: () => void;
 	onRedo: () => void;
 	canUndo: boolean;

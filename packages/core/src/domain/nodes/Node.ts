@@ -1,5 +1,6 @@
 import type { IDomainEvent } from "../events/DomainEventBus.js";
 import {
+	type BoundedElementMetadata,
 	type CanvasElementVisitor,
 	CircularReferenceError,
 	type EncryptionStrategy,
@@ -154,18 +155,10 @@ export class Notebook extends Node {
 }
 
 export abstract class CanvasElement extends Node {
-	accept(visitor: CanvasElementVisitor): void {
-		visitor.visitElement(this);
-	}
-}
-
-export class StrokeElement extends CanvasElement {
-	// Narrows the inherited `record.metadata` to the typed shape for strokes.
-	protected declare record: NodeRecord & { metadata: StrokeMetadata };
-
-	get points(): number[] {
-		return this.record.metadata.points;
-	}
+	// Every canvas element carries a z-index and an optional bounding box from
+	// the WASM engine; narrowing the record here surfaces typed accessors in all
+	// subclasses without repeating them.
+	protected declare record: NodeRecord & { metadata: BoundedElementMetadata };
 
 	get zIndex(): number {
 		return this.record.metadata.z_index;
@@ -185,6 +178,18 @@ export class StrokeElement extends CanvasElement {
 
 	get maxY(): number {
 		return this.record.metadata.max_y ?? 0;
+	}
+
+	accept(visitor: CanvasElementVisitor): void {
+		visitor.visitElement(this);
+	}
+}
+
+export class StrokeElement extends CanvasElement {
+	protected declare record: NodeRecord & { metadata: StrokeMetadata };
+
+	get points(): number[] {
+		return this.record.metadata.points;
 	}
 }
 
@@ -194,26 +199,6 @@ export class ImageElement extends CanvasElement {
 	get src(): string {
 		return this.record.metadata.src;
 	}
-
-	get zIndex(): number {
-		return this.record.metadata.z_index;
-	}
-
-	get minX(): number {
-		return this.record.metadata.min_x ?? 0;
-	}
-
-	get minY(): number {
-		return this.record.metadata.min_y ?? 0;
-	}
-
-	get maxX(): number {
-		return this.record.metadata.max_x ?? 0;
-	}
-
-	get maxY(): number {
-		return this.record.metadata.max_y ?? 0;
-	}
 }
 
 export class TextElement extends CanvasElement {
@@ -221,25 +206,5 @@ export class TextElement extends CanvasElement {
 
 	get content(): string {
 		return this.record.metadata.content;
-	}
-
-	get zIndex(): number {
-		return this.record.metadata.z_index;
-	}
-
-	get minX(): number {
-		return this.record.metadata.min_x ?? 0;
-	}
-
-	get minY(): number {
-		return this.record.metadata.min_y ?? 0;
-	}
-
-	get maxX(): number {
-		return this.record.metadata.max_x ?? 0;
-	}
-
-	get maxY(): number {
-		return this.record.metadata.max_y ?? 0;
 	}
 }

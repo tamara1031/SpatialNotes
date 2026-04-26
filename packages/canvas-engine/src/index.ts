@@ -9,7 +9,7 @@ import { ClipboardService } from "./services/ClipboardService";
 import { DrawingService } from "./services/DrawingService";
 import { EraserService } from "./services/EraserService";
 import { SelectionService } from "./services/SelectionService";
-import { CanvasStore } from "./store/CanvasStore";
+import { CanvasStore, type CanvasState } from "./store/CanvasStore";
 import { DrawingTool } from "./tools/DrawingTool";
 import { EraserTool } from "./tools/EraserTool";
 import { SelectionTool } from "./tools/SelectionTool";
@@ -161,7 +161,7 @@ export class CanvasEngine
 		}>,
 	) {
 		const state = this.store.getState();
-		const storePatch: any = {};
+		const storePatch: Partial<CanvasState> = {};
 
 		if (patch.elements !== undefined) {
 			const elements = patch.elements;
@@ -197,10 +197,9 @@ export class CanvasEngine
 					...context.highlighterConfig,
 				};
 
-			if ((context as any).activeTool !== undefined) {
-				const tool = (context as any).activeTool as CanvasTool;
-				storePatch.activeTool = tool;
-				this.interactionManager.setActiveTool(tool);
+			if (context.activeTool !== undefined) {
+				storePatch.activeTool = context.activeTool;
+				this.interactionManager.setActiveTool(context.activeTool);
 				this.renderer.updateCursor(this.interactionManager.getCursor());
 			}
 		}
@@ -212,7 +211,7 @@ export class CanvasEngine
 
 	updateContext(context: Partial<CanvasEngineContext>) {
 		const state = this.store.getState();
-		const storePatch: any = {};
+		const storePatch: Partial<CanvasState> = {};
 
 		if (context.activeNodeId !== undefined)
 			storePatch.activeNodeId = context.activeNodeId;
@@ -227,14 +226,13 @@ export class CanvasEngine
 				...context.highlighterConfig,
 			};
 
-		if ((context as any).activeTool !== undefined) {
-			const tool = (context as any).activeTool as CanvasTool;
-			storePatch.activeTool = tool;
-			this.interactionManager.setActiveTool(tool);
+		if (context.activeTool !== undefined) {
+			storePatch.activeTool = context.activeTool;
+			this.interactionManager.setActiveTool(context.activeTool);
 			this.renderer.updateCursor(this.interactionManager.getCursor());
 		}
 
-		if ((context as any).command === "EXPORT_SVG") {
+		if (context.command === "EXPORT_SVG") {
 			this.exportToSVG().then((svg) => {
 				this.onActionCallback?.({ type: "EXPORT_RESULT", payload: svg });
 			});
@@ -254,7 +252,7 @@ export class CanvasEngine
 	}
 
 	setRenderingPath(path: "SVG" | "WEBGPU") {
-		const container = (this.renderer as any).container;
+		const container = this.renderer.container;
 		this.renderer.unmount();
 
 		if (path === "WEBGPU") {

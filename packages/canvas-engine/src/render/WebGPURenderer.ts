@@ -3,10 +3,12 @@ import type { CanvasState } from "../store/CanvasStore";
 import type { CanvasRenderer } from "./Renderer";
 
 export class WebGPURenderer implements CanvasRenderer {
+	container: HTMLElement | null = null;
 	private canvas: HTMLCanvasElement | null = null;
 	private gateway: WorkerGateway | null = null;
 
 	mount(container: HTMLElement, gateway: WorkerGateway) {
+		this.container = container;
 		this.gateway = gateway;
 		this.canvas = document.createElement("canvas");
 		this.canvas.style.width = "100%";
@@ -31,6 +33,7 @@ export class WebGPURenderer implements CanvasRenderer {
 			this.canvas.parentElement.removeChild(this.canvas);
 		}
 		this.canvas = null;
+		this.container = null;
 		this.gateway = null;
 	}
 
