@@ -24,6 +24,8 @@ interface WorkerResponse {
 	error?: string;
 }
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 /**
  * Reusable base for classes that communicate with a dedicated Web Worker via a
  * request/response RPC protocol.
@@ -33,13 +35,21 @@ interface WorkerResponse {
  *
  * Subclasses pass their worker URL to `super()` and call `request<T>()` to make
  * typed RPC calls without reimplementing the pending-map bookkeeping.
+ *
+ * Every pending request is guarded by a timeout (REQUEST_TIMEOUT_MS). Calling
+ * `terminate()` drains the pending map so no promises are left hanging after
+ * the worker is killed.
  */
 export abstract class WorkerRpcClient {
 	private worker?: Worker;
 	private nextId = 0;
 	private readonly pending = new Map<
 		number,
-		{ resolve: (value: unknown) => void; reject: (reason: Error) => void }
+		{
+			resolve: (value: unknown) => void;
+			reject: (reason: Error) => void;
+			timer: ReturnType<typeof setTimeout>;
+		}
 	>();
 
 	protected constructor(workerUrl: URL) {
@@ -57,9 +67,18 @@ export abstract class WorkerRpcClient {
 		if (!this.worker) return Promise.resolve(undefined as T);
 		const id = this.nextId++;
 		return new Promise<T>((resolve, reject) => {
+			const timer = setTimeout(() => {
+				this.pending.delete(id);
+				reject(
+					new Error(
+						`Worker request "${type}" timed out after ${REQUEST_TIMEOUT_MS}ms`,
+					),
+				);
+			}, REQUEST_TIMEOUT_MS);
 			this.pending.set(id, {
 				resolve: (v) => resolve(v as T),
 				reject,
+				timer,
 			});
 			this.worker?.postMessage({ type, payload, id }, transfer ?? []);
 		});
@@ -69,6 +88,7 @@ export abstract class WorkerRpcClient {
 		const { type, id, payload, error } = e.data as WorkerResponse;
 		const entry = this.pending.get(id);
 		if (!entry) return;
+		clearTimeout(entry.timer);
 		this.pending.delete(id);
 		if (type === "ERROR" || error) {
 			entry.reject(new Error(error ?? `Worker error in ${type}`));
@@ -80,6 +100,11 @@ export abstract class WorkerRpcClient {
 	terminate(): void {
 		this.worker?.terminate();
 		this.worker = undefined;
+		for (const entry of this.pending.values()) {
+			clearTimeout(entry.timer);
+			entry.reject(new Error("Worker terminated"));
+		}
+		this.pending.clear();
 	}
 }
 

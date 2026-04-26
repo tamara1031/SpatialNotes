@@ -11,7 +11,7 @@ export class DrawingService {
 	public createStroke(
 		points: number[],
 		config: { color: string; width: number },
-		extraMetadata: any = {},
+		extraMetadata: Record<string, unknown> = {},
 	): void {
 		const state = this.store.getState();
 		const parentId = state.activeNodeId || "root";

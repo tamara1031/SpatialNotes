@@ -49,33 +49,40 @@ export const ElementUtils = {
 		ids: string[],
 		dx: number,
 		dy: number,
-	) {
+	): { id: string; changes: { metadata: Record<string, unknown> } }[] {
 		return ids
 			.map((id) => {
 				const el = elements.find((e) => e.id === id);
 				if (!el) return null;
 
-				const changes: any = { metadata: { ...el.metadata } };
+				const metadata: Record<string, unknown> = { ...el.metadata };
 				if (el.type === "ELEMENT_STROKE") {
 					const pts = (el.metadata.points as number[]).slice();
 					for (let i = 0; i < pts.length; i += 2) {
 						pts[i] += dx;
 						pts[i + 1] += dy;
 					}
-					changes.metadata.points = pts;
+					metadata.points = pts;
 				} else {
-					if (changes.metadata.min_x !== undefined)
-						changes.metadata.min_x += dx;
-					if (changes.metadata.min_y !== undefined)
-						changes.metadata.min_y += dy;
-					if (changes.metadata.max_x !== undefined)
-						changes.metadata.max_x += dx;
-					if (changes.metadata.max_y !== undefined)
-						changes.metadata.max_y += dy;
+					if (metadata.min_x !== undefined)
+						metadata.min_x = (metadata.min_x as number) + dx;
+					if (metadata.min_y !== undefined)
+						metadata.min_y = (metadata.min_y as number) + dy;
+					if (metadata.max_x !== undefined)
+						metadata.max_x = (metadata.max_x as number) + dx;
+					if (metadata.max_y !== undefined)
+						metadata.max_y = (metadata.max_y as number) + dy;
 				}
-				return { id, changes };
+				return { id, changes: { metadata } };
 			})
-			.filter((u): u is { id: string; changes: any } => u !== null);
+			.filter(
+				(
+					u,
+				): u is {
+					id: string;
+					changes: { metadata: Record<string, unknown> };
+				} => u !== null,
+			);
 	},
 
 	/**
