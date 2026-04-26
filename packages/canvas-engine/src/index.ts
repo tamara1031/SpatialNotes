@@ -37,9 +37,6 @@ export class CanvasEngine
 	private interactionManager: InteractionManager;
 	private interactionHandler: InteractionHandler;
 	private gateway: WorkerGateway;
-	private statusListeners: Set<
-		(status: "LOADING" | "READY" | "ERROR", message?: string) => void
-	> = new Set();
 	private eraserService: EraserService;
 	private selectionService: SelectionService;
 	private drawingService: DrawingService;
@@ -63,17 +60,15 @@ export class CanvasEngine
 		this.drawingService = new DrawingService(this.store, elementFactory);
 		this.clipboardService = new ClipboardService();
 
-		this.reportStatus("LOADING", "Initializing Wasm Engine...");
+		this.reportStatus("LOADING");
 
 		this.gateway
 			.init(width, height)
 			.then(() => {
-				this.store.update({ status: "READY" });
 				this.reportStatus("READY");
 			})
-			.catch((err) => {
-				this.store.update({ status: "ERROR" });
-				this.reportStatus("ERROR", err.message);
+			.catch(() => {
+				this.reportStatus("ERROR");
 			});
 
 		this.renderer = this.createSvgRenderer();
@@ -315,20 +310,8 @@ export class CanvasEngine
 		return await this.gateway.exportSVG();
 	}
 
-	onStatusChange(
-		callback: (status: "LOADING" | "READY" | "ERROR", message?: string) => void,
-	): void {
-		this.statusListeners.add(callback);
-	}
-
-	private reportStatus(
-		status: "LOADING" | "READY" | "ERROR",
-		message?: string,
-	) {
+	private reportStatus(status: "LOADING" | "READY" | "ERROR") {
 		this.store.update({ status });
-		this.statusListeners.forEach((l) => {
-			l(status, message);
-		});
 	}
 
 	private async syncToWasm(elements: CanvasElement[]) {

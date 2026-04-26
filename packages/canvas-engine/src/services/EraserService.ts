@@ -1,6 +1,29 @@
 import type { WorkerGateway } from "../bridge/WorkerGateway";
-import type { CanvasAction, CanvasStore } from "../store/CanvasStore";
+import type {
+	CanvasAction,
+	CanvasState,
+	CanvasStore,
+} from "../store/CanvasStore";
 import type { CanvasElement } from "../types";
+
+/** Shape of stroke fragments returned by the WASM partial-erase operation. */
+interface WasmFragment {
+	id: string;
+	data: { type?: string; [key: string]: unknown };
+	parent_id: string;
+}
+
+type PrecisionUpdate =
+	| { id: string; changes: { isDeleted: true } }
+	| {
+			id: string;
+			changes: {
+				type: string;
+				parentId: string;
+				metadata: Record<string, unknown>;
+				isDeleted: false;
+			};
+	  };
 
 export class EraserService {
 	constructor(
@@ -14,7 +37,6 @@ export class EraserService {
 		radius: number,
 		isPrecision: boolean,
 	): Promise<void> {
-		// 1. Find elements intersecting with the eraser path/point
 		const hitIds = await this.gateway.queryAt(x, y, radius);
 		if (hitIds.length === 0) return;
 
@@ -23,20 +45,20 @@ export class EraserService {
 		if (isPrecision) {
 			await this.handlePrecisionErasure(hitIds, state, radius);
 		} else {
-			this.handleStandardErasure(hitIds, state);
+			this.handleStandardErasure(hitIds);
 		}
 	}
 
-	private handleStandardErasure(hitIds: string[], _state: any): void {
+	private handleStandardErasure(hitIds: string[]): void {
 		this.store.dispatch({ type: "DELETE_ELEMENTS", payload: hitIds });
 	}
 
 	private async handlePrecisionErasure(
 		hitIds: string[],
-		state: any,
+		state: CanvasState,
 		radius: number,
 	): Promise<void> {
-		const allUpdates: any[] = [];
+		const allUpdates: PrecisionUpdate[] = [];
 
 		for (const id of hitIds) {
 			const el = state.elements.find((e: CanvasElement) => e.id === id);
@@ -44,23 +66,25 @@ export class EraserService {
 			if (el && el.type === "ELEMENT_STROKE") {
 				const eraserPath = await this.gateway.getInteractionPoints();
 				if (eraserPath.length >= 4) {
-					const fragments = await this.gateway.partialErase(
+					const fragments = (await this.gateway.partialErase(
 						el,
 						eraserPath,
 						radius,
-					);
+					)) as WasmFragment[];
 					if (fragments) {
-						const updates = [
+						const updates: PrecisionUpdate[] = [
 							{ id: el.id, changes: { isDeleted: true } },
-							...fragments.map((f: any) => ({
-								id: f.id,
-								changes: {
-									type: f.data.type,
-									parentId: f.parent_id,
-									metadata: { ...f.data },
-									isDeleted: false,
-								},
-							})),
+							...fragments.map(
+								(f): PrecisionUpdate => ({
+									id: f.id,
+									changes: {
+										type: f.data.type ?? "ELEMENT_STROKE",
+										parentId: f.parent_id,
+										metadata: { ...f.data },
+										isDeleted: false,
+									},
+								}),
+							),
 						];
 						allUpdates.push(...updates);
 					}
@@ -77,22 +101,24 @@ export class EraserService {
 
 	private applyOptimisticPrecisionUpdates(
 		_currentElements: CanvasElement[],
-		updates: any[],
+		updates: PrecisionUpdate[],
 	): void {
 		const deletedIds = updates
 			.filter((u) => u.changes.isDeleted)
 			.map((u) => u.id);
 		const activeFragments = updates
-			.filter((u) => !u.changes.isDeleted)
+			.filter(
+				(u): u is Extract<PrecisionUpdate, { changes: { isDeleted: false } }> =>
+					!u.changes.isDeleted,
+			)
 			.map(
-				(u) =>
-					({
-						id: u.id,
-						type: u.changes.type || "ELEMENT_STROKE",
-						parentId: u.changes.parentId,
-						metadata: { ...u.changes.metadata },
-						updatedAt: Date.now(),
-					}) as CanvasElement,
+				(u): CanvasElement => ({
+					id: u.id,
+					type: u.changes.type,
+					parentId: u.changes.parentId,
+					metadata: { ...u.changes.metadata },
+					updatedAt: Date.now(),
+				}),
 			);
 
 		const actions: CanvasAction[] = [];

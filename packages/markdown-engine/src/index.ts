@@ -94,12 +94,16 @@ export class MarkdownEngine
 			const currentElements = this.elements;
 			const nextElements = patch.elements;
 
-			// Simple check to see if we actually need to update the doc
-			// In a real app, we'd do a more granular diff or use Yjs
-			if (JSON.stringify(currentElements) !== JSON.stringify(nextElements)) {
+			const changed =
+				currentElements.length !== nextElements.length ||
+				nextElements.some(
+					(el, i) =>
+						el.id !== currentElements[i].id ||
+						el.updatedAt !== currentElements[i].updatedAt,
+				);
+
+			if (changed) {
 				this.elements = nextElements;
-				// Re-initialize doc from elements if it changed externally
-				// (e.g. initial load or remote sync)
 				const doc = this.createDocFromElements(nextElements);
 				const state = EditorState.create({
 					doc,
