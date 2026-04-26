@@ -1,8 +1,11 @@
 import type { CryptoPayload } from "../../domain/crypto/types.js";
 
+const REQUEST_TIMEOUT_MS = 30_000;
+
 interface PendingCall {
-	resolve: (value: any) => void;
+	resolve: (value: unknown) => void;
 	reject: (reason?: unknown) => void;
+	timer: ReturnType<typeof setTimeout>;
 }
 
 export class CryptoWorkerProxy {
@@ -36,7 +39,10 @@ export class CryptoWorkerProxy {
 	}
 
 	public async wrapKey(key: CryptoKey, kek: CryptoKey): Promise<string> {
-		const res = await this.send("WRAP_KEY", { key, kek });
+		const res = await this.send<{ wrappedKey: string }>("WRAP_KEY", {
+			key,
+			kek,
+		});
 		return res.wrappedKey;
 	}
 
@@ -44,7 +50,10 @@ export class CryptoWorkerProxy {
 		wrappedKey: string,
 		kek: CryptoKey,
 	): Promise<CryptoKey> {
-		const res = await this.send("UNWRAP_KEY", { wrappedKey, kek });
+		const res = await this.send<{ key: CryptoKey }>("UNWRAP_KEY", {
+			wrappedKey,
+			kek,
+		});
 		return res.key;
 	}
 
@@ -74,7 +83,11 @@ export class CryptoWorkerProxy {
 		iv: Uint8Array,
 		key: CryptoKey,
 	): Promise<Uint8Array> {
-		const result = await this.send("DECRYPT", { data, iv, key });
+		const result = await this.send<{ data: Uint8Array }>("DECRYPT", {
+			data,
+			iv,
+			key,
+		});
 		return result.data;
 	}
 
@@ -83,7 +96,11 @@ export class CryptoWorkerProxy {
 		nonce: Uint8Array,
 		key: Uint8Array,
 	): Promise<Uint8Array> {
-		const result = await this.send("XCHACHA20_DECRYPT", { data, nonce, key });
+		const result = await this.send<{ data: Uint8Array }>("XCHACHA20_DECRYPT", {
+			data,
+			nonce,
+			key,
+		});
 		return result.data;
 	}
 
@@ -92,7 +109,10 @@ export class CryptoWorkerProxy {
 		iv: Uint8Array,
 		key: CryptoKey,
 	): Promise<Uint8Array> {
-		const result = await this.send("DECRYPT_DECOMPRESSED", { data, iv, key });
+		const result = await this.send<{ data: Uint8Array }>(
+			"DECRYPT_DECOMPRESSED",
+			{ data, iv, key },
+		);
 		return result.data;
 	}
 
@@ -101,7 +121,7 @@ export class CryptoWorkerProxy {
 		maxWidth: number = 2048,
 		maxHeight: number = 2048,
 	): Promise<Uint8Array> {
-		const result = await this.send("PROCESS_IMAGE", {
+		const result = await this.send<{ data: Uint8Array }>("PROCESS_IMAGE", {
 			data,
 			maxWidth,
 			maxHeight,
@@ -109,41 +129,54 @@ export class CryptoWorkerProxy {
 		return result.data;
 	}
 
-	private send(type: string, payload: any): Promise<any> {
+	private send<T = unknown>(type: string, payload: unknown): Promise<T> {
 		if (!this.worker) {
-			return Promise.resolve(); // No-op in SSR
+			return Promise.resolve(undefined as unknown as T); // No-op in SSR
 		}
-		return new Promise((resolve, reject) => {
+		return new Promise<T>((resolve, reject) => {
 			const id = globalThis.crypto.randomUUID();
-			this.pendingPromises.set(id, { resolve, reject });
-
-			// Identify transferable objects
-			const transfer: Transferable[] = [];
-			if (payload.data instanceof Uint8Array) {
-				// Only transfer if we are sure the caller doesn't need it anymore.
-				// For simplicity in MVP, we might NOT transfer TO the worker unless performance is a bottleneck,
-				// but we ALWAYS transfer FROM the worker.
-			}
-
-			this.worker?.postMessage({ id, type, payload }, transfer);
+			const timer = setTimeout(() => {
+				this.pendingPromises.delete(id);
+				reject(
+					new Error(
+						`CryptoWorker request "${type}" timed out after ${REQUEST_TIMEOUT_MS}ms`,
+					),
+				);
+			}, REQUEST_TIMEOUT_MS);
+			this.pendingPromises.set(id, {
+				resolve: (v) => resolve(v as T),
+				reject,
+				timer,
+			});
+			this.worker?.postMessage({ id, type, payload }, []);
 		});
 	}
 
 	private handleMessage(event: MessageEvent) {
-		const { id, type, payload, error } = event.data;
-		const promise = this.pendingPromises.get(id);
-		if (!promise) return;
-
+		const { id, type, payload, error } = event.data as {
+			id: string;
+			type: string;
+			payload: unknown;
+			error?: string;
+		};
+		const entry = this.pendingPromises.get(id);
+		if (!entry) return;
+		clearTimeout(entry.timer);
 		this.pendingPromises.delete(id);
-
 		if (error || type.endsWith("_ERROR")) {
-			promise.reject(new Error(error || `Error in ${type}`));
+			entry.reject(new Error(error || `Error in ${type}`));
 		} else {
-			promise.resolve(payload);
+			entry.resolve(payload);
 		}
 	}
 
 	public terminate() {
 		this.worker?.terminate();
+		this.worker = undefined;
+		for (const entry of this.pendingPromises.values()) {
+			clearTimeout(entry.timer);
+			entry.reject(new Error("CryptoWorker terminated"));
+		}
+		this.pendingPromises.clear();
 	}
 }
