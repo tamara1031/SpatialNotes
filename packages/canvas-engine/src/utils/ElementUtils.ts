@@ -1,4 +1,4 @@
-import type { CanvasElement } from "../types";
+import type { CanvasElement, CanvasLayoutMode } from "../types";
 
 export interface Bounds {
 	minX: number;
@@ -84,7 +84,7 @@ export const ElementUtils = {
 	clipCoords(
 		x: number,
 		y: number,
-		layoutMode: string,
+		layoutMode: CanvasLayoutMode,
 		pageSize: { width: number; height: number },
 	): { x: number; y: number } {
 		if (layoutMode === "INFINITE") return { x, y };
@@ -101,7 +101,7 @@ export const ElementUtils = {
 	isInBounds(
 		x: number,
 		y: number,
-		layoutMode: string,
+		layoutMode: CanvasLayoutMode,
 		pageSize: { width: number; height: number },
 	): boolean {
 		if (layoutMode === "INFINITE") return true;

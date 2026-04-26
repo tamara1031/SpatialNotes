@@ -9,7 +9,7 @@ import type { CanvasRenderer } from "./Renderer";
 const MM_TO_PX = 96 / 25.4;
 
 export class SVGRenderer implements CanvasRenderer {
-	private container: HTMLElement | null = null;
+	container: HTMLElement | null = null;
 	private lastState: CanvasState | null = null;
 	private viewportRoot: HTMLDivElement | null = null;
 	private paperSurface: HTMLDivElement | null = null;

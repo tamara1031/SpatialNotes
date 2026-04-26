@@ -2,6 +2,7 @@ import type { WorkerGateway } from "../bridge/WorkerGateway";
 import type { CanvasState } from "../store/CanvasStore";
 
 export interface CanvasRenderer {
+	readonly container: HTMLElement | null;
 	mount(container: HTMLElement, gateway: WorkerGateway): void;
 	unmount(): void;
 	render(state: CanvasState): void;

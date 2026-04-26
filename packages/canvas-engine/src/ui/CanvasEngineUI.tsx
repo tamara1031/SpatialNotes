@@ -1,4 +1,4 @@
-import type { ElementFactory, EngineInterface } from "engine-core";
+import type { ElementFactory } from "engine-core";
 import { motion } from "framer-motion";
 import type React from "react";
 import {
@@ -11,11 +11,9 @@ import {
 import { CanvasEngine } from "../index";
 import {
 	type CanvasElement,
-	type CanvasEngineContext,
 	type CanvasLayoutMode,
 	type CanvasOrientation,
 	CanvasTool,
-	type CanvasViewport,
 } from "../types";
 import {
 	EraserIcon,
@@ -82,10 +80,15 @@ const TOOL_CONFIG = [
 	{ id: CanvasTool.SELECTOR, icon: LassoIcon, title: "Lasso (L)" },
 ];
 
+export interface CanvasEngineHandle {
+	handleKeyDown(e: KeyboardEvent): boolean;
+	getState(): ReturnType<CanvasEngine["getState"]> | undefined;
+}
+
 export interface CanvasEngineUIProps {
 	activeNodeId: string;
 	elements: CanvasElement[];
-	onCommand: (cmd: any) => void;
+	onCommand: (cmd: { type: string; payload?: unknown }) => void;
 	onUndo?: () => void;
 	onRedo?: () => void;
 	canUndo: boolean;
@@ -93,7 +96,10 @@ export interface CanvasEngineUIProps {
 	elementFactory: ElementFactory;
 }
 
-export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
+export const CanvasEngineUI = forwardRef<
+	CanvasEngineHandle,
+	CanvasEngineUIProps
+>(
 	(
 		{
 			activeNodeId,
@@ -108,12 +114,7 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 		ref,
 	) => {
 		const containerRef = useRef<HTMLDivElement>(null);
-		const engineRef = useRef<EngineInterface<
-			CanvasElement,
-			CanvasTool,
-			CanvasViewport,
-			CanvasEngineContext
-		> | null>(null);
+		const engineRef = useRef<CanvasEngine | null>(null);
 		const [engineReady, setEngineReady] = useState(false);
 
 		// Internal UI State
@@ -131,18 +132,11 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 			useState<CanvasOrientation>("PORTRAIT");
 		const [showSettings, setShowSettings] = useState(false);
 
-		useImperativeHandle(
-			ref,
-			() =>
-				({
-					handleKeyDown: (e: KeyboardEvent) => {
-						return engineRef.current?.handleKeyDown?.(e) ?? false;
-					},
-					getState: () => {
-						return engineRef.current?.getState?.();
-					},
-				}) as any,
-		);
+		useImperativeHandle(ref, () => ({
+			handleKeyDown: (e: KeyboardEvent) =>
+				engineRef.current?.handleKeyDown?.(e) ?? false,
+			getState: () => engineRef.current?.getState(),
+		}));
 
 		// Keep stable references for callbacks
 		const depsRef = useRef({ onCommand, onUndo, onRedo, elementFactory });
@@ -176,7 +170,7 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 				);
 				engineRef.current = engine;
 
-				engine.onAction?.((action: any) => {
+				engine.onAction?.((action: { type: string; payload?: unknown }) => {
 					const { onCommand, onUndo, onRedo } = depsRef.current;
 					if (action.type === "STATUS") {
 						if (action.payload === "READY") setEngineReady(true);
@@ -230,7 +224,7 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 						penConfig,
 						highlighterConfig,
 						activeTool,
-					} as any,
+					},
 					elements: elements.filter((el) => el.parentId === activeNodeId),
 				});
 			}
@@ -247,9 +241,7 @@ export const CanvasEngineUI = forwardRef<HTMLDivElement, CanvasEngineUIProps>(
 
 		// --- Handlers ---
 		const handleExport = () => {
-			engineRef.current?.update({
-				context: { command: "EXPORT_SVG" } as any,
-			});
+			engineRef.current?.updateContext({ command: "EXPORT_SVG" });
 		};
 
 		const renderPalette = () => {

@@ -1,4 +1,9 @@
-import { type CanvasElement, CanvasTool, type CanvasViewport } from "../types";
+import {
+	type CanvasElement,
+	type CanvasLayoutMode,
+	CanvasTool,
+	type CanvasViewport,
+} from "../types";
 
 export interface CanvasState {
 	// Persistent State (Synced via App)
@@ -29,7 +34,7 @@ export interface CanvasState {
 	highlighterConfig: { color: string; width: number };
 
 	// Layout Context (ADR-030)
-	layoutMode: string;
+	layoutMode: CanvasLayoutMode;
 	pageSize: { width: number; height: number };
 
 	// Lifecycle Status

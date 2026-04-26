@@ -17,21 +17,27 @@ interface BoundingBox {
 	max_y?: number;
 }
 
-export interface StrokeMetadata extends BoundingBox {
+/**
+ * Every canvas element carries a z-index and an optional bounding box.
+ * Lifting these into a shared base allows CanvasElement (in Node.ts) to
+ * expose typed accessors without repeating them in every subclass.
+ */
+export interface BoundedElementMetadata extends BoundingBox {
+	z_index: number;
+}
+
+export interface StrokeMetadata extends BoundedElementMetadata {
 	points: number[];
 	color: string;
 	width: number;
-	z_index: number;
 }
 
-export interface ImageMetadata extends BoundingBox {
+export interface ImageMetadata extends BoundedElementMetadata {
 	src: string;
-	z_index: number;
 }
 
-export interface TextMetadata extends BoundingBox {
+export interface TextMetadata extends BoundedElementMetadata {
 	content: string;
-	z_index: number;
 }
 
 /** Metadata for container nodes (no typed fields required). */
