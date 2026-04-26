@@ -34,9 +34,11 @@ export const AuthForm: React.FC<AuthFormProps> = ({
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
-		const result = await execute(email, password);
-		if (result !== undefined) {
+		try {
+			await execute(email, password);
 			onSuccess();
+		} catch {
+			// useAsyncAction surfaces the error via the `error` state.
 		}
 	};
 

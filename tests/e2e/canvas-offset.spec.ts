@@ -50,11 +50,13 @@ test("Canvas Drawing: Correct position after panning and zooming", async ({
 	// Wait for pan to settle
 	await page.waitForTimeout(200);
 
-	// 4. Draw a line at screen (400, 400)
+	// 4. Draw a line within the canvas after panning
 	await page.getByTitle("Pen (P)").click();
-	await page.mouse.move(400, 400);
+	await page.mouse.move(initialRect.x + 400, initialRect.y + 400);
 	await page.mouse.down();
-	await page.mouse.move(450, 450, { steps: 10 });
+	await page.mouse.move(initialRect.x + 450, initialRect.y + 450, {
+		steps: 10,
+	});
 	await page.mouse.up();
 
 	await page.waitForTimeout(1000);

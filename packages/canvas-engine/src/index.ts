@@ -52,7 +52,6 @@ export class CanvasEngine
 
 	constructor(width: number, height: number, elementFactory: ElementFactory) {
 		this.gateway = new WorkerGateway();
-		this.reportStatus("LOADING", "Initializing Wasm Engine...");
 
 		this.store = new CanvasStore({
 			viewport: { pan: { x: 0, y: 0 }, scale: 1.0 },
@@ -62,6 +61,8 @@ export class CanvasEngine
 		this.selectionService = new SelectionService(this.store, this.gateway);
 		this.drawingService = new DrawingService(this.store, elementFactory);
 		this.clipboardService = new ClipboardService();
+
+		this.reportStatus("LOADING", "Initializing Wasm Engine...");
 
 		this.gateway
 			.init(width, height)
@@ -337,6 +338,7 @@ export class CanvasEngine
 		status: "LOADING" | "READY" | "ERROR",
 		message?: string,
 	) {
+		this.store.update({ status });
 		this.statusListeners.forEach((l) => {
 			l(status, message);
 		});

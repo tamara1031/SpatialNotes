@@ -8,7 +8,6 @@ import { useNoteCommands } from "../hooks/useNoteCommands";
 import { useNoteHistory } from "../hooks/useNoteHistory";
 import { useNoteMode } from "../hooks/useNoteMode";
 import { useSync, useSyncMap } from "../hooks/useSync";
-import { resetYDoc } from "../store/noteStore";
 import {
 	removeNotification,
 	showNotification,
@@ -28,10 +27,8 @@ export const NoteViewShell: React.FC = () => {
 	>("LOADING");
 	const errorNotificationId = useRef<string | null>(null);
 
-	// Reset Yjs state when switching nodes to avoid crosstalk (ADR-016)
 	useEffect(() => {
 		if (activeNodeId) {
-			resetYDoc();
 			setEngineStatus("LOADING");
 		}
 	}, [activeNodeId]);

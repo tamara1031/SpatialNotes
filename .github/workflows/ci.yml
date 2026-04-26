@@ -24,7 +24,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -48,7 +48,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -87,7 +87,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - name: Install Dependencies
@@ -96,8 +96,23 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Build Full App
-        run: pnpm build
+      - name: Build canvas-wasm
+        run: pnpm build:wasm
+
+      - name: Build markdown-wasm
+        run: pnpm build:markdown-wasm
+
+      - name: Build engine-core
+        run: pnpm build:engine-core
+
+      - name: Build core
+        run: pnpm build:core
+
+      - name: Build web
+        run: pnpm build:web
+
+      - name: Build server
+        run: pnpm build:server
 
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
@@ -106,6 +121,17 @@ jobs:
         run: |
           set -e
           make test-e2e
+
+      - name: Upload Playwright Report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+            test_server.log
+          retention-days: 14
 
   deploy:
     name: Build & Push Docker Image
