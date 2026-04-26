@@ -1,5 +1,4 @@
 import { globalEventBus } from "../../domain/events/DomainEventBus.js";
-import { NodeMovedEvent } from "../../domain/nodes/events.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { CircularReferenceError } from "../../domain/types.js";
 
@@ -17,7 +16,7 @@ export class MoveNodeUseCase {
 			throw new Error(`Node not found: ${input.id}`);
 		}
 
-		// Circular reference check
+		// Guard against circular references by traversing ancestors via persistence.
 		if (input.newParentId) {
 			let currentId: string | null = input.newParentId;
 			while (currentId) {
@@ -32,8 +31,10 @@ export class MoveNodeUseCase {
 		node.move(input.newParentId);
 		await this.nodeRepository.save(node);
 
-		globalEventBus.publish(
-			new NodeMovedEvent({ id: input.id, parentId: input.newParentId }),
-		);
+		// Publish events collected by the entity (mirrors RenameNodeUseCase pattern).
+		for (const event of node.domainEvents) {
+			globalEventBus.publish(event);
+		}
+		node.clearDomainEvents();
 	}
 }
