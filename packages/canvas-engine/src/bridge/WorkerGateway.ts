@@ -1,49 +1,9 @@
+import { WorkerRpcClient } from "engine-core";
 import type { CanvasElement } from "../types";
 
-export class WorkerGateway {
-	private worker?: Worker;
-	private nextId = 0;
-	private pendingRequests = new Map<
-		number,
-		{ resolve: (val: any) => void; reject: (err: any) => void }
-	>();
-
+export class WorkerGateway extends WorkerRpcClient {
 	constructor() {
-		if (typeof Worker !== "undefined") {
-			// In Vite, this URL pattern is used for workers
-			this.worker = new Worker(new URL("./CanvasWorker.ts", import.meta.url), {
-				type: "module",
-			});
-			this.worker.onmessage = this.handleMessage.bind(this);
-		}
-	}
-
-	private handleMessage(e: MessageEvent) {
-		const { type, id, payload, error } = e.data;
-		const request = this.pendingRequests.get(id);
-		if (!request) return;
-
-		if (type === "ERROR") {
-			request.reject(new Error(error));
-		} else {
-			request.resolve(payload);
-		}
-		this.pendingRequests.delete(id);
-	}
-
-	private request(
-		type: string,
-		payload?: any,
-		transfer?: Transferable[],
-	): Promise<any> {
-		if (!this.worker) {
-			return Promise.resolve(); // No-op in SSR
-		}
-		const id = this.nextId++;
-		return new Promise((resolve, reject) => {
-			this.pendingRequests.set(id, { resolve, reject });
-			this.worker?.postMessage({ type, payload, id }, transfer || []);
-		});
+		super(new URL("./CanvasWorker.ts", import.meta.url));
 	}
 
 	// --- Lifecycle ---
@@ -53,11 +13,6 @@ export class WorkerGateway {
 
 	async bindCanvas(canvas: OffscreenCanvas): Promise<void> {
 		return this.request("BIND_CANVAS", { canvas }, [canvas]);
-	}
-
-	terminate(): void {
-		this.worker?.terminate();
-		this.worker = undefined;
 	}
 
 	// --- Interaction ---
@@ -81,7 +36,7 @@ export class WorkerGateway {
 		return this.request("POINTER_MOVE", { x, y, pressure, tiltX, tiltY });
 	}
 
-	async pointerUp(): Promise<any> {
+	async pointerUp(): Promise<unknown> {
 		return this.request("POINTER_UP");
 	}
 
@@ -100,32 +55,36 @@ export class WorkerGateway {
 
 	// --- Queries ---
 	async queryAt(x: number, y: number, radius: number): Promise<string[]> {
-		return this.request("QUERY_AT", { x, y, radius });
+		return this.request<string[]>("QUERY_AT", { x, y, radius });
 	}
 
 	async getElementAt(x: number, y: number): Promise<string | null> {
-		return this.request("GET_ELEMENT_AT", { x, y });
+		return this.request<string | null>("GET_ELEMENT_AT", { x, y });
 	}
 
 	// --- Performance & Debugging ---
 	async getInteractionPoints(): Promise<number[]> {
-		return this.request("GET_CURRENT_INTERACTION_POINTS");
+		return this.request<number[]>("GET_CURRENT_INTERACTION_POINTS");
 	}
 
 	async getStrokePath(): Promise<string> {
-		return this.request("GET_CURRENT_STROKE_PATH");
+		return this.request<string>("GET_CURRENT_STROKE_PATH");
 	}
 
 	// --- Specialized Operations ---
 	async partialErase(
 		element: CanvasElement,
-		eraserPath: any,
+		eraserPath: unknown,
 		radius: number,
-	): Promise<any[]> {
-		return this.request("PARTIAL_ERASE", { element, eraserPath, radius });
+	): Promise<unknown[]> {
+		return this.request<unknown[]>("PARTIAL_ERASE", {
+			element,
+			eraserPath,
+			radius,
+		});
 	}
 
 	async exportSVG(): Promise<string> {
-		return this.request("EXPORT_SVG");
+		return this.request<string>("EXPORT_SVG");
 	}
 }
