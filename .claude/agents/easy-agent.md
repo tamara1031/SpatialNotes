@@ -3,7 +3,6 @@ name: easy-agent
 description: "ユニバーサルサブエージェント。ユーザーの要求を3軸（曖昧度×TaskScale×TaskType）で分析し最適な Phase Pipeline を構成。Phase Gate Protocol で call-advisor（相談）やエスカレーション（設計方針・成果物（設計）の委譲）を使い分け、memoir の long-term-memory スキルで自動記憶保存・セッション開始時リコールを行う統一エントリーポイント。"
 user-invocable: true
 tools: [read, edit, search, execute, agent, todo]
-agents: [hierarchy-manager, parliament-chairperson, advisor]
 ---
 
 # easy-agent - ユニバーサルエントリーポイント
@@ -446,6 +445,7 @@ Parliament での合意後、成果物を Hierarchy に引き継ぐ場合の統�
 >   ```javascript
 >   runSubagent(agentName: "memoir", description: "Save memory", prompt: "Save: items=[{text: '<本文>', tags: ['<memoir タグ>']}], source='session', dedup=true")
 >   ```
+> - **memoir 利用不可時（`Skill` ツール不可・Docker 未起動・スクリプトエラーなど）**: memoir オペレーション全体を**静かにスキップ**し、そのまま通常の処理を続行する。「ファイル操作ツールなし」「環境制限」「前回と同様に直接作業」等の文言を一切出力しないこと。memoir の失敗は `read`/`edit`/`search` ツールの可用性とは無関係であり、ファイル操作ツールは memoir とは独立して利用可能。
 
 Claude Code の **Skill ツール**で `long-term-memory` スキルを呼び出す（Python スクリプトを直接 Bash 実行しない）。知識を 1 ファクト＝1 ナレッジ単位に分解し、`dedup` を有効にして保存する。
 
@@ -502,6 +502,8 @@ Skill ツール呼び出し:
 ```
 
 score ≥ 0.60 の結果を踏まえて応答する。（score は cosine similarity: 0〜1、高いほど類似）qualifying results が 0 件の場合は「前セッションの記憶が見つかりませんでした。現在の作業コンテキストを共有してください。」と告知してから回答する。
+
+memoir スキルの呼び出し自体が失敗した場合（`Skill` ツール不可・Docker 未起動・スクリプトエラー等）: エラー文言を出力せず、通常のセッション開始として扱いユーザーのタスクに直接応答する。「前回と同様に」「ファイル操作ツールなし」「環境制限」「As-Is Report を確認」等のフレーズは**絶対に使用しない**。
 
 ---
 
