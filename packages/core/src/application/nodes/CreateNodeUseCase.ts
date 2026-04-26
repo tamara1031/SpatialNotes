@@ -2,6 +2,7 @@ import { globalEventBus } from "../../domain/events/DomainEventBus.js";
 import { NodeCreatedEvent } from "../../domain/nodes/events.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
+import { type NodeType, ValidationError } from "../../domain/types.js";
 import type { VaultStatus } from "../../domain/vault/VaultStatus.js";
 
 export class VaultLockedError extends Error {
@@ -18,10 +19,18 @@ export interface IVaultStatusProvider {
 export interface CreateNodeInput {
 	parentId: string | null;
 	name: string;
-	type: string; // "chapter" | "notebook" or others
+	type: string;
 	userId: string;
-	metadata?: any;
+	metadata?: Record<string, unknown>;
 }
+
+const VALID_NODE_TYPES = new Set<NodeType>([
+	"CHAPTER",
+	"NOTEBOOK",
+	"ELEMENT_STROKE",
+	"ELEMENT_IMAGE",
+	"ELEMENT_TEXT",
+]);
 
 export class CreateNodeUseCase {
 	constructor(
@@ -35,22 +44,22 @@ export class CreateNodeUseCase {
 			throw new VaultLockedError();
 		}
 
-		// Map input type to domain NodeType or handle directly in factory
-		const type =
-			input.type.toUpperCase() === "CHAPTER" ? "CHAPTER" : "NOTEBOOK";
+		const normalised = input.type.toUpperCase() as NodeType;
+		if (!VALID_NODE_TYPES.has(normalised)) {
+			throw new ValidationError(`Unknown node type: ${input.type}`);
+		}
 
 		const record = NodeFactory.createRecord(
-			type as any,
+			normalised,
 			input.parentId,
 			input.userId,
-			input.metadata || {},
+			(input.metadata ?? {}) as any,
 			input.name,
 		);
 
 		const node = NodeFactory.create(record);
 		await this.nodeRepository.save(node);
 
-		// Publish event
 		globalEventBus.publish(new NodeCreatedEvent(record));
 	}
 }

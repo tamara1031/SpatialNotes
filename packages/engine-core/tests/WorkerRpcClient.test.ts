@@ -3,10 +3,6 @@ import { WorkerRpcClient } from "../src/index";
 
 // Concrete subclass that exposes request() for testing
 class TestClient extends WorkerRpcClient {
-	constructor(workerUrl: URL) {
-		super(workerUrl);
-	}
-
 	send<T = void>(type: string, payload?: unknown): Promise<T> {
 		return this.request<T>(type, payload);
 	}

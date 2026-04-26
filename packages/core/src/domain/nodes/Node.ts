@@ -9,7 +9,11 @@ import {
 	type StrokeMetadata,
 	type TextMetadata,
 } from "../types.js";
-import { NodeDeletedEvent, NodeRenamedEvent } from "./events.js";
+import {
+	NodeDeletedEvent,
+	NodeMovedEvent,
+	NodeRenamedEvent,
+} from "./events.js";
 
 export abstract class Node {
 	protected parent: Node | null = null;
@@ -98,9 +102,11 @@ export abstract class Node {
 	}
 
 	move(newParentId: string | null): void {
-		// Note: Validation should be done in UseCase or via a domain service if complex
 		this.record.parentId = newParentId;
 		this.record.updatedAt = Date.now();
+		this.addDomainEvent(
+			new NodeMovedEvent({ id: this.id, parentId: newParentId }),
+		);
 	}
 
 	delete(): void {
