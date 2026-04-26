@@ -11,11 +11,9 @@ import {
 import { CanvasEngine } from "../index";
 import {
 	type CanvasElement,
-	type CanvasEngineContext,
 	type CanvasLayoutMode,
 	type CanvasOrientation,
 	CanvasTool,
-	type CanvasViewport,
 } from "../types";
 import {
 	EraserIcon,
@@ -98,7 +96,10 @@ export interface CanvasEngineUIProps {
 	elementFactory: ElementFactory;
 }
 
-export const CanvasEngineUI = forwardRef<CanvasEngineHandle, CanvasEngineUIProps>(
+export const CanvasEngineUI = forwardRef<
+	CanvasEngineHandle,
+	CanvasEngineUIProps
+>(
 	(
 		{
 			activeNodeId,

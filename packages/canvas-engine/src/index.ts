@@ -9,7 +9,7 @@ import { ClipboardService } from "./services/ClipboardService";
 import { DrawingService } from "./services/DrawingService";
 import { EraserService } from "./services/EraserService";
 import { SelectionService } from "./services/SelectionService";
-import { CanvasStore, type CanvasState } from "./store/CanvasStore";
+import { type CanvasState, CanvasStore } from "./store/CanvasStore";
 import { DrawingTool } from "./tools/DrawingTool";
 import { EraserTool } from "./tools/EraserTool";
 import { SelectionTool } from "./tools/SelectionTool";
