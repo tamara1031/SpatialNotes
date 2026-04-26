@@ -49,6 +49,7 @@ export class CanvasEngine
 	private onViewportChangeCallback:
 		| ((viewport: CanvasViewport) => void)
 		| null = null;
+	private lastEmittedStatus: "LOADING" | "READY" | "ERROR" | null = null;
 
 	constructor(width: number, height: number, elementFactory: ElementFactory) {
 		this.gateway = new WorkerGateway();
@@ -67,9 +68,11 @@ export class CanvasEngine
 		this.gateway
 			.init(width, height)
 			.then(() => {
+				this.store.update({ status: "READY" });
 				this.reportStatus("READY");
 			})
 			.catch((err) => {
+				this.store.update({ status: "ERROR" });
 				this.reportStatus("ERROR", err.message);
 			});
 
@@ -129,7 +132,11 @@ export class CanvasEngine
 			const state = this.store.getState();
 			this.renderer.render(state);
 			this.renderer.renderInteraction(state);
-			this.onActionCallback?.({ type: "STATUS", payload: state.status });
+			// Emit STATUS only on actual transitions, not on every render frame.
+			if (state.status !== this.lastEmittedStatus) {
+				this.lastEmittedStatus = state.status;
+				this.onActionCallback?.({ type: "STATUS", payload: state.status });
+			}
 		});
 	}
 
@@ -178,70 +185,50 @@ export class CanvasEngine
 			}
 		}
 
-		if (patch.viewport !== undefined) {
-			storePatch.viewport = patch.viewport;
-		}
+		if (patch.viewport !== undefined) storePatch.viewport = patch.viewport;
+		if (patch.context !== undefined)
+			Object.assign(storePatch, this.applyContextPatch(patch.context, state));
 
-		if (patch.context !== undefined) {
-			const context = patch.context;
-			if (context.activeNodeId !== undefined)
-				storePatch.activeNodeId = context.activeNodeId;
-			if (context.layoutMode !== undefined)
-				storePatch.layoutMode = context.layoutMode;
-			if (context.pageSize !== undefined)
-				storePatch.pageSize = context.pageSize;
-			if (context.penConfig !== undefined)
-				storePatch.penConfig = { ...state.penConfig, ...context.penConfig };
-			if (context.highlighterConfig !== undefined)
-				storePatch.highlighterConfig = {
-					...state.highlighterConfig,
-					...context.highlighterConfig,
-				};
-
-			if (context.activeTool !== undefined) {
-				storePatch.activeTool = context.activeTool;
-				this.interactionManager.setActiveTool(context.activeTool);
-				this.renderer.updateCursor(this.interactionManager.getCursor());
-			}
-		}
-
-		if (Object.keys(storePatch).length > 0) {
-			this.store.update(storePatch);
-		}
+		if (Object.keys(storePatch).length > 0) this.store.update(storePatch);
 	}
 
 	updateContext(context: Partial<CanvasEngineContext>) {
-		const state = this.store.getState();
-		const storePatch: Partial<CanvasState> = {};
-
-		if (context.activeNodeId !== undefined)
-			storePatch.activeNodeId = context.activeNodeId;
-		if (context.layoutMode !== undefined)
-			storePatch.layoutMode = context.layoutMode;
-		if (context.pageSize !== undefined) storePatch.pageSize = context.pageSize;
-		if (context.penConfig !== undefined)
-			storePatch.penConfig = { ...state.penConfig, ...context.penConfig };
-		if (context.highlighterConfig !== undefined)
-			storePatch.highlighterConfig = {
-				...state.highlighterConfig,
-				...context.highlighterConfig,
-			};
-
-		if (context.activeTool !== undefined) {
-			storePatch.activeTool = context.activeTool;
-			this.interactionManager.setActiveTool(context.activeTool);
-			this.renderer.updateCursor(this.interactionManager.getCursor());
-		}
-
 		if (context.command === "EXPORT_SVG") {
 			this.exportToSVG().then((svg) => {
 				this.onActionCallback?.({ type: "EXPORT_RESULT", payload: svg });
 			});
 		}
+		const patch = this.applyContextPatch(context, this.store.getState());
+		if (Object.keys(patch).length > 0) this.store.update(patch);
+	}
 
-		if (Object.keys(storePatch).length > 0) {
-			this.store.update(storePatch);
+	/**
+	 * Translates a partial CanvasEngineContext into a CanvasState patch and
+	 * synchronously applies any side-effects that must be in lock-step with the
+	 * state change (tool registration, cursor update).
+	 */
+	private applyContextPatch(
+		context: Partial<CanvasEngineContext>,
+		state: CanvasState,
+	): Partial<CanvasState> {
+		const patch: Partial<CanvasState> = {};
+		if (context.activeNodeId !== undefined)
+			patch.activeNodeId = context.activeNodeId;
+		if (context.layoutMode !== undefined) patch.layoutMode = context.layoutMode;
+		if (context.pageSize !== undefined) patch.pageSize = context.pageSize;
+		if (context.penConfig !== undefined)
+			patch.penConfig = { ...state.penConfig, ...context.penConfig };
+		if (context.highlighterConfig !== undefined)
+			patch.highlighterConfig = {
+				...state.highlighterConfig,
+				...context.highlighterConfig,
+			};
+		if (context.activeTool !== undefined) {
+			patch.activeTool = context.activeTool;
+			this.interactionManager.setActiveTool(context.activeTool);
+			this.renderer.updateCursor(this.interactionManager.getCursor());
 		}
+		return patch;
 	}
 
 	onAction(callback: (action: { type: string; payload?: any }) => void) {

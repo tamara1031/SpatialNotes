@@ -61,17 +61,24 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 
 	const createInitialDoc = useCallback((initialElements: MarkdownElement[]) => {
 		if (initialElements.length === 0) {
-			return schema.nodes.doc.createAndFill(null, [
-				schema.nodes.paragraph.createAndFill()!,
-			])!;
+			const paragraph =
+				schema.nodes.paragraph.createAndFill() ??
+				schema.nodes.paragraph.create();
+			return (
+				schema.nodes.doc.createAndFill(null, [paragraph]) ??
+				schema.nodes.doc.create()
+			);
 		}
-		const nodes = initialElements.map((el) => {
+		const nodes = initialElements.flatMap((el) => {
 			const typeName = el.metadata.kind?.toLowerCase() || "paragraph";
 			const nodeType = schema.nodes[typeName] || schema.nodes.paragraph;
 			const content = el.content ? [schema.text(el.content)] : [];
-			return nodeType.createAndFill(el.metadata, content)!;
+			const node = nodeType.createAndFill(el.metadata, content);
+			return node ? [node] : [];
 		});
-		return schema.nodes.doc.createAndFill(null, nodes)!;
+		return (
+			schema.nodes.doc.createAndFill(null, nodes) ?? schema.nodes.doc.create()
+		);
 	}, []);
 
 	const mapProseMirrorTypeToElement = useCallback((pmType: string): string => {

@@ -1,7 +1,7 @@
 import katex from "katex";
 import type { WorkerGateway } from "../bridge/WorkerGateway";
 import type { CanvasState } from "../store/CanvasStore";
-import type { CanvasElement } from "../types";
+import { type CanvasElement, CanvasTool } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
 import { pointsToCatmullRomPath } from "../utils/path-smoothing";
 import type { CanvasRenderer } from "./Renderer";
@@ -259,7 +259,8 @@ export class SVGRenderer implements CanvasRenderer {
 
 		if (
 			state.isInteracting &&
-			(state.activeTool === "PEN" || state.activeTool === "HIGHLIGHTER")
+			(state.activeTool === CanvasTool.PEN ||
+				state.activeTool === CanvasTool.HIGHLIGHTER)
 		) {
 			this.gateway.getStrokePath().then((d) => {
 				if (!d || !this.interactionPath) {
@@ -268,10 +269,10 @@ export class SVGRenderer implements CanvasRenderer {
 				}
 				this.interactionPath.setAttribute("d", d);
 				const config =
-					state.activeTool === "HIGHLIGHTER"
+					state.activeTool === CanvasTool.HIGHLIGHTER
 						? state.highlighterConfig
 						: state.penConfig;
-				const opacity = state.activeTool === "HIGHLIGHTER" ? 0.4 : 1.0;
+				const opacity = state.activeTool === CanvasTool.HIGHLIGHTER ? 0.4 : 1.0;
 
 				this.interactionPath.setAttribute("stroke", config.color);
 				this.interactionPath.setAttribute(

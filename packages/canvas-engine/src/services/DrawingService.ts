@@ -15,16 +15,11 @@ export class DrawingService {
 	): void {
 		const state = this.store.getState();
 		const parentId = state.activeNodeId || "root";
-		console.log(
-			`[DrawingService] Creating stroke for parentId: ${parentId}, activeNodeId: ${state.activeNodeId}`,
-		);
-
 		const stroke = this.elementFactory("ELEMENT_STROKE", parentId, {
 			points,
 			...config,
 			...extraMetadata,
 		}) as CanvasElement;
-
 		this.store.dispatch({ type: "CREATE_ELEMENT", payload: stroke });
 	}
 }

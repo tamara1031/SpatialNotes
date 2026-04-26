@@ -3,19 +3,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { SVGRenderer } from "../src/render/SVGRenderer";
 import type { CanvasState } from "../src/store/CanvasStore";
 
-vi.mock("canvas-wasm", () => ({
-	smooth_stroke_svg: vi.fn().mockReturnValue("M 0 0 L 10 10"),
-}));
-
 describe("SVGRenderer", () => {
 	let container: HTMLDivElement;
 	let renderer: SVGRenderer;
 	let mockStore: any;
-	let _mockBridge: any;
+	let mockGateway: any;
 
 	beforeEach(() => {
 		container = document.createElement("div");
-		// Prevent JS DOM missing methods from crashing SVG element creation
 		if (!container.setPointerCapture) container.setPointerCapture = vi.fn();
 		if (!container.releasePointerCapture)
 			container.releasePointerCapture = vi.fn();
@@ -34,11 +29,16 @@ describe("SVGRenderer", () => {
 			subscribe: vi.fn(),
 		};
 
+		mockGateway = {
+			exportSVG: vi.fn().mockResolvedValue("<svg></svg>"),
+			getStrokePath: vi.fn().mockResolvedValue(""),
+		};
+
 		renderer = new SVGRenderer({
 			onTextEdit: vi.fn(),
 			onTextEditCancel: vi.fn(),
 		});
-		renderer.mount(container);
+		renderer.mount(container, mockGateway);
 	});
 
 	it("SC-R2: Layout Boundaries Rendering (INFINITE mode)", () => {
