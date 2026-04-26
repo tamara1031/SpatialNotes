@@ -223,6 +223,8 @@ export const SidebarNodeItem = memo<{
 				{isEditing ? (
 					<input
 						ref={editInputRef}
+						// biome-ignore lint/a11y/noAutofocus: rename UX requires focus on the synchronous render — useEffect-based focus loses races with rapid keyboard input.
+						autoFocus
 						value={editedName}
 						onChange={(e) => setEditedName(e.target.value)}
 						onBlur={handleCommit}
