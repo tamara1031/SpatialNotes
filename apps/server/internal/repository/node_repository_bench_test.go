@@ -5,10 +5,10 @@ import (
 
 	"context"
 	"fmt"
-	"testing"
-	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"github.com/tamara1031/spatial-notes/apps/server/internal/infrastructure"
 	"github.com/tamara1031/spatial-notes/apps/server/internal/repository"
+	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"testing"
 )
 
 func BenchmarkNodeRepository_DeleteIndividual(b *testing.B) {
@@ -67,8 +67,8 @@ func BenchmarkNodeRepository_DeleteMany(b *testing.B) {
 
 		// This tests an imagined method
 		_, _ = db.NewUpdate().Table("notebook_nodes").
-		Set("is_deleted = 1").
-		Where("id IN (?) AND user_id = ?", bun.In(ids), uid).
-		Exec(ctx)
+			Set("is_deleted = 1").
+			Where("id IN (?) AND user_id = ?", bun.In(ids), uid).
+			Exec(ctx)
 	}
 }

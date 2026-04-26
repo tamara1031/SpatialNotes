@@ -5,6 +5,12 @@ import (
 	"errors"
 )
 
+// maxAncestorWalk caps how many ancestors MoveNode follows when checking for
+// cycles. It guards against pathologically deep or malformed parent chains
+// (e.g. corrupt data that forms an undetected loop) so a single request can
+// never hang the server. Real notebooks are nowhere near this depth.
+const maxAncestorWalk = 1024
+
 type NodeService struct {
 	structureRepo  StructureRepository
 	elementRepo    ElementRepository
@@ -43,26 +49,29 @@ func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 		return err
 	}
 
-	// Case 1: Existing node switching to E2EE
+	// Authorise the inbound payload before triggering any side effects: a
+	// malformed request that claims a foreign user id must never reach
+	// repository writes, even if the caller would otherwise be filtered by
+	// uid downstream.
+	if n.UserID() != uid {
+		return errors.New("forbidden: user does not own this node")
+	}
+
+	// On a STANDARD -> E2EE transition, plaintext children become unreadable
+	// by design and must be purged. We only do this when an existing node is
+	// flipping strategies; new E2EE nodes have nothing to clean up.
 	if old, err := s.GetNode(ctx, n.ID()); err == nil {
-		if old.EncryptionStrategy() == "STANDARD" && n.EncryptionStrategy() == "E2EE" {
-			// Trigger Purge of plaintext elements/indices
+		if old.EncryptionStrategy() == EncryptionStandard && n.EncryptionStrategy() == EncryptionE2EE {
 			if err := s.elementRepo.DeleteByNodeID(ctx, n.ID(), uid); err != nil {
 				return err
 			}
 		}
 	}
 
-	if n.UserID() != uid {
-		return errors.New("forbidden: user does not own this node")
-	}
-
-	switch n.Type() {
-	case "CHAPTER", "NOTEBOOK":
+	if IsStructureType(n.Type()) {
 		return s.structureRepo.Save(ctx, n)
-	default:
-		return s.elementRepo.Save(ctx, n)
 	}
+	return s.elementRepo.Save(ctx, n)
 }
 
 func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) error {
@@ -76,7 +85,7 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 	}
 
 	curr := newParentId
-	for curr != "" {
+	for steps := 0; curr != "" && steps < maxAncestorWalk; steps++ {
 		if curr == id {
 			return errors.New("circular reference: cannot move node into its own descendant")
 		}
@@ -104,7 +113,6 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 		node.IsDeleted(),
 	)
 	return s.SaveNode(ctx, updated)
-
 }
 
 func (s *NodeService) GetNode(ctx context.Context, id string) (Node, error) {
@@ -137,10 +145,9 @@ func (s *NodeService) DeleteNode(ctx context.Context, id string) error {
 	var elementIDs []string
 
 	for _, n := range nodes {
-		switch n.Type() {
-		case "CHAPTER", "NOTEBOOK":
+		if IsStructureType(n.Type()) {
 			structureIDs = append(structureIDs, n.ID())
-		default:
+		} else {
 			elementIDs = append(elementIDs, n.ID())
 		}
 	}
@@ -169,7 +176,6 @@ func (s *NodeService) SearchNodes(ctx context.Context, query string) ([]Node, er
 }
 
 func (s *NodeService) SaveUpdate(ctx context.Context, update *NodeUpdate) error {
-
 	uid, err := s.getUserID(ctx)
 	if err != nil {
 		return err

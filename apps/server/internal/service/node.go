@@ -4,6 +4,37 @@ import (
 	"encoding/json"
 )
 
+// NodeType enumerates the kinds of nodes the service understands.
+// Mirrors packages/core/src/domain/types.ts so that the wire format stays
+// consistent across the Go server and the TypeScript clients.
+type NodeType = string
+
+const (
+	NodeTypeChapter       NodeType = "CHAPTER"
+	NodeTypeNotebook      NodeType = "NOTEBOOK"
+	NodeTypeElementStroke NodeType = "ELEMENT_STROKE"
+)
+
+// EncryptionStrategy enumerates how node payloads are protected at rest.
+type EncryptionStrategy = string
+
+const (
+	EncryptionStandard EncryptionStrategy = "STANDARD"
+	EncryptionE2EE     EncryptionStrategy = "E2EE"
+)
+
+// IsStructureType reports whether the given type belongs to the structural
+// hierarchy (notebooks/chapters) rather than canvas elements. The service
+// uses this to route a node to the correct repository.
+func IsStructureType(t NodeType) bool {
+	switch t {
+	case NodeTypeChapter, NodeTypeNotebook:
+		return true
+	default:
+		return false
+	}
+}
+
 type Node interface {
 	ID() string
 	Type() string
@@ -55,7 +86,7 @@ func NewBaseNode(id, nodeType, parentId, userId string) Node {
 		NodeType:               nodeType,
 		ParentNodeId:           parentId,
 		NodeUserID:             userId,
-		NodeEncryptionStrategy: "STANDARD",
+		NodeEncryptionStrategy: EncryptionStandard,
 	}
 }
 

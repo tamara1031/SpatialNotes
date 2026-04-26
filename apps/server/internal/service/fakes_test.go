@@ -137,6 +137,11 @@ func (f *FakeElementRepository) DeleteByNodeID(ctx context.Context, nodeId, user
 	return nil
 }
 
+var (
+	_ StructureRepository = (*FakeStructureRepository)(nil)
+	_ ElementRepository   = (*FakeElementRepository)(nil)
+)
+
 type FakeNodeUpdateRepository struct {
 	updates map[string][]*NodeUpdate
 }
@@ -161,12 +166,4 @@ func (f *FakeNodeUpdateRepository) FindAllByNodeID(ctx context.Context, nodeId, 
 	return results, nil
 }
 
-func (f *FakeNodeUpdateRepository) FindAllByRoomID(ctx context.Context, roomId, userID string) ([][]byte, error) {
-
-	return nil, nil
-}
-
-func (f *FakeNodeUpdateRepository) SaveRoomUpdate(ctx context.Context, roomId, userID string, payload []byte) error {
-
-	return nil
-}
+var _ NodeUpdateRepository = (*FakeNodeUpdateRepository)(nil)

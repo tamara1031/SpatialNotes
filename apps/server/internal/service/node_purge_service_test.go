@@ -13,9 +13,9 @@ func TestNodePurgeService_AtomicErasure(t *testing.T) {
 	uid := "u1"
 
 	// Setup: Notebook with 2 elements
-	nb := NewBaseNode("nb1", "NOTEBOOK", "root", uid)
-	hit := NewBaseNode("hit-me", "ELEMENT_STROKE", "nb1", uid)
-	miss := NewBaseNode("miss-me", "ELEMENT_STROKE", "nb1", uid)
+	nb := NewBaseNode("nb1", NodeTypeNotebook, "root", uid)
+	hit := NewBaseNode("hit-me", NodeTypeElementStroke, "nb1", uid)
+	miss := NewBaseNode("miss-me", NodeTypeElementStroke, "nb1", uid)
 
 	nodeRepo.Save(ctx, nb)
 	nodeRepo.Save(ctx, hit)
