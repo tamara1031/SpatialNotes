@@ -26,19 +26,13 @@ if (typeof window !== "undefined" && typeof BroadcastChannel !== "undefined") {
 		channel.postMessage({ kind: "update", update });
 	});
 
-	channel.onmessage = (
-		e: MessageEvent<
-			| { kind: "update"; update: Uint8Array }
-			| { kind: "request-state" }
-			| { kind: "state"; state: Uint8Array }
-		>,
-	) => {
+	channel.onmessage = (e: MessageEvent) => {
 		const msg = e.data;
-		if (msg.kind === "update") {
+		if (msg?.kind === "update") {
 			Y.applyUpdate(syncService.ydoc, msg.update, "broadcast");
-		} else if (msg.kind === "state") {
+		} else if (msg?.kind === "state") {
 			Y.applyUpdate(syncService.ydoc, msg.state, "broadcast");
-		} else if (msg.kind === "request-state") {
+		} else if (msg?.kind === "request-state") {
 			const state = Y.encodeStateAsUpdate(syncService.ydoc);
 			channel.postMessage({ kind: "state", state });
 		}
