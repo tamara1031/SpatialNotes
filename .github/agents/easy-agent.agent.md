@@ -98,7 +98,7 @@ TaskType に応じて以下のフェーズを構成します。
 | **Deliberate** | 協議・合意形成。設計判断が必要な場合 | `Parliament` (複数エージェント会議) | 複数の合理的な案から、方針が一つに決定したか |
 | **Plan** | 実行計画の立案。ステップの具体化 | 自律実行 または `Hierarchy: Planner` | 各ステップが具体的で実行可能か。チェックリストを網羅しているか |
 | **Implement** | 実装。コード変更の実行 | `Hierarchy: Implementer` または `edit` | コード変更が完了し、エラーがないか |
-| **Verify** | 検証。テスト実行と品質チェック | `execute`, `Hierarchy: Reviewer` | テストがパスし、チェックリストをすべて満たしているか |
+| **Verify** | 検証。テスト実行 + **refine-loop** で外部レビュー | `execute`, `Hierarchy: Reviewer`, **`refine-loop` スキル** | テストがパスし、requirements_checklist が2連続 CONVERGED か |
 | **Synthesize** | 総括・報告。ユーザーへの最終回答 | 自律実行 | 全てのフェーズが完了し、最終的な回答を作成できたか |
 
 #### Plan フェーズと Hierarchy 1 階層の統合
@@ -125,7 +125,7 @@ Explore の範囲はユーザーのコンテキストと TaskType に基づい�
 
 `Explore -> Deliberate -> Plan -> Implement -> Verify -> (完了)`
 
-* **Verify 内で失敗（バグ・デグレ）**: `Implement` へ戻る（最大2回）
+* **Verify 内で失敗（バグ・デグレ）**: `refine-loop` スキル内で処理（max_iterations=3）。refine-loop が `ESCALATE` を返した場合のみ `Implement` へ戻る
 * **Deliberate で不可解な点**: `Explore` へ戻る（最大1回）
 * **Plan 時に実現不可が判明**: `Explore` または `Deliberate` へ戻る
 
@@ -138,7 +138,7 @@ Explore の範囲はユーザーのコンテキストと TaskType に基づい�
 評価は以下の **ラベル（ステータス）** を付与して判定します。
 
 * **[A] APPROVED (承認)**: フェーズ目標を達成。次フェーズへ進行。
-* **[R] REVISE (修正依頼)**: 目標未達。同一フェーズを再実行（ループ）。
+* **[R] REVISE (修正依頼)**: 目標未達。同一フェーズを再実行（ループ）。**Verify フェーズの REVISE は `refine-loop` スキルに委譲する**（自己評価ループは使わない）。
 * **[D] DELEGATE (委譲)**: 作業を Hierarchy や Parliament などの下位スキルへ委譲。
 * **[L] LOOPBACK (戻り)**: 前段のフェーズ（Plan → Explore 等）に戻って再検討が必要。
 * **[E] ESCALATE (要相談)**: 判断不能。Advisory 相談（Advisory Advisor）へ。
@@ -322,6 +322,29 @@ runSubagent(
 | call-hierarchy | `hierarchy-manager` |
 | call-parliament | `parliament-chairperson` |
 | long-term-memory (VS Code) | `memoir` |
+| call-refine-loop | `refine-loop` |
+
+### call-refine-loop (refine-loop エージェント呼び出し)
+
+Verify フェーズで成果物を外部レビューし、反復改善する。`agent` ツールで呼び出す（Skill ツール不要）。
+
+```
+agent(
+  subagent_type: "refine-loop",
+  description: "Verify: iterative refinement of <subject>",
+  prompt: """
+    subject: "<対象ファイルパスと成果物の説明>"
+    requirements_checklist:
+      - "[critical] <必須要件>"
+      - "<通常要件>"
+    task_context: "<背景・制約・意図>"
+    max_iterations: 3
+  """
+)
+```
+
+> **いつ呼ぶか**: Verify フェーズ開始時に常に呼ぶ（REVISE ループの自己評価の代わり）。テスト実行は先に `execute` で行い、その結果を `task_context` に含めて渡す。
+> **agent ツールが利用不可の場合**: REVISE ループ（最大2回）にフォールバックし、ユーザーに `[refine-loop 不可: agent ツールなし。自己評価モードで継続します]` と通知する。
 
 ---
 
@@ -370,7 +393,7 @@ Parliament での合意後、成果物を Hierarchy に引き継ぐ場合の統�
 
 | 失敗したフェーズ | 判定理由 | 対応方針 |
 | :--- | :--- | :--- |
-| **Verify (失敗)** | 修正上限に達した | `Implement` に戻る。ループ上限（5回）で作動。 |
+| **Verify (失敗)** | refine-loop が ESCALATE を返した | `Implement` に戻る。refine-loop 内で同一 Fix Rule が 3回出現した場合。 |
 | **Deliberate (停滞)** | 合意に至らない | `Explore` に戻り、新たな情報を収集する。 |
 | **Plan (破綻)** | 実現不可と判明 | `Deliberate` で方針の再検討、または `Explore` へ戻る。 |
 
@@ -514,7 +537,7 @@ memoir スキルの呼び出し自体が失敗した場合（`Skill` ツール�
 * **Deliberate**: 合意案がチェックリストを網羅しているか。
 * **Plan**: ステップの実行可能性と、エッジケースの考慮。
 * **Implement**: テスト結果、ビルド結果、修正ファイルの一覧。
-* **Verify**: 全てのチェックリスト項目が「PASS」しているか。
+* **Verify**: `refine-loop` エージェントに委譲。CONVERGED / MAX_ITER / ESCALATE のいずれかが返るまで待つ。自己評価ループ（REVISE）は使用しない。
 
 ### 最終検証 (全モード共通)
 1. **成果物の存在確認**: 期待されたファイルが作成/更新されているか。
