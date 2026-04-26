@@ -469,7 +469,7 @@ export const CanvasEngineUI = forwardRef<
 				{/* Board Area */}
 				<div
 					ref={containerRef}
-					className="canvas-surface"
+					className="canvas-board"
 					style={{ flex: 1, overflow: "hidden", position: "relative" }}
 				>
 					{!activeNodeId && (

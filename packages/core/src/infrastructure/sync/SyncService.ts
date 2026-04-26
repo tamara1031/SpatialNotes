@@ -34,7 +34,6 @@ export class SyncService {
 
 	public reset(): void {
 		this.undoManager.clear();
-		this.nodes.clear();
 		this.elements.clear();
 	}
 }

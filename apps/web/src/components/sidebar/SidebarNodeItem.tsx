@@ -1,5 +1,5 @@
 import type React from "react";
-import { memo, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import type { TreeNode } from "../../store/nodes";
 import {
 	ChapterIcon,
@@ -43,6 +43,14 @@ export const SidebarNodeItem = memo<{
 		"above" | "inside" | "below" | null
 	>(null);
 	const [isExpanded, setIsExpanded] = useState(true);
+	const editInputRef = useRef<HTMLInputElement>(null);
+
+	useEffect(() => {
+		if (isEditing) {
+			editInputRef.current?.focus();
+			editInputRef.current?.select();
+		}
+	}, [isEditing]);
 
 	const handleCommit = () => {
 		const name = (editedName || "").trim();
@@ -214,10 +222,12 @@ export const SidebarNodeItem = memo<{
 
 				{isEditing ? (
 					<input
+						ref={editInputRef}
 						value={editedName}
 						onChange={(e) => setEditedName(e.target.value)}
 						onBlur={handleCommit}
 						onKeyDown={(e) => {
+							e.stopPropagation();
 							if (e.key === "Enter") handleCommit();
 							if (e.key === "Escape") {
 								setIsEditing(false);
