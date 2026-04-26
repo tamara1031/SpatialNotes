@@ -19,7 +19,9 @@ export class CryptoWorkerProxy {
 			// Reject all pending callers if the worker crashes so they don't hang.
 			this.worker.onerror = (err) => {
 				console.error("CryptoWorker Error:", err);
-				this.rejectAllPending(new Error(`CryptoWorker crashed: ${err.message}`));
+				this.rejectAllPending(
+					new Error(`CryptoWorker crashed: ${err.message}`),
+				);
 			};
 		}
 	}
