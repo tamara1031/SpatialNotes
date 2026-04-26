@@ -15,7 +15,7 @@
 		"build:server": "mkdir -p apps/server/cmd/server/dist && touch apps/server/cmd/server/dist/.gitkeep && go build -o apps/server/bin/server apps/server/cmd/server/main.go",
 		"lint": "biome check .",
 		"format:check": "pnpm --filter web run format:check 2>/dev/null || echo 'web: no format script'",
-		"test": "pnpm --filter canvas-engine test && pnpm --filter web test",
+		"test": "pnpm build:engine-core && pnpm build:core && pnpm --filter canvas-engine test && pnpm --filter web test",
 		"test:e2e": "playwright test -c tests/e2e/playwright.config.ts"
 	},
 	"devDependencies": {

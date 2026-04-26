@@ -40,13 +40,19 @@ test.describe("Astro Auth Flow & Redirection", () => {
 	test("Deep link to /signin/ should work for guests", async ({ page }) => {
 		await page.goto("/signin/");
 		await expect(page).toHaveURL(/\/signin\/?$/);
-		await expect(page.locator("h2")).toContainText("Welcome Back");
+		// Match by accessible name so the Astro dev toolbar's own h2
+		// ("Featured integrations") cannot collide with this assertion.
+		await expect(
+			page.getByRole("heading", { name: "Welcome Back" }),
+		).toBeVisible();
 	});
 
 	test("Deep link to /signup/ should work for guests", async ({ page }) => {
 		await page.goto("/signup/");
 		await expect(page).toHaveURL(/\/signup\/?$/);
-		await expect(page.locator("h2")).toContainText("Join SpatialNotes");
+		await expect(
+			page.getByRole("heading", { name: "Join SpatialNotes" }),
+		).toBeVisible();
 	});
 
 	test("Clicking 'Sign Up' link on Sign In page should navigate to /signup/", async ({

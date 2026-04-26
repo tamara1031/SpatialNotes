@@ -3,8 +3,8 @@ package service_test
 import (
 	"context"
 	"fmt"
-	"testing"
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"testing"
 )
 
 func BenchmarkNodeService_DeleteNode(b *testing.B) {
