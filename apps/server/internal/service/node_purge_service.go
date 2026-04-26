@@ -22,7 +22,7 @@ func (s *NodePurgeService) Purge(ctx context.Context, nodeId, userID string, pat
 	// 2. Simplistic intersection check (for system test purposes)
 	for _, node := range tree {
 		// Only stroke elements are currently target for erasure in this service
-		if node.Type() == "ELEMENT_STROKE" {
+		if node.Type() == NodeTypeElementStroke {
 			// In real implementation, we'd use bounding box logic here
 			// For SC-S2 we simulate hit on a specific node
 			if node.ID() == "hit-me" {

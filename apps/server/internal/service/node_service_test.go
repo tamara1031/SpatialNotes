@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestNodeService_CircularReference(t *testing.T) {
@@ -15,9 +16,9 @@ func TestNodeService_CircularReference(t *testing.T) {
 	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
 
 	// Hierarchy: root -> n1 -> n2 -> n3
-	n1 := NewBaseNode("n1", "CHAPTER", "root", uid)
-	n2 := NewBaseNode("n2", "CHAPTER", "n1", uid)
-	n3 := NewBaseNode("n3", "CHAPTER", "n2", uid)
+	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
+	n2 := NewBaseNode("n2", NodeTypeChapter, "n1", uid)
+	n3 := NewBaseNode("n3", NodeTypeChapter, "n2", uid)
 
 	structureRepo.Save(ctx, n1)
 	structureRepo.Save(ctx, n2)
@@ -39,6 +40,69 @@ func TestNodeService_CircularReference(t *testing.T) {
 	}
 }
 
+func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T) {
+	uid := "u1"
+	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// Existing STANDARD node owned by u1 with one plaintext element child.
+	nodeID := "nb1"
+	nb := NewFullNode(nodeID, NodeTypeNotebook, "root", uid, "CANVAS", EncryptionStandard, nil, 0, false)
+	if err := svc.SaveNode(ctx, nb); err != nil {
+		t.Fatalf("setup: save nb: %v", err)
+	}
+	el := NewBaseNode("el-1", NodeTypeElementStroke, nodeID, uid)
+	if err := svc.SaveNode(ctx, el); err != nil {
+		t.Fatalf("setup: save element: %v", err)
+	}
+
+	// A request that tries to flip the same node to E2EE while claiming a
+	// different owner must be rejected, and must not destroy any plaintext
+	// elements as a side effect of the rejected request.
+	hostile := NewFullNode(nodeID, NodeTypeNotebook, "root", "attacker", "CANVAS", EncryptionE2EE, nil, 1, false)
+	if err := svc.SaveNode(ctx, hostile); err == nil {
+		t.Fatal("expected forbidden error for foreign user save")
+	}
+
+	// Element must still exist - the auth check must short-circuit before
+	// the E2EE purge runs.
+	if _, err := elementRepo.FindByID(ctx, "el-1", uid); err != nil {
+		t.Errorf("element was wrongly purged by a rejected save: %v", err)
+	}
+}
+
+func TestNodeService_MoveNode_DepthGuardOnCorruptParentChain(t *testing.T) {
+	uid := "u1"
+	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// Construct a corrupted parent cycle: a <-> b. This should never occur
+	// in well-formed data but must not be able to hang the server.
+	a := NewFullNode("a", NodeTypeChapter, "b", uid, "", EncryptionStandard, nil, 0, false)
+	b := NewFullNode("b", NodeTypeChapter, "a", uid, "", EncryptionStandard, nil, 0, false)
+	target := NewBaseNode("target", NodeTypeChapter, "root", uid)
+	structureRepo.Save(ctx, a)
+	structureRepo.Save(ctx, b)
+	structureRepo.Save(ctx, target)
+
+	done := make(chan error, 1)
+	go func() { done <- svc.MoveNode(ctx, "target", "a") }()
+
+	select {
+	case <-done:
+		// Either succeeds or returns an error - what matters is that the
+		// ancestor walk terminates.
+	case <-time.After(2 * time.Second):
+		t.Fatal("MoveNode did not terminate on corrupted parent cycle")
+	}
+}
+
 func TestNodeService_RecursiveDelete(t *testing.T) {
 	uid := "u1"
 	ctx := context.WithValue(context.Background(), UserIDKey, uid)
@@ -51,8 +115,8 @@ func TestNodeService_RecursiveDelete(t *testing.T) {
 	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
 
 	// Hierarchy: root -> n1 -> e1
-	n1 := NewBaseNode("n1", "CHAPTER", "root", uid)
-	e1 := NewBaseNode("e1", "ELEMENT_STROKE", "n1", uid)
+	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
+	e1 := NewBaseNode("e1", NodeTypeElementStroke, "n1", uid)
 
 	structureRepo.Save(ctx, n1)
 	elementRepo.Save(ctx, e1)

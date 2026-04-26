@@ -16,10 +16,10 @@ func TestNodeService_E2EE_Transition_Purge(t *testing.T) {
 
 	// 1. Setup a STANDARD node with plaintext elements
 	nodeID := "node-123"
-	node := NewFullNode(nodeID, "NOTEBOOK", "root", uid, "CANVAS", "STANDARD", []byte("meta"), 0, false)
+	node := NewFullNode(nodeID, NodeTypeNotebook, "root", uid, "CANVAS", EncryptionStandard, []byte("meta"), 0, false)
 	svc.SaveNode(ctx, node)
 
-	element := NewBaseNode("el-1", "ELEMENT_STROKE", nodeID, uid)
+	element := NewBaseNode("el-1", NodeTypeElementStroke, nodeID, uid)
 	svc.SaveNode(ctx, element)
 
 	// Verify element exists
@@ -29,7 +29,7 @@ func TestNodeService_E2EE_Transition_Purge(t *testing.T) {
 	}
 
 	// 2. Transition to E2EE
-	e2eeNode := NewFullNode(nodeID, "NOTEBOOK", "root", uid, "CANVAS", "E2EE", []byte("meta"), 1, false)
+	e2eeNode := NewFullNode(nodeID, NodeTypeNotebook, "root", uid, "CANVAS", EncryptionE2EE, []byte("meta"), 1, false)
 	err = svc.SaveNode(ctx, e2eeNode)
 	if err != nil {
 		t.Fatalf("failed to transition to E2EE: %v", err)
