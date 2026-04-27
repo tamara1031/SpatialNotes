@@ -58,8 +58,7 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nodes)
+	writeJSON(w, http.StatusOK, nodes)
 }
 
 func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
@@ -131,8 +130,7 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nodes)
+	writeJSON(w, http.StatusOK, nodes)
 }
 
 func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
@@ -188,6 +186,5 @@ func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updates)
+	writeJSON(w, http.StatusOK, updates)
 }
