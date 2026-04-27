@@ -22,6 +22,23 @@ func requireNodeID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	return id, true
 }
 
+// requireUserID returns the authenticated user id attached to r's context
+// by AuthMiddleware. When no uid is present (the middleware was bypassed
+// or a test forgot authctx.With), it writes the canonical 401 response
+// for the named operation and returns false; the caller should return.
+//
+// Centralising this means the "uid -> 401 via ErrUnauthenticated" path is
+// expressed once instead of being copy-pasted at every endpoint that
+// stamps a uid onto an outbound payload.
+func requireUserID(w http.ResponseWriter, r *http.Request, op string) (string, bool) {
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		writeServiceError(w, service.ErrUnauthenticated, op)
+		return "", false
+	}
+	return uid, true
+}
+
 type NodeHandler struct {
 	service NodeService
 }
@@ -56,9 +73,8 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
-	uid, ok := authctx.UserID(r.Context())
+	uid, ok := requireUserID(w, r, "save_node")
 	if !ok {
-		writeServiceError(w, service.ErrUnauthenticated, "save_node")
 		return
 	}
 	var req UpsertNodeRequest
@@ -112,9 +128,8 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
-	uid, ok := authctx.UserID(r.Context())
+	uid, ok := requireUserID(w, r, "push_update")
 	if !ok {
-		writeServiceError(w, service.ErrUnauthenticated, "push_update")
 		return
 	}
 	id, ok := requireNodeID(w, r)
