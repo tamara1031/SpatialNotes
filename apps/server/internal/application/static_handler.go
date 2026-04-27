@@ -40,8 +40,17 @@ func (h *SPAHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		fullPath = h.IndexFile
 	}
 
-	// Check if the file exists in the embedded filesystem
-	if _, err := fs.Stat(h.FileSystem, fullPath); err != nil {
+	// Check if the file exists in the embedded filesystem.
+	// fs.FS paths must not end with "/", so strip it before calling Stat.
+	statPath := strings.TrimSuffix(fullPath, "/")
+	fi, err := fs.Stat(h.FileSystem, statPath)
+	if err == nil && fi.IsDir() {
+		// Directory found — let FileServer handle index.html lookup without
+		// rewriting the URL to "/…/index.html", which would trigger a 301 loop.
+		h.StaticHandler.ServeHTTP(w, r)
+		return
+	}
+	if err != nil {
 		// File not found, try appending index.html for directories
 		altPath := fullPath
 		if strings.HasSuffix(altPath, "/") {
