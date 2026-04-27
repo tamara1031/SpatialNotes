@@ -2,12 +2,13 @@ import type * as Y from "yjs";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import type { Node } from "../../domain/nodes/Node.js";
 import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
+import type { NodeRecord } from "../../domain/types.js";
 
 /**
  * Implementation of INodeRepository using Yjs for real-time synchronization.
  */
 export class YjsNodeRepository implements INodeRepository {
-	private readonly nodes: Y.Map<any>;
+	private readonly nodes: Y.Map<NodeRecord>;
 
 	constructor(private readonly doc: Y.Doc) {
 		this.nodes = this.doc.getMap("nodes");
@@ -46,7 +47,7 @@ export class YjsNodeRepository implements INodeRepository {
 		return result;
 	}
 
-	private mapToEntity(data: any): Node {
-		return NodeFactory.create(data as any);
+	private mapToEntity(data: NodeRecord): Node {
+		return NodeFactory.create(data);
 	}
 }
