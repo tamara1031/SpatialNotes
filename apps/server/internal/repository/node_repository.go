@@ -59,33 +59,41 @@ func (r *NodeRepository) FindByID(ctx context.Context, id, userID string) (servi
 	return nil, service.ErrNodeNotFound
 }
 
+// GetTree fetches the complete subtree rooted at rootId for the given user
+// in a single recursive CTE query, replacing the previous BFS implementation
+// that issued O(depth) round-trips to the database.
+//
+// SQLite has supported WITH RECURSIVE since 3.8.3 (2013); the modernc driver
+// used here is well past that floor.
 func (r *NodeRepository) GetTree(ctx context.Context, rootId, userID string) ([]service.Node, error) {
-	root, err := r.FindByID(ctx, rootId, userID)
-	if err != nil {
-		return nil, err
+	var rows []NotebookNode
+	err := r.db.NewRaw(`
+		WITH RECURSIVE tree AS (
+			SELECT id, type, parent_id, user_id, engine_type, encryption_strategy,
+			       metadata_payload, updated_at, is_deleted
+			FROM notebook_nodes
+			WHERE id = ? AND user_id = ? AND is_deleted = 0
+			UNION ALL
+			SELECT n.id, n.type, n.parent_id, n.user_id, n.engine_type, n.encryption_strategy,
+			       n.metadata_payload, n.updated_at, n.is_deleted
+			FROM notebook_nodes n
+			INNER JOIN tree t ON n.parent_id = t.id
+			WHERE n.user_id = ? AND n.is_deleted = 0
+		)
+		SELECT * FROM tree`,
+		rootId, userID, userID,
+	).Scan(ctx, &rows)
+	if err != nil || len(rows) == 0 {
+		return nil, service.ErrNodeNotFound
 	}
-
-	var results []service.Node
-	results = append(results, root)
-
-	queue := []string{rootId}
-	for len(queue) > 0 {
-		currentId := queue[0]
-		queue = queue[1:]
-
-		var children []NotebookNode
-		if err := r.db.NewSelect().Model(&children).
-			Where("parent_id = ? AND user_id = ? AND is_deleted = 0", currentId, userID).
-			Scan(ctx); err == nil {
-			for _, child := range children {
-				node := service.NewFullNode(child.NodeId, child.NodeType, child.ParentNodeId, child.UserID, child.NodeEngineType, child.NodeEncryptionStrategy, child.NodeMetadataPayload, child.NodeUpdatedAt, child.IsDeleted)
-				results = append(results, node)
-				queue = append(queue, child.NodeId)
-			}
-		}
-
+	results := make([]service.Node, len(rows))
+	for i, row := range rows {
+		results[i] = service.NewFullNode(
+			row.NodeId, row.NodeType, row.ParentNodeId, row.UserID,
+			row.NodeEngineType, row.NodeEncryptionStrategy,
+			row.NodeMetadataPayload, row.NodeUpdatedAt, row.IsDeleted,
+		)
 	}
-
 	return results, nil
 }
 
