@@ -1,7 +1,6 @@
 package application
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/logger"
@@ -56,8 +55,7 @@ type RegisterRequest struct {
 
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -88,8 +86,7 @@ type LoginResponse struct {
 
 func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 	var req LoginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 

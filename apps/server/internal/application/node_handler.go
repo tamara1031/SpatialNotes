@@ -1,7 +1,6 @@
 package application
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
@@ -63,8 +62,7 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var req UpsertNodeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -125,8 +123,7 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req PushUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
