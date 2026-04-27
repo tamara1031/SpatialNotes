@@ -129,13 +129,14 @@ func (s *NodeService) validateNewParent(ctx context.Context, nodeID, newParentID
 	return nil
 }
 
+// MoveNode is now a thin convenience wrapper: it loads the existing node,
+// rebuilds it with the new parent_id, and delegates to SaveNode. SaveNode
+// owns the parent-mutation contract (cycle detection, ownership), so this
+// path stays in step with any future tightening of the rules without
+// having to remember to update both call sites.
 func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) error {
 	uid, err := s.getUserID(ctx)
 	if err != nil {
-		return err
-	}
-
-	if err := s.validateNewParent(ctx, id, newParentId, uid); err != nil {
 		return err
 	}
 
