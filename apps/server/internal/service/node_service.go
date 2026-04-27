@@ -82,30 +82,31 @@ func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 	return s.elementRepo.Save(ctx, n)
 }
 
-func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) error {
-	uid, err := s.getUserID(ctx)
-	if err != nil {
-		return err
-	}
-
-	if id == newParentId {
+// validateNewParent is the single source of truth for "is this parent
+// change safe?" — both MoveNode and (eventually) SaveNode delegate here so
+// the cycle/ownership contract cannot drift between entry points.
+//
+// It enforces three invariants:
+//  1. A node cannot be its own parent.
+//  2. A non-root destination must exist and be owned by the caller. Without
+//     this, the ancestor walk would silently treat "parent not visible to
+//     me" as "I have reached the top of the tree".
+//  3. None of the destination's ancestors may equal nodeID (cycle), capped
+//     at maxAncestorWalk to guard against corrupt parent chains.
+func (s *NodeService) validateNewParent(ctx context.Context, nodeID, newParentID, uid string) error {
+	if nodeID == newParentID {
 		return ErrCircularRef
 	}
 
-	// Verify the destination parent before doing anything else: unless it is
-	// the virtual root, it must exist as a structure node owned by the
-	// caller. Without this check, the ancestor walk below would silently
-	// treat "parent not found" as "we hit the top of the tree", letting a
-	// caller re-parent their own node onto a foreign or non-existent id.
-	if !IsVirtualRoot(newParentId) {
-		if _, err := s.structureRepo.FindByID(ctx, newParentId, uid); err != nil {
+	if !IsVirtualRoot(newParentID) {
+		if _, err := s.structureRepo.FindByID(ctx, newParentID, uid); err != nil {
 			return ErrForbidden
 		}
 	}
 
-	curr := newParentId
+	curr := newParentID
 	for steps := 0; curr != "" && steps < maxAncestorWalk; steps++ {
-		if curr == id {
+		if curr == nodeID {
 			return ErrCircularRef
 		}
 		parent, err := s.structureRepo.FindByID(ctx, curr, uid)
@@ -116,6 +117,18 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 			break
 		}
 		curr = parent.ParentID()
+	}
+	return nil
+}
+
+func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) error {
+	uid, err := s.getUserID(ctx)
+	if err != nil {
+		return err
+	}
+
+	if err := s.validateNewParent(ctx, id, newParentId, uid); err != nil {
+		return err
 	}
 
 	node, err := s.GetNode(ctx, id)
