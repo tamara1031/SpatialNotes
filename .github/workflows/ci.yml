@@ -119,8 +119,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: apps/server/go.mod
-          cache-dependency-path: apps/server/go.sum
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
