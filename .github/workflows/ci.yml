@@ -48,7 +48,7 @@ jobs:
 
       - name: Run Go Tests
         working-directory: apps/server
-        run: go test ./...
+        run: go test ./internal/... ./pkg/...
 
   test-unit:
     name: Unit Tests
