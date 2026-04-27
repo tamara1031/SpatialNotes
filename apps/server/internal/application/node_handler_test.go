@@ -361,3 +361,164 @@ func TestHandlePushUpdate_RejectsUnauthenticated(t *testing.T) {
 		t.Fatalf("expected 401 on unauthenticated push, got %d", rr.Code)
 	}
 }
+
+// --- HandleMove ---
+
+func TestHandleMove_OK(t *testing.T) {
+	var capturedID, capturedParent string
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, id, newParentId string) error {
+			capturedID = id
+			capturedParent = newParentId
+			return nil
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "new-parent"})
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", rr.Code)
+	}
+	if capturedID != "node-abc" {
+		t.Errorf("expected id=node-abc, got %q", capturedID)
+	}
+	if capturedParent != "new-parent" {
+		t.Errorf("expected newParentId=new-parent, got %q", capturedParent)
+	}
+}
+
+func TestHandleMove_MissingID(t *testing.T) {
+	svc := &stubNodeService{}
+	h := NewNodeHandler(svc)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "p1"})
+	req := authedRequest(http.MethodPatch, "/api/nodes//move", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	// Invoke handler directly without mux to simulate missing path param.
+	h.HandleMove(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on missing id, got %d", rr.Code)
+	}
+}
+
+func TestHandleMove_InvalidBody(t *testing.T) {
+	svc := &stubNodeService{}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader([]byte("not-json")))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on invalid body, got %d", rr.Code)
+	}
+}
+
+func TestHandleMove_CircularRef_Returns400(t *testing.T) {
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, _, _ string) error {
+			return service.ErrCircularRef
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "descendant"})
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on circular ref, got %d", rr.Code)
+	}
+}
+
+func TestHandleMove_Forbidden_Returns403(t *testing.T) {
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, _, _ string) error {
+			return service.ErrForbidden
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "foreign-parent"})
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 on forbidden move, got %d", rr.Code)
+	}
+}
+
+func TestHandleMove_NodeNotFound_Returns404(t *testing.T) {
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, _, _ string) error {
+			return service.ErrNodeNotFound
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "p1"})
+	req := authedRequest(http.MethodPatch, "/api/nodes/ghost", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("expected 404 on node not found, got %d", rr.Code)
+	}
+}
+
+func TestHandleMove_ServiceError_Returns500(t *testing.T) {
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, _, _ string) error {
+			return errors.New("unexpected db failure")
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: "p1"})
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 on unexpected error, got %d", rr.Code)
+	}
+}
+
+// MoveNode accepts an empty parentId; that is a valid "move to root" signal
+// (IsVirtualRoot treats "" as the tree root). The handler must not reject it.
+func TestHandleMove_EmptyParentID_IsValid(t *testing.T) {
+	var capturedParent string
+	svc := &stubNodeService{
+		moveNode: func(_ context.Context, _, newParentId string) error {
+			capturedParent = newParentId
+			return nil
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(MoveNodeRequest{ParentID: ""})
+	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected 204 for empty parentId (move to root), got %d", rr.Code)
+	}
+	if capturedParent != "" {
+		t.Errorf("expected capturedParent to be empty string, got %q", capturedParent)
+	}
+}
