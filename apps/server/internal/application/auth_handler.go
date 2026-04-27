@@ -81,12 +81,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 
 	token, err := h.authSvc.Register(r.Context(), req.Email, req.SaltAuth, req.EncryptionSalt, req.WrappedDEK, req.AuthToken)
 	if err != nil {
-		if err == service.ErrUserAlreadyExists {
-			http.Error(w, "User already exists", http.StatusConflict)
-		} else {
-			logger.Error("Failed to register user", "error", err)
-			http.Error(w, "Internal server error", http.StatusInternalServerError)
-		}
+		writeServiceError(w, err, "register_user", "email", req.Email)
 		return
 	}
 
