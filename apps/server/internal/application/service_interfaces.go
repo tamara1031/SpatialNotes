@@ -15,3 +15,12 @@ type NodeService interface {
 	SaveUpdate(ctx context.Context, update *service.NodeUpdate) error
 	GetUpdates(ctx context.Context, nodeId string) ([]*service.NodeUpdate, error)
 }
+
+// AuthService defines the authentication operations required by AuthHandler.
+// Using an interface decouples the handler from the concrete AuthService,
+// enabling straightforward unit testing without a real JWT/bcrypt stack.
+type AuthService interface {
+	GetSalts(ctx context.Context, email string) (string, string, error)
+	Register(ctx context.Context, email, saltAuth, saltEncryption, wrappedDEK, authToken string) (string, error)
+	Login(ctx context.Context, email, authToken string) (string, string, error)
+}
