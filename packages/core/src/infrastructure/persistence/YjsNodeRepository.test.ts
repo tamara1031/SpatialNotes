@@ -1,5 +1,5 @@
-import * as Y from "yjs";
 import { describe, expect, it } from "vitest";
+import * as Y from "yjs";
 import { NodeFactory } from "../../domain/nodes/NodeFactory.js";
 import { YjsNodeRepository } from "./YjsNodeRepository.js";
 
@@ -19,7 +19,13 @@ describe("YjsNodeRepository", () => {
 
 		it("round-trips a saved node", async () => {
 			const repo = makeRepo();
-			const record = NodeFactory.createRecord("CHAPTER", null, userId, {}, "Root");
+			const record = NodeFactory.createRecord(
+				"CHAPTER",
+				null,
+				userId,
+				{},
+				"Root",
+			);
 			const node = NodeFactory.create(record);
 			await repo.save(node);
 			const found = await repo.findById(node.id);
@@ -30,7 +36,13 @@ describe("YjsNodeRepository", () => {
 
 		it("findById returns a soft-deleted node (caller decides visibility)", async () => {
 			const repo = makeRepo();
-			const record = NodeFactory.createRecord("CHAPTER", null, userId, {}, "Deleted");
+			const record = NodeFactory.createRecord(
+				"CHAPTER",
+				null,
+				userId,
+				{},
+				"Deleted",
+			);
 			const node = NodeFactory.create(record);
 			node.delete();
 			await repo.save(node);
@@ -42,8 +54,12 @@ describe("YjsNodeRepository", () => {
 	describe("findAll", () => {
 		it("returns only nodes for the requested user", async () => {
 			const repo = makeRepo();
-			const mine = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Mine"));
-			const theirs = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, otherUserId, {}, "Theirs"));
+			const mine = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Mine"),
+			);
+			const theirs = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, otherUserId, {}, "Theirs"),
+			);
 			await repo.save(mine);
 			await repo.save(theirs);
 
@@ -54,8 +70,12 @@ describe("YjsNodeRepository", () => {
 
 		it("excludes soft-deleted nodes", async () => {
 			const repo = makeRepo();
-			const active = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Active"));
-			const deleted = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Deleted"));
+			const active = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Active"),
+			);
+			const deleted = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Deleted"),
+			);
 			deleted.delete();
 			await repo.save(active);
 			await repo.save(deleted);
@@ -74,8 +94,12 @@ describe("YjsNodeRepository", () => {
 	describe("findByParentId", () => {
 		it("returns children with matching parentId for the user", async () => {
 			const repo = makeRepo();
-			const parent = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Parent"));
-			const child = NodeFactory.create(NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Child"));
+			const parent = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Parent"),
+			);
+			const child = NodeFactory.create(
+				NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Child"),
+			);
 			await repo.save(parent);
 			await repo.save(child);
 
@@ -86,9 +110,15 @@ describe("YjsNodeRepository", () => {
 
 		it("excludes soft-deleted children", async () => {
 			const repo = makeRepo();
-			const parent = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Parent"));
-			const active = NodeFactory.create(NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Active"));
-			const deleted = NodeFactory.create(NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Deleted"));
+			const parent = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Parent"),
+			);
+			const active = NodeFactory.create(
+				NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Active"),
+			);
+			const deleted = NodeFactory.create(
+				NodeFactory.createRecord("NOTEBOOK", parent.id, userId, {}, "Deleted"),
+			);
 			deleted.delete();
 			await repo.save(parent);
 			await repo.save(active);
@@ -101,8 +131,12 @@ describe("YjsNodeRepository", () => {
 
 		it("returns root nodes when parentId is null", async () => {
 			const repo = makeRepo();
-			const root = NodeFactory.create(NodeFactory.createRecord("CHAPTER", null, userId, {}, "Root"));
-			const child = NodeFactory.create(NodeFactory.createRecord("NOTEBOOK", root.id, userId, {}, "Child"));
+			const root = NodeFactory.create(
+				NodeFactory.createRecord("CHAPTER", null, userId, {}, "Root"),
+			);
+			const child = NodeFactory.create(
+				NodeFactory.createRecord("NOTEBOOK", root.id, userId, {}, "Child"),
+			);
 			await repo.save(root);
 			await repo.save(child);
 

@@ -27,10 +27,7 @@ interface SqliteNodeRow {
 
 interface Sqlite3OO1DB {
 	exec(sql: string): void;
-	exec(options: {
-		sql: string;
-		bind?: (string | number | null)[];
-	}): void;
+	exec(options: { sql: string; bind?: (string | number | null)[] }): void;
 	exec(options: {
 		sql: string;
 		bind?: (string | number | null)[];
