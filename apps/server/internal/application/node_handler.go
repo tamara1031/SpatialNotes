@@ -47,11 +47,6 @@ type PushUpdateRequest struct {
 }
 
 func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	nodes, err := h.service.SearchNodes(r.Context(), "")
 	if err != nil {
 		writeServiceError(w, err, "list_nodes")
@@ -62,11 +57,6 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	uid, ok := authctx.UserID(r.Context())
 	if !ok {
 		writeServiceError(w, service.ErrUnauthenticated, "save_node")
@@ -99,11 +89,6 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id, ok := requireNodeID(w, r)
 	if !ok {
 		return
@@ -118,11 +103,6 @@ func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	query := r.URL.Query().Get("q")
 	nodes, err := h.service.SearchNodes(r.Context(), query)
 	if err != nil {
@@ -134,11 +114,6 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	uid, ok := authctx.UserID(r.Context())
 	if !ok {
 		writeServiceError(w, service.ErrUnauthenticated, "push_update")
@@ -170,11 +145,6 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id, ok := requireNodeID(w, r)
 	if !ok {
 		return
