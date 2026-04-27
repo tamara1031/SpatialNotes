@@ -37,6 +37,20 @@ func (h *NodeHandler) getUserID(r *http.Request) string {
 	return uid
 }
 
+// nodeIDFromPath extracts the node id from a URL of the form /prefix/{id}/...
+// It returns the id and true on success, or ("", false) when the path segment is absent.
+func nodeIDFromPath(r *http.Request, segmentIndex int) (string, bool) {
+	id := r.PathValue("id")
+	if id != "" {
+		return id, true
+	}
+	parts := strings.Split(r.URL.Path, "/")
+	if len(parts) <= segmentIndex || parts[segmentIndex] == "" {
+		return "", false
+	}
+	return parts[segmentIndex], true
+}
+
 func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -50,8 +64,7 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nodes)
+	writeJSON(w, http.StatusOK, nodes)
 }
 
 func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
@@ -94,13 +107,11 @@ func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simple URL path parsing: /api/nodes/{id}
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 4 || parts[3] == "" {
+	id, ok := nodeIDFromPath(r, 3)
+	if !ok {
 		http.Error(w, "Missing node id", http.StatusBadRequest)
 		return
 	}
-	id := parts[3]
 
 	if err := h.service.DeleteNode(r.Context(), id); err != nil {
 		logger.Error("Failed to delete node in index", "error", err, "id", id)
@@ -125,8 +136,7 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(nodes)
+	writeJSON(w, http.StatusOK, nodes)
 }
 
 func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
@@ -136,14 +146,10 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	uid := h.getUserID(r)
-	id := r.PathValue("id")
-	if id == "" {
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 4 || parts[3] == "" {
-			http.Error(w, "Missing node id", http.StatusBadRequest)
-			return
-		}
-		id = parts[3]
+	id, ok := nodeIDFromPath(r, 3)
+	if !ok {
+		http.Error(w, "Missing node id", http.StatusBadRequest)
+		return
 	}
 
 	var req PushUpdateRequest
@@ -173,14 +179,10 @@ func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-	if id == "" {
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 4 || parts[3] == "" {
-			http.Error(w, "Missing node id", http.StatusBadRequest)
-			return
-		}
-		id = parts[3]
+	id, ok := nodeIDFromPath(r, 3)
+	if !ok {
+		http.Error(w, "Missing node id", http.StatusBadRequest)
+		return
 	}
 
 	updates, err := h.service.GetUpdates(r.Context(), id)
@@ -190,6 +192,5 @@ func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(updates)
+	writeJSON(w, http.StatusOK, updates)
 }

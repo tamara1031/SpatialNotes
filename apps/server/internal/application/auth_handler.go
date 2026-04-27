@@ -9,10 +9,10 @@ import (
 )
 
 type AuthHandler struct {
-	authSvc *service.AuthService
+	authSvc AuthService
 }
 
-func NewAuthHandler(authSvc *service.AuthService) *AuthHandler {
+func NewAuthHandler(authSvc AuthService) *AuthHandler {
 	return &AuthHandler{
 		authSvc: authSvc,
 	}
@@ -40,14 +40,12 @@ func (h *AuthHandler) HandleGetSalt(w http.ResponseWriter, r *http.Request) {
 	s1, s2, err := h.authSvc.GetSalts(r.Context(), email)
 	if err != nil {
 		logger.Info("Salts not found for email", "email", email)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(SaltResponse{Exists: false})
+		writeJSON(w, http.StatusOK, SaltResponse{Exists: false})
 		return
 	}
 
 	logger.Info("Salts found for email", "email", email)
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(SaltResponse{
+	writeJSON(w, http.StatusOK, SaltResponse{
 		Exists:         true,
 		SaltAuth:       s1,
 		EncryptionSalt: s2,
@@ -90,9 +88,7 @@ func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"status": "ok", "token": token})
+	writeJSON(w, http.StatusCreated, map[string]string{"status": "ok", "token": token})
 }
 
 type LoginRequest struct {
@@ -124,9 +120,7 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	json.NewEncoder(w).Encode(LoginResponse{
+	writeJSON(w, http.StatusOK, LoginResponse{
 		Status:     "ok",
 		Token:      token,
 		WrappedDEK: wrapped,
