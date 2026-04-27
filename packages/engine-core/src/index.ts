@@ -61,6 +61,10 @@ export abstract class WorkerRpcClient {
 			this.worker = new Worker(workerUrl, { type: "module" });
 			this.worker.onmessage = this.handleMessage.bind(this);
 			this.worker.onerror = (event) => {
+				// Surface the raw ErrorEvent first so devtools still see
+				// filename/lineno and the stack the browser attached to it;
+				// rejection-only would swallow that context.
+				console.error("Worker onerror:", event);
 				// Duck-typed read of event.message: in browsers this is an
 				// ErrorEvent, but the global ErrorEvent constructor is not
 				// available in every test environment, so we avoid the

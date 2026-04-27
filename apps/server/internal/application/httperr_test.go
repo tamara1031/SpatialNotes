@@ -40,10 +40,12 @@ func TestRequireNodeID_PassesThroughWhenRouterCaptures(t *testing.T) {
 	}
 }
 
-// TestWriteServiceError pins the sentinel-to-HTTP-status contract that the
-// rest of the application layer relies on. If a new domain sentinel is added
-// without a mapping, the default branch is exercised here so the gap shows
-// up as a 500 rather than as a silent regression.
+// TestWriteServiceError pins the sentinel-to-HTTP-status contract for the
+// sentinels that exist today. It does NOT detect newly-added sentinels
+// that lack a mapping — those still fall through to 500 silently. A
+// future improvement is to replace this case table with iteration over an
+// exported registry so adding a sentinel without updating the registry
+// (or this test) becomes a build-time rather than wire-time failure.
 func TestWriteServiceError(t *testing.T) {
 	cases := []struct {
 		name       string

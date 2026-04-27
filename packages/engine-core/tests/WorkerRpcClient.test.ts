@@ -168,7 +168,16 @@ describe("WorkerRpcClient", () => {
 		await a2;
 	});
 
-	it("a request issued after a crash does not see stale state from before the crash", async () => {
+	it("after a crash the pending map is empty so new sends queue cleanly", async () => {
+		// We are NOT claiming the client is usable after a real worker
+		// crash — in the browser, a dead worker cannot reply. We only
+		// check the rpc bookkeeping: a fresh send must not collide with
+		// the rejected entry's id and must end up registered as its own
+		// pending entry. The mock worker continues to reply, which would
+		// not happen against a real crashed worker, but that is what lets
+		// us inspect the post-crash map rather than the post-crash
+		// browser. Recovery is the application's job (recreate the
+		// client or call terminate()).
 		const client = new TestClient(new URL("mock://worker"));
 
 		const stale = client.send("STALE");
@@ -176,11 +185,6 @@ describe("WorkerRpcClient", () => {
 		mockWorker.crash("boom");
 		await a;
 
-		// A subsequent request must still complete normally — the rpc client
-		// only drained the pending map; it did not enter a permanent error
-		// state. (The application is responsible for replacing a dead worker
-		// if it wants to recover; here we just confirm that the bookkeeping
-		// is clean.)
 		const fresh = client.send<number>("FRESH");
 		const msg = mockWorker.lastMessage as { type: string; id: number };
 		mockWorker.reply({ type: "DONE", id: msg.id, payload: 7 });

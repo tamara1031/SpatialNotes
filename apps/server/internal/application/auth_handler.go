@@ -115,6 +115,10 @@ func (h *AuthHandler) HandleLogin(w http.ResponseWriter, r *http.Request) {
 
 	token, wrapped, err := h.authSvc.Login(r.Context(), req.Email, req.AuthToken)
 	if err != nil {
+		// Login intentionally bypasses writeServiceError. The mapper would
+		// translate ErrUserNotFound into 404, which leaks whether an email
+		// is registered. Login collapses every authentication failure into
+		// the same 401 to deny that side channel.
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
