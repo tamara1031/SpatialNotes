@@ -3,11 +3,25 @@ package application
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
+
+// requireNodeID extracts the {id} path parameter and writes a 400 to w
+// when the route did not capture one. Every node handler that operates on
+// a single node uses this so the missing-id contract is enforced in
+// exactly one place; the previous mix of r.PathValue and a manual
+// strings.Split fallback hid silent regressions whenever a route
+// definition drifted from its handler's expectations.
+func requireNodeID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing node id", http.StatusBadRequest)
+		return "", false
+	}
+	return id, true
+}
 
 type NodeHandler struct {
 	service NodeService
@@ -91,13 +105,10 @@ func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Simple URL path parsing: /api/nodes/{id}
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) < 4 || parts[3] == "" {
-		http.Error(w, "Missing node id", http.StatusBadRequest)
+	id, ok := requireNodeID(w, r)
+	if !ok {
 		return
 	}
-	id := parts[3]
 
 	if err := h.service.DeleteNode(r.Context(), id); err != nil {
 		writeServiceError(w, err, "delete_node", "id", id)
@@ -135,14 +146,9 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 		writeServiceError(w, service.ErrUnauthenticated, "push_update")
 		return
 	}
-	id := r.PathValue("id")
-	if id == "" {
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 4 || parts[3] == "" {
-			http.Error(w, "Missing node id", http.StatusBadRequest)
-			return
-		}
-		id = parts[3]
+	id, ok := requireNodeID(w, r)
+	if !ok {
+		return
 	}
 
 	var req PushUpdateRequest
@@ -171,14 +177,9 @@ func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id := r.PathValue("id")
-	if id == "" {
-		parts := strings.Split(r.URL.Path, "/")
-		if len(parts) < 4 || parts[3] == "" {
-			http.Error(w, "Missing node id", http.StatusBadRequest)
-			return
-		}
-		id = parts[3]
+	id, ok := requireNodeID(w, r)
+	if !ok {
+		return
 	}
 
 	updates, err := h.service.GetUpdates(r.Context(), id)

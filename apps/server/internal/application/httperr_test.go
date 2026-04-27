@@ -10,6 +10,36 @@ import (
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 )
 
+func TestRequireNodeID_ReturnsFalseAnd400WhenMissing(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/nodes//updates", nil)
+	// PathValue("id") on this raw request is empty because the request did
+	// not pass through a router — that is exactly the "route did not
+	// capture an id" failure mode the helper must guard against.
+
+	id, ok := requireNodeID(rec, req)
+	if ok || id != "" {
+		t.Fatalf("expected (\"\", false) on missing id, got (%q, %v)", id, ok)
+	}
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("expected 400, got %d", rec.Code)
+	}
+}
+
+func TestRequireNodeID_PassesThroughWhenRouterCaptures(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/api/nodes/abc/updates", nil)
+	req.SetPathValue("id", "abc")
+
+	id, ok := requireNodeID(rec, req)
+	if !ok || id != "abc" {
+		t.Fatalf("expected (\"abc\", true), got (%q, %v)", id, ok)
+	}
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected no early write, got status %d", rec.Code)
+	}
+}
+
 // TestWriteServiceError pins the sentinel-to-HTTP-status contract that the
 // rest of the application layer relies on. If a new domain sentinel is added
 // without a mapping, the default branch is exercised here so the gap shows
