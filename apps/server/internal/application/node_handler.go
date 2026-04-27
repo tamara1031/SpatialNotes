@@ -1,7 +1,6 @@
 package application
 
 import (
-	"encoding/json"
 	"net/http"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
@@ -21,6 +20,23 @@ func requireNodeID(w http.ResponseWriter, r *http.Request) (string, bool) {
 		return "", false
 	}
 	return id, true
+}
+
+// requireUserID returns the authenticated user id attached to r's context
+// by AuthMiddleware. When no uid is present (the middleware was bypassed
+// or a test forgot authctx.With), it writes the canonical 401 response
+// for the named operation and returns false; the caller should return.
+//
+// Centralising this means the "uid -> 401 via ErrUnauthenticated" path is
+// expressed once instead of being copy-pasted at every endpoint that
+// stamps a uid onto an outbound payload.
+func requireUserID(w http.ResponseWriter, r *http.Request, op string) (string, bool) {
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		writeServiceError(w, service.ErrUnauthenticated, op)
+		return "", false
+	}
+	return uid, true
 }
 
 type NodeHandler struct {
@@ -47,11 +63,6 @@ type PushUpdateRequest struct {
 }
 
 func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	nodes, err := h.service.SearchNodes(r.Context(), "")
 	if err != nil {
 		writeServiceError(w, err, "list_nodes")
@@ -62,19 +73,12 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	uid, ok := authctx.UserID(r.Context())
+	uid, ok := requireUserID(w, r, "save_node")
 	if !ok {
-		writeServiceError(w, service.ErrUnauthenticated, "save_node")
 		return
 	}
 	var req UpsertNodeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -99,11 +103,6 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodDelete {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id, ok := requireNodeID(w, r)
 	if !ok {
 		return
@@ -118,11 +117,6 @@ func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	query := r.URL.Query().Get("q")
 	nodes, err := h.service.SearchNodes(r.Context(), query)
 	if err != nil {
@@ -134,14 +128,8 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
-	uid, ok := authctx.UserID(r.Context())
+	uid, ok := requireUserID(w, r, "push_update")
 	if !ok {
-		writeServiceError(w, service.ErrUnauthenticated, "push_update")
 		return
 	}
 	id, ok := requireNodeID(w, r)
@@ -150,8 +138,7 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var req PushUpdateRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request body", http.StatusBadRequest)
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -170,11 +157,6 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-
 	id, ok := requireNodeID(w, r)
 	if !ok {
 		return
