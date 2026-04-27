@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 )
@@ -25,13 +25,13 @@ func TestNodeService_CircularReference(t *testing.T) {
 	structureRepo.Save(ctx, n3)
 
 	// 1. Move to itself
-	if err := svc.MoveNode(ctx, "n1", "n1"); err == nil || !strings.Contains(err.Error(), "circular reference") {
-		t.Errorf("expected circular reference error (itself), got %v", err)
+	if err := svc.MoveNode(ctx, "n1", "n1"); !errors.Is(err, ErrCircularRef) {
+		t.Errorf("expected ErrCircularRef (itself), got %v", err)
 	}
 
 	// 2. Move to descendant (n1 to n3)
-	if err := svc.MoveNode(ctx, "n1", "n3"); err == nil || !strings.Contains(err.Error(), "circular reference") {
-		t.Errorf("expected circular reference error (descendant), got %v", err)
+	if err := svc.MoveNode(ctx, "n1", "n3"); !errors.Is(err, ErrCircularRef) {
+		t.Errorf("expected ErrCircularRef (descendant), got %v", err)
 	}
 
 	// 3. Valid move (n3 to root)
@@ -63,8 +63,8 @@ func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T)
 	// different owner must be rejected, and must not destroy any plaintext
 	// elements as a side effect of the rejected request.
 	hostile := NewFullNode(nodeID, NodeTypeNotebook, "root", "attacker", "CANVAS", EncryptionE2EE, nil, 1, false)
-	if err := svc.SaveNode(ctx, hostile); err == nil {
-		t.Fatal("expected forbidden error for foreign user save")
+	if err := svc.SaveNode(ctx, hostile); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden for foreign user save, got %v", err)
 	}
 
 	// Element must still exist - the auth check must short-circuit before

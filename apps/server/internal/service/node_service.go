@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 )
 
 // maxAncestorWalk caps how many ancestors MoveNode follows when checking for
@@ -38,7 +37,7 @@ const UserIDKey contextKey = "user_id"
 func (s *NodeService) getUserID(ctx context.Context) (string, error) {
 	uid, ok := ctx.Value(UserIDKey).(string)
 	if !ok || uid == "" {
-		return "", errors.New("unauthorized: user id not found in context")
+		return "", ErrUnauthenticated
 	}
 	return uid, nil
 }
@@ -54,7 +53,7 @@ func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 	// repository writes, even if the caller would otherwise be filtered by
 	// uid downstream.
 	if n.UserID() != uid {
-		return errors.New("forbidden: user does not own this node")
+		return ErrForbidden
 	}
 
 	// On a STANDARD -> E2EE transition, plaintext children become unreadable
@@ -81,13 +80,13 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 	}
 
 	if id == newParentId {
-		return errors.New("circular reference: cannot move node to itself")
+		return ErrCircularRef
 	}
 
 	curr := newParentId
 	for steps := 0; curr != "" && steps < maxAncestorWalk; steps++ {
 		if curr == id {
-			return errors.New("circular reference: cannot move node into its own descendant")
+			return ErrCircularRef
 		}
 		parent, err := s.structureRepo.FindByID(ctx, curr, uid)
 		if err != nil {
@@ -181,7 +180,7 @@ func (s *NodeService) SaveUpdate(ctx context.Context, update *NodeUpdate) error 
 		return err
 	}
 	if update.UserID != uid {
-		return errors.New("forbidden: user id mismatch")
+		return ErrForbidden
 	}
 	return s.nodeUpdateRepo.Save(ctx, update)
 }
