@@ -96,6 +96,17 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 		return ErrCircularRef
 	}
 
+	// Verify the destination parent before doing anything else: unless it is
+	// the virtual root, it must exist as a structure node owned by the
+	// caller. Without this check, the ancestor walk below would silently
+	// treat "parent not found" as "we hit the top of the tree", letting a
+	// caller re-parent their own node onto a foreign or non-existent id.
+	if !IsVirtualRoot(newParentId) {
+		if _, err := s.structureRepo.FindByID(ctx, newParentId, uid); err != nil {
+			return ErrForbidden
+		}
+	}
+
 	curr := newParentId
 	for steps := 0; curr != "" && steps < maxAncestorWalk; steps++ {
 		if curr == id {
@@ -103,6 +114,9 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 		}
 		parent, err := s.structureRepo.FindByID(ctx, curr, uid)
 		if err != nil {
+			// Reached the virtual root or a parent we can't confirm — stop
+			// walking. The pre-check above has already gated unsafe
+			// destinations, so a break here is safe.
 			break
 		}
 		curr = parent.ParentID()

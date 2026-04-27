@@ -74,6 +74,41 @@ func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T)
 	}
 }
 
+func TestNodeService_MoveNode_RejectsForeignNewParent(t *testing.T) {
+	uid := "u1"
+	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// u1 owns node "mine". u2 owns node "victim".
+	mine := NewBaseNode("mine", NodeTypeChapter, "root", uid)
+	victim := NewBaseNode("victim", NodeTypeChapter, "root", "u2")
+	structureRepo.Save(ctx, mine)
+	structureRepo.Save(ctx, victim)
+
+	// Attempting to re-parent our own node onto a foreign user's node must
+	// be rejected. Without ownership validation on newParentId, the
+	// ancestor walk would silently treat "parent not visible to me" as
+	// "I have reached the top of the tree" and let the move succeed.
+	if err := svc.MoveNode(ctx, "mine", "victim"); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden when moving onto a foreign parent, got %v", err)
+	}
+
+	// The node must not have been mutated as a side effect of the rejected
+	// request: parent_id should still point at the virtual root.
+	if got, _ := structureRepo.FindByID(ctx, "mine", uid); got.ParentID() != "root" {
+		t.Errorf("rejected move should not have changed parent_id, got %q", got.ParentID())
+	}
+
+	// Likewise, a non-existent parent id must be rejected so callers cannot
+	// orphan their own subtree onto an unreachable anchor.
+	if err := svc.MoveNode(ctx, "mine", "does-not-exist"); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden when moving onto an unknown parent, got %v", err)
+	}
+}
+
 func TestNodeService_MoveNode_DepthGuardOnCorruptParentChain(t *testing.T) {
 	uid := "u1"
 	ctx := context.WithValue(context.Background(), UserIDKey, uid)
