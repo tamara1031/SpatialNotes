@@ -5,11 +5,13 @@ import (
 	"errors"
 	"testing"
 	"time"
+
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 func TestNodeService_CircularReference(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
@@ -42,7 +44,7 @@ func TestNodeService_CircularReference(t *testing.T) {
 
 func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
@@ -76,7 +78,7 @@ func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T)
 
 func TestNodeService_MoveNode_RejectsForeignNewParent(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
@@ -111,7 +113,7 @@ func TestNodeService_MoveNode_RejectsForeignNewParent(t *testing.T) {
 
 func TestNodeService_MoveNode_DepthGuardOnCorruptParentChain(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
@@ -140,7 +142,7 @@ func TestNodeService_MoveNode_DepthGuardOnCorruptParentChain(t *testing.T) {
 
 func TestNodeService_RecursiveDelete(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	// Link them for GetTree to work in the fake

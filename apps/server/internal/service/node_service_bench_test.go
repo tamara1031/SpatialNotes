@@ -3,13 +3,15 @@ package service_test
 import (
 	"context"
 	"fmt"
-	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"testing"
+
+	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 func BenchmarkNodeService_DeleteNode(b *testing.B) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), service.UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()

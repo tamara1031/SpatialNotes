@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"testing"
+
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 func TestNodeService_E2EE_Transition_Purge(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()

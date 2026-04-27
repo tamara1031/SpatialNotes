@@ -3,11 +3,25 @@ package application
 import (
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
-	"github.com/tamara1031/spatial-notes/apps/server/pkg/logger"
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
+
+// requireNodeID extracts the {id} path parameter and writes a 400 to w
+// when the route did not capture one. Every node handler that operates on
+// a single node uses this so the missing-id contract is enforced in
+// exactly one place; the previous mix of r.PathValue and a manual
+// strings.Split fallback hid silent regressions whenever a route
+// definition drifted from its handler's expectations.
+func requireNodeID(w http.ResponseWriter, r *http.Request) (string, bool) {
+	id := r.PathValue("id")
+	if id == "" {
+		http.Error(w, "Missing node id", http.StatusBadRequest)
+		return "", false
+	}
+	return id, true
+}
 
 type NodeHandler struct {
 	service NodeService
@@ -32,25 +46,6 @@ type PushUpdateRequest struct {
 	Payload []byte `json:"payload"`
 }
 
-func (h *NodeHandler) getUserID(r *http.Request) string {
-	uid, _ := r.Context().Value(service.UserIDKey).(string)
-	return uid
-}
-
-// nodeIDFromPath extracts the node id from a URL of the form /prefix/{id}/...
-// It returns the id and true on success, or ("", false) when the path segment is absent.
-func nodeIDFromPath(r *http.Request, segmentIndex int) (string, bool) {
-	id := r.PathValue("id")
-	if id != "" {
-		return id, true
-	}
-	parts := strings.Split(r.URL.Path, "/")
-	if len(parts) <= segmentIndex || parts[segmentIndex] == "" {
-		return "", false
-	}
-	return parts[segmentIndex], true
-}
-
 func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -59,8 +54,7 @@ func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 
 	nodes, err := h.service.SearchNodes(r.Context(), "")
 	if err != nil {
-		logger.Error("Failed to list nodes", "error", err)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "list_nodes")
 		return
 	}
 
@@ -73,7 +67,11 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uid := h.getUserID(r)
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		writeServiceError(w, service.ErrUnauthenticated, "save_node")
+		return
+	}
 	var req UpsertNodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -93,8 +91,7 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 	)
 
 	if err := h.service.SaveNode(r.Context(), node); err != nil {
-		logger.Error("Failed to materialize node", "error", err, "id", req.ID)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "save_node", "id", req.ID)
 		return
 	}
 
@@ -107,15 +104,13 @@ func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, ok := nodeIDFromPath(r, 3)
+	id, ok := requireNodeID(w, r)
 	if !ok {
-		http.Error(w, "Missing node id", http.StatusBadRequest)
 		return
 	}
 
 	if err := h.service.DeleteNode(r.Context(), id); err != nil {
-		logger.Error("Failed to delete node in index", "error", err, "id", id)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "delete_node", "id", id)
 		return
 	}
 
@@ -131,8 +126,7 @@ func (h *NodeHandler) HandleSearch(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	nodes, err := h.service.SearchNodes(r.Context(), query)
 	if err != nil {
-		logger.Error("Search failed", "error", err, "query", query)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "search_nodes", "query", query)
 		return
 	}
 
@@ -145,10 +139,13 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uid := h.getUserID(r)
-	id, ok := nodeIDFromPath(r, 3)
+	uid, ok := authctx.UserID(r.Context())
 	if !ok {
-		http.Error(w, "Missing node id", http.StatusBadRequest)
+		writeServiceError(w, service.ErrUnauthenticated, "push_update")
+		return
+	}
+	id, ok := requireNodeID(w, r)
+	if !ok {
 		return
 	}
 
@@ -165,8 +162,7 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.service.SaveUpdate(r.Context(), update); err != nil {
-		logger.Error("Failed to save node update", "error", err, "nodeId", id)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "push_update", "nodeId", id)
 		return
 	}
 
@@ -179,16 +175,14 @@ func (h *NodeHandler) HandleGetUpdates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	id, ok := nodeIDFromPath(r, 3)
+	id, ok := requireNodeID(w, r)
 	if !ok {
-		http.Error(w, "Missing node id", http.StatusBadRequest)
 		return
 	}
 
 	updates, err := h.service.GetUpdates(r.Context(), id)
 	if err != nil {
-		logger.Error("Failed to get node updates", "error", err, "nodeId", id)
-		http.Error(w, "Internal server error", http.StatusInternalServerError)
+		writeServiceError(w, err, "get_updates", "nodeId", id)
 		return
 	}
 

@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 // maxAncestorWalk caps how many ancestors MoveNode follows when checking for
@@ -28,15 +30,9 @@ func NewNodeService(
 	}
 }
 
-// UserIDKey is used to extract user ID from context.
-// In a real app, this should be imported from application package or shared.
-type contextKey string
-
-const UserIDKey contextKey = "user_id"
-
 func (s *NodeService) getUserID(ctx context.Context) (string, error) {
-	uid, ok := ctx.Value(UserIDKey).(string)
-	if !ok || uid == "" {
+	uid, ok := authctx.UserID(ctx)
+	if !ok {
 		return "", ErrUnauthenticated
 	}
 	return uid, nil

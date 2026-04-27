@@ -5,12 +5,24 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
+
+// authedRequest builds an authenticated test request. Handlers expect an
+// authenticated user id on the context (the production wire is
+// AuthMiddleware, which writes via authctx.With); tests that exercise a
+// happy path therefore have to mirror that contract or they end up
+// testing the 401 branch by accident.
+func authedRequest(method, target string, body io.Reader) *http.Request {
+	req := httptest.NewRequest(method, target, body)
+	return req.WithContext(authctx.With(req.Context(), "u1"))
+}
 
 // --- stub NodeService ---
 
@@ -131,7 +143,7 @@ func TestHandleUpsert_OK(t *testing.T) {
 		Type:               "canvas",
 		EncryptionStrategy: "standard",
 	})
-	req := httptest.NewRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -140,12 +152,32 @@ func TestHandleUpsert_OK(t *testing.T) {
 	}
 }
 
+func TestHandleUpsert_RejectsUnauthenticated(t *testing.T) {
+	// HandleUpsert MUST refuse to construct a node when the request has no
+	// authenticated user id on its context, because uid is the only proof
+	// of ownership the service layer has. Pin this so a future "convenience"
+	// regression that tolerates an empty uid (the previous silent-fail
+	// behaviour) shows up here as a status mismatch.
+	svc := &stubNodeService{}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: "canvas"})
+	req := httptest.NewRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated upsert, got %d", rr.Code)
+	}
+}
+
 func TestHandleUpsert_InvalidBody(t *testing.T) {
 	svc := &stubNodeService{}
 	h := NewNodeHandler(svc)
 	mux := newMux(h)
 
-	req := httptest.NewRequest(http.MethodPost, "/api/nodes", bytes.NewReader([]byte("not-json")))
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader([]byte("not-json")))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -164,7 +196,7 @@ func TestHandleUpsert_ServiceError(t *testing.T) {
 	mux := newMux(h)
 
 	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: "canvas"})
-	req := httptest.NewRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -293,7 +325,7 @@ func TestHandlePushUpdate_OK(t *testing.T) {
 	mux := newMux(h)
 
 	body, _ := json.Marshal(PushUpdateRequest{Payload: []byte("patch-data")})
-	req := httptest.NewRequest(http.MethodPost, "/api/nodes/n1/updates", bytes.NewReader(body))
+	req := authedRequest(http.MethodPost, "/api/nodes/n1/updates", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -302,5 +334,23 @@ func TestHandlePushUpdate_OK(t *testing.T) {
 	}
 	if savedUpdate == nil || savedUpdate.NodeID != "n1" {
 		t.Errorf("expected nodeID=n1 in saved update, got %+v", savedUpdate)
+	}
+	if savedUpdate.UserID != "u1" {
+		t.Errorf("expected userID=u1 from auth context, got %q", savedUpdate.UserID)
+	}
+}
+
+func TestHandlePushUpdate_RejectsUnauthenticated(t *testing.T) {
+	svc := &stubNodeService{}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(PushUpdateRequest{Payload: []byte("patch-data")})
+	req := httptest.NewRequest(http.MethodPost, "/api/nodes/n1/updates", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated push, got %d", rr.Code)
 	}
 }

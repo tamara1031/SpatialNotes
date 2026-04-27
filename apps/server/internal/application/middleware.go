@@ -1,11 +1,11 @@
 package application
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 func AuthMiddleware(authSvc *service.AuthService) func(http.Handler) http.Handler {
@@ -29,7 +29,7 @@ func AuthMiddleware(authSvc *service.AuthService) func(http.Handler) http.Handle
 				return
 			}
 
-			ctx := context.WithValue(r.Context(), service.UserIDKey, userID)
+			ctx := authctx.With(r.Context(), userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
