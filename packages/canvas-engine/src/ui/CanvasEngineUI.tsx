@@ -144,8 +144,8 @@ export const CanvasEngineUI = forwardRef<
 			color: "rgba(255,235,59,0.3)",
 			width: 10.0,
 		});
-		const [layoutMode, _setLayoutMode] = useState<CanvasLayoutMode>("SINGLE");
-		const [orientation, _setOrientation] =
+		const [layoutMode, setLayoutMode] = useState<CanvasLayoutMode>("SINGLE");
+		const [orientation, setOrientation] =
 			useState<CanvasOrientation>("PORTRAIT");
 		const [showSettings, setShowSettings] = useState(false);
 
@@ -452,6 +452,77 @@ export const CanvasEngineUI = forwardRef<
 
 				{renderPalette()}
 				{renderEraserOptions()}
+
+				{/* Settings Panel */}
+				{showSettings && (
+					<div
+						style={{
+							padding: "12px 16px",
+							borderBottom: "1px solid rgba(255,255,255,0.08)",
+							background: "rgba(20,20,20,0.9)",
+							display: "flex",
+							gap: "24px",
+							alignItems: "center",
+							fontSize: "13px",
+							color: "rgba(255,255,255,0.7)",
+						}}
+					>
+						<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+							<span>Layout</span>
+							{(["SINGLE", "INFINITE"] as CanvasLayoutMode[]).map((mode) => (
+								<button
+									key={mode}
+									type="button"
+									onClick={() => setLayoutMode(mode)}
+									style={{
+										padding: "4px 10px",
+										fontSize: "11px",
+										border: "1px solid rgba(255,255,255,0.15)",
+										borderRadius: "6px",
+										background:
+											layoutMode === mode
+												? "rgba(255,255,255,0.15)"
+												: "transparent",
+										color:
+											layoutMode === mode ? "white" : "rgba(255,255,255,0.5)",
+										cursor: "pointer",
+									}}
+								>
+									{mode === "SINGLE" ? "Page" : "Infinite"}
+								</button>
+							))}
+						</div>
+						{layoutMode === "SINGLE" && (
+							<div
+								style={{ display: "flex", alignItems: "center", gap: "8px" }}
+							>
+								<span>Orientation</span>
+								{(["PORTRAIT", "LANDSCAPE"] as CanvasOrientation[]).map((o) => (
+									<button
+										key={o}
+										type="button"
+										onClick={() => setOrientation(o)}
+										style={{
+											padding: "4px 10px",
+											fontSize: "11px",
+											border: "1px solid rgba(255,255,255,0.15)",
+											borderRadius: "6px",
+											background:
+												orientation === o
+													? "rgba(255,255,255,0.15)"
+													: "transparent",
+											color:
+												orientation === o ? "white" : "rgba(255,255,255,0.5)",
+											cursor: "pointer",
+										}}
+									>
+										{o === "PORTRAIT" ? "Portrait" : "Landscape"}
+									</button>
+								))}
+							</div>
+						)}
+					</div>
+				)}
 
 				{/* Board Area */}
 				<div

@@ -17,7 +17,6 @@ const SidebarView = lazy(() =>
 );
 
 import { VaultSetupOverlay } from "./setup/VaultSetupOverlay";
-import { UserSelector } from "./UserSelector";
 import { VaultEmailOverlay } from "./VaultEmailOverlay";
 import { VaultUnlockOverlay } from "./VaultUnlockOverlay";
 
@@ -79,7 +78,6 @@ export const DesktopApp: React.FC = () => {
 				<VaultEmailOverlay />
 				<VaultSetupOverlay />
 				<VaultUnlockOverlay />
-				<UserSelector />
 
 				<AnimatePresence>
 					{!isInitialized && (

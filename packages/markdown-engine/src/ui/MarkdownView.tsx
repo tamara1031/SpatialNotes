@@ -51,13 +51,19 @@ const markdownInputRules = inputRules({
 });
 
 export const MarkdownView: React.FC<MarkdownViewProps> = ({
+	activeNodeId,
 	elements,
 	onCommand,
 }) => {
 	const editorRef = useRef<HTMLDivElement>(null);
 	const viewRef = useRef<EditorView | null>(null);
+	const onCommandRef = useRef(onCommand);
 	const [showSlashMenu, setShowSlashMenu] = useState(false);
 	const [slashMenuPos, setSlashMenuPos] = useState({ top: 0, left: 0 });
+
+	useEffect(() => {
+		onCommandRef.current = onCommand;
+	}, [onCommand]);
 
 	const createInitialDoc = useCallback((initialElements: MarkdownElement[]) => {
 		if (initialElements.length === 0) {
@@ -121,8 +127,13 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 		[mapProseMirrorTypeToElement],
 	);
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: reinitialize only on note switch; elements/onCommand changes within the same note are handled internally by ProseMirror
 	useEffect(() => {
-		if (!editorRef.current || viewRef.current) return;
+		if (!editorRef.current) return;
+		if (viewRef.current) {
+			viewRef.current.destroy();
+			viewRef.current = null;
+		}
 
 		const doc = createInitialDoc(elements);
 
@@ -178,7 +189,10 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 
 				if (tr.docChanged) {
 					const updatedElements = mapDocToElements(newState.doc);
-					onCommand({ type: "UPDATE_ELEMENTS", payload: updatedElements });
+					onCommandRef.current({
+						type: "UPDATE_ELEMENTS",
+						payload: updatedElements,
+					});
 				}
 			},
 		});
@@ -189,7 +203,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 			view.destroy();
 			viewRef.current = null;
 		};
-	}, [createInitialDoc, elements, mapDocToElements, onCommand]);
+	}, [activeNodeId]);
 
 	const insertBlock = (type: string) => {
 		if (!viewRef.current) return;

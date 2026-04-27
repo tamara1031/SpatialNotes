@@ -12,6 +12,7 @@ import { useSync } from "../../hooks/useSync";
 import { $activeNodeId, $nodeTree, type TreeNode } from "../../store/nodes";
 import { showNotification } from "../../store/notificationStore";
 import { $currentUser, vaultManager } from "../../store/vaultStore";
+import { UserSelector } from "../UserSelector";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNodeItem } from "./SidebarNodeItem";
 
@@ -185,6 +186,15 @@ export const SidebarView: React.FC = () => {
 						/>
 					))
 				)}
+			</div>
+
+			<div
+				style={{
+					padding: "8px 12px",
+					borderTop: "1px solid var(--glass-border)",
+				}}
+			>
+				<UserSelector />
 			</div>
 		</div>
 	);
