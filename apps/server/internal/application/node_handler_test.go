@@ -29,6 +29,7 @@ func authedRequest(method, target string, body io.Reader) *http.Request {
 type stubNodeService struct {
 	searchNodes func(ctx context.Context, query string) ([]service.Node, error)
 	saveNode    func(ctx context.Context, n service.Node) error
+	moveNode    func(ctx context.Context, id, newParentId string) error
 	deleteNode  func(ctx context.Context, id string) error
 	saveUpdate  func(ctx context.Context, u *service.NodeUpdate) error
 	getUpdates  func(ctx context.Context, nodeId string) ([]*service.NodeUpdate, error)
@@ -46,7 +47,12 @@ func (s *stubNodeService) SaveNode(ctx context.Context, n service.Node) error {
 	}
 	return nil
 }
-func (s *stubNodeService) MoveNode(_ context.Context, _, _ string) error { return nil }
+func (s *stubNodeService) MoveNode(ctx context.Context, id, newParentId string) error {
+	if s.moveNode != nil {
+		return s.moveNode(ctx, id, newParentId)
+	}
+	return nil
+}
 func (s *stubNodeService) GetNode(_ context.Context, _ string) (service.Node, error) {
 	return nil, nil
 }
@@ -75,6 +81,7 @@ func newMux(h *NodeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/nodes", h.HandleList)
 	mux.HandleFunc("POST /api/nodes", h.HandleUpsert)
+	mux.HandleFunc("PATCH /api/nodes/{id}", h.HandleMove)
 	mux.HandleFunc("DELETE /api/nodes/{id}", h.HandleDelete)
 	mux.HandleFunc("GET /api/search", h.HandleSearch)
 	mux.HandleFunc("POST /api/nodes/{id}/updates", h.HandlePushUpdate)
