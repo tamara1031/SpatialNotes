@@ -2,6 +2,7 @@ package application
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
@@ -58,6 +59,10 @@ type UpsertNodeRequest struct {
 	IsDeleted          bool   `json:"isDeleted"`
 }
 
+type MoveNodeRequest struct {
+	ParentID string `json:"parentId"`
+}
+
 type PushUpdateRequest struct {
 	Payload []byte `json:"payload"`
 }
@@ -102,6 +107,29 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
+// HandleMove re-parents a node. It delegates cycle detection and ownership
+// validation entirely to the service layer, which performs the full ancestor
+// walk before writing. The HTTP layer is responsible only for extracting the
+// path id and decoding the request body.
+func (h *NodeHandler) HandleMove(w http.ResponseWriter, r *http.Request) {
+	id, ok := requireNodeID(w, r)
+	if !ok {
+		return
+	}
+
+	var req MoveNodeRequest
+	if !decodeJSON(w, r, &req) {
+		return
+	}
+
+	if err := h.service.MoveNode(r.Context(), id, req.ParentID); err != nil {
+		writeServiceError(w, err, "move_node", "id", id)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	id, ok := requireNodeID(w, r)
 	if !ok {
@@ -143,9 +171,10 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	update := &service.NodeUpdate{
-		NodeID:  id,
-		UserID:  uid,
-		Payload: req.Payload,
+		NodeID:    id,
+		UserID:    uid,
+		Payload:   req.Payload,
+		CreatedAt: time.Now().UnixMilli(),
 	}
 
 	if err := h.service.SaveUpdate(r.Context(), update); err != nil {

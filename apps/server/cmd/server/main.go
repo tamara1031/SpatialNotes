@@ -89,6 +89,7 @@ func main() {
 	// Protected API
 	mux.Handle("GET /api/nodes", authMiddleware(http.HandlerFunc(nodeHandler.HandleList)))
 	mux.Handle("POST /api/nodes", authMiddleware(http.HandlerFunc(nodeHandler.HandleUpsert)))
+	mux.Handle("PATCH /api/nodes/{id}", authMiddleware(http.HandlerFunc(nodeHandler.HandleMove)))
 	mux.Handle("DELETE /api/nodes/{id}", authMiddleware(http.HandlerFunc(nodeHandler.HandleDelete)))
 	mux.Handle("POST /api/nodes/{id}/updates", authMiddleware(http.HandlerFunc(nodeHandler.HandlePushUpdate)))
 	mux.Handle("GET /api/nodes/{id}/updates", authMiddleware(http.HandlerFunc(nodeHandler.HandleGetUpdates)))
