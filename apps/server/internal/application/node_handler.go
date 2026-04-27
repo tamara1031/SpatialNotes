@@ -3,6 +3,7 @@ package application
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
@@ -184,9 +185,10 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	update := &service.NodeUpdate{
-		NodeID:  id,
-		UserID:  uid,
-		Payload: req.Payload,
+		NodeID:    id,
+		UserID:    uid,
+		Payload:   req.Payload,
+		CreatedAt: time.Now().UnixMilli(),
 	}
 
 	if err := h.service.SaveUpdate(r.Context(), update); err != nil {

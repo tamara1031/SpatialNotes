@@ -345,6 +345,9 @@ func TestHandlePushUpdate_OK(t *testing.T) {
 	if savedUpdate.UserID != "u1" {
 		t.Errorf("expected userID=u1 from auth context, got %q", savedUpdate.UserID)
 	}
+	if savedUpdate.CreatedAt == 0 {
+		t.Errorf("expected CreatedAt to be set from wall clock, got 0")
+	}
 }
 
 func TestHandlePushUpdate_RejectsUnauthenticated(t *testing.T) {
