@@ -2,6 +2,7 @@ package repository_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/infrastructure"
@@ -99,6 +100,112 @@ func TestSqliteNodeRepository_GetTree(t *testing.T) {
 	_, err = repo.GetTree(ctx, "root2", "u1")
 	if err == nil {
 		t.Errorf("should not find root2 for u1")
+	}
+}
+
+// TestSqliteNodeRepository_GetTree_Deep pins that the recursive CTE returns
+// every node across a 10-level chain — the old BFS implementation also
+// handled this correctly, but only by issuing 10 round-trips. This test
+// gives confidence that the single-query CTE produces identical results.
+func TestSqliteNodeRepository_GetTree_Deep(t *testing.T) {
+	db, err := infrastructure.NewDB("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	if err := infrastructure.CreateSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := repository.NewNodeRepository(db)
+	uid := "u1"
+	const depth = 10
+
+	// Build a linear chain: n0 -> n1 -> n2 -> ... -> n9
+	ids := make([]string, depth)
+	for i := range ids {
+		ids[i] = fmt.Sprintf("n%d", i)
+	}
+	parentID := ""
+	for i, id := range ids {
+		n := service.NewBaseNode(id, "CHAPTER", parentID, uid)
+		if err := repo.Save(ctx, n); err != nil {
+			t.Fatalf("save %s: %v", id, err)
+		}
+		parentID = id
+		_ = i
+	}
+
+	tree, err := repo.GetTree(ctx, ids[0], uid)
+	if err != nil {
+		t.Fatalf("GetTree failed: %v", err)
+	}
+	if len(tree) != depth {
+		t.Errorf("expected %d nodes in deep tree, got %d", depth, len(tree))
+	}
+
+	// Verify every id appears in the result (order not guaranteed by CTE).
+	found := make(map[string]bool, depth)
+	for _, n := range tree {
+		found[n.ID()] = true
+	}
+	for _, id := range ids {
+		if !found[id] {
+			t.Errorf("node %q missing from GetTree result", id)
+		}
+	}
+}
+
+// TestSqliteNodeRepository_GetTree_ExcludesDeleted pins that soft-deleted
+// nodes are not included in the CTE result, and that a deleted root returns
+// ErrNodeNotFound rather than a partial subtree.
+func TestSqliteNodeRepository_GetTree_ExcludesDeleted(t *testing.T) {
+	db, err := infrastructure.NewDB("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	if err := infrastructure.CreateSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := repository.NewNodeRepository(db)
+	uid := "u1"
+
+	root := service.NewBaseNode("root", "CHAPTER", "", uid)
+	live := service.NewBaseNode("live", "CHAPTER", "root", uid)
+	gone := service.NewFullNode("gone", "CHAPTER", "root", uid, "", "STANDARD", nil, 0, true)
+
+	for _, n := range []service.Node{root, live, gone} {
+		if err := repo.Save(ctx, n); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	tree, err := repo.GetTree(ctx, "root", uid)
+	if err != nil {
+		t.Fatalf("GetTree: %v", err)
+	}
+	if len(tree) != 2 {
+		t.Errorf("expected 2 nodes (root + live), got %d", len(tree))
+	}
+	for _, n := range tree {
+		if n.ID() == "gone" {
+			t.Errorf("soft-deleted node 'gone' appeared in GetTree result")
+		}
+	}
+
+	// A deleted root must not appear in the anchor step of the CTE.
+	deletedRoot := service.NewFullNode("dr", "CHAPTER", "", uid, "", "STANDARD", nil, 0, true)
+	if err := repo.Save(ctx, deletedRoot); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.GetTree(ctx, "dr", uid); err == nil {
+		t.Errorf("expected ErrNodeNotFound for deleted root, got nil")
 	}
 }
 
