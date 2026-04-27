@@ -27,7 +27,7 @@ export class YjsNodeRepository implements INodeRepository {
 	public async findAll(userId: string): Promise<Node[]> {
 		const result: Node[] = [];
 		for (const data of this.nodes.values()) {
-			if (data.userId === userId) {
+			if (data.userId === userId && !data.isDeleted) {
 				result.push(this.mapToEntity(data));
 			}
 		}
@@ -40,7 +40,11 @@ export class YjsNodeRepository implements INodeRepository {
 	): Promise<Node[]> {
 		const result: Node[] = [];
 		for (const data of this.nodes.values()) {
-			if (data.userId === userId && data.parentId === parentId) {
+			if (
+				data.userId === userId &&
+				data.parentId === parentId &&
+				!data.isDeleted
+			) {
 				result.push(this.mapToEntity(data));
 			}
 		}
