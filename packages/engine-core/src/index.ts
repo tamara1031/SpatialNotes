@@ -36,9 +36,13 @@ const REQUEST_TIMEOUT_MS = 30_000;
  * Subclasses pass their worker URL to `super()` and call `request<T>()` to make
  * typed RPC calls without reimplementing the pending-map bookkeeping.
  *
- * Every pending request is guarded by a timeout (REQUEST_TIMEOUT_MS). Calling
- * `terminate()` drains the pending map so no promises are left hanging after
- * the worker is killed.
+ * Crash and lifecycle handling:
+ * - Every pending request is guarded by a timeout (REQUEST_TIMEOUT_MS).
+ * - If the underlying Worker fires an `onerror` event (uncaught throw inside
+ *   the worker, module load failure, etc.) every pending caller is rejected
+ *   immediately so they don't hang until the per-request timeout fires.
+ * - `terminate()` drains the pending map for the same reason on intentional
+ *   teardown.
  */
 export abstract class WorkerRpcClient {
 	private worker?: Worker;
@@ -56,6 +60,17 @@ export abstract class WorkerRpcClient {
 		if (typeof Worker !== "undefined") {
 			this.worker = new Worker(workerUrl, { type: "module" });
 			this.worker.onmessage = this.handleMessage.bind(this);
+			this.worker.onerror = (event) => {
+				// Duck-typed read of event.message: in browsers this is an
+				// ErrorEvent, but the global ErrorEvent constructor is not
+				// available in every test environment, so we avoid the
+				// instanceof check.
+				const message =
+					typeof (event as { message?: unknown }).message === "string"
+						? (event as { message: string }).message
+						: "worker crashed";
+				this.rejectAllPending(new Error(`Worker crashed: ${message}`));
+			};
 		}
 	}
 
@@ -100,9 +115,13 @@ export abstract class WorkerRpcClient {
 	terminate(): void {
 		this.worker?.terminate();
 		this.worker = undefined;
+		this.rejectAllPending(new Error("Worker terminated"));
+	}
+
+	private rejectAllPending(reason: Error): void {
 		for (const entry of this.pending.values()) {
 			clearTimeout(entry.timer);
-			entry.reject(new Error("Worker terminated"));
+			entry.reject(reason);
 		}
 		this.pending.clear();
 	}
