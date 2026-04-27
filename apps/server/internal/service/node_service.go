@@ -65,12 +65,20 @@ func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 		return err
 	}
 
-	// On a STANDARD -> E2EE transition, plaintext children become unreadable
-	// by design and must be purged. We only do this when an existing node is
-	// flipping strategies; new E2EE nodes have nothing to clean up.
+	// Inspect the existing node (if any) once, then act on each transition:
+	//   - STANDARD -> E2EE flips the encryption strategy and must purge
+	//     plaintext children, which become unreadable by design.
+	//   - parent_id changes via upsert must be cycle-safe. Without this,
+	//     callers could bypass MoveNode and create cycles by issuing a
+	//     plain SaveNode with a malicious parent_id.
 	if old, err := s.GetNode(ctx, n.ID()); err == nil {
 		if old.EncryptionStrategy() == EncryptionStandard && n.EncryptionStrategy() == EncryptionE2EE {
 			if err := s.elementRepo.DeleteByNodeID(ctx, n.ID(), uid); err != nil {
+				return err
+			}
+		}
+		if old.ParentID() != n.ParentID() {
+			if err := s.validateNewParent(ctx, n.ID(), n.ParentID(), uid); err != nil {
 				return err
 			}
 		}

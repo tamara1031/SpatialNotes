@@ -173,3 +173,98 @@ func TestNodeService_RecursiveDelete(t *testing.T) {
 		t.Errorf("expected e1 to be deleted")
 	}
 }
+
+// TestNodeService_SaveNode_RejectsCycleViaUpsert pins that SaveNode
+// applies the same cycle-detection contract as MoveNode. Without this
+// guard, a client could bypass MoveNode entirely by issuing a plain
+// upsert that flips parent_id to point at a descendant of the node.
+func TestNodeService_SaveNode_RejectsCycleViaUpsert(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// Hierarchy: root -> n1 -> n2 -> n3
+	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
+	n2 := NewBaseNode("n2", NodeTypeChapter, "n1", uid)
+	n3 := NewBaseNode("n3", NodeTypeChapter, "n2", uid)
+	if err := svc.SaveNode(ctx, n1); err != nil {
+		t.Fatalf("setup save n1: %v", err)
+	}
+	if err := svc.SaveNode(ctx, n2); err != nil {
+		t.Fatalf("setup save n2: %v", err)
+	}
+	if err := svc.SaveNode(ctx, n3); err != nil {
+		t.Fatalf("setup save n3: %v", err)
+	}
+
+	// Now attempt to upsert n1 with parent_id = "n3" (its own descendant).
+	// Without the SaveNode guard this would corrupt the tree into a cycle
+	// and the next read of the structure would loop until maxAncestorWalk.
+	hostile := NewFullNode("n1", NodeTypeChapter, "n3", uid, "", EncryptionStandard, nil, 1, false)
+	if err := svc.SaveNode(ctx, hostile); !errors.Is(err, ErrCircularRef) {
+		t.Fatalf("expected ErrCircularRef when upserting parent_id pointing to descendant, got %v", err)
+	}
+
+	// And the on-disk parent_id must still be the original "root", proving
+	// the rejection happened before the repository write.
+	if got, _ := structureRepo.FindByID(ctx, "n1", uid); got.ParentID() != "root" {
+		t.Errorf("rejected upsert should not have changed parent_id, got %q", got.ParentID())
+	}
+}
+
+// TestNodeService_SaveNode_RejectsForeignParentViaUpsert pins that
+// SaveNode rejects an upsert that re-parents the caller's node onto a
+// node owned by a different user. This is the same protection MoveNode
+// has, applied to the upsert entry point.
+func TestNodeService_SaveNode_RejectsForeignParentViaUpsert(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// u1 owns "mine" at root. u2 owns "victim" at root.
+	mine := NewBaseNode("mine", NodeTypeChapter, "root", uid)
+	victim := NewBaseNode("victim", NodeTypeChapter, "root", "u2")
+	if err := svc.SaveNode(ctx, mine); err != nil {
+		t.Fatalf("setup save mine: %v", err)
+	}
+	// Save victim directly via the repo because SaveNode's authorizeOwner
+	// would reject a u1 caller persisting a node claimed by u2.
+	if err := structureRepo.Save(ctx, victim); err != nil {
+		t.Fatalf("setup save victim: %v", err)
+	}
+
+	hostile := NewFullNode("mine", NodeTypeChapter, "victim", uid, "", EncryptionStandard, nil, 1, false)
+	if err := svc.SaveNode(ctx, hostile); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden when upserting onto foreign parent, got %v", err)
+	}
+}
+
+// TestNodeService_SaveNode_AllowsUnchangedParent guards against a
+// regression where the new parent-mutation guard runs on every save —
+// re-saving an existing node with the same parent_id (e.g. an
+// E2EE-strategy flip) must remain free of the validation overhead.
+func TestNodeService_SaveNode_AllowsUnchangedParent(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	original := NewFullNode("nb1", NodeTypeNotebook, "root", uid, "CANVAS", EncryptionStandard, []byte("meta-v1"), 0, false)
+	if err := svc.SaveNode(ctx, original); err != nil {
+		t.Fatalf("setup save: %v", err)
+	}
+
+	// Re-save with same parent_id but updated metadata + bumped updatedAt.
+	updated := NewFullNode("nb1", NodeTypeNotebook, "root", uid, "CANVAS", EncryptionStandard, []byte("meta-v2"), 1, false)
+	if err := svc.SaveNode(ctx, updated); err != nil {
+		t.Fatalf("expected unchanged-parent re-save to succeed, got %v", err)
+	}
+}
