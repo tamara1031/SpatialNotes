@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 type NodeHandler struct {
@@ -31,11 +32,6 @@ type PushUpdateRequest struct {
 	Payload []byte `json:"payload"`
 }
 
-func (h *NodeHandler) getUserID(r *http.Request) string {
-	uid, _ := r.Context().Value(service.UserIDKey).(string)
-	return uid
-}
-
 func (h *NodeHandler) HandleList(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
@@ -58,7 +54,11 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uid := h.getUserID(r)
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		writeServiceError(w, service.ErrUnauthenticated, "save_node")
+		return
+	}
 	var req UpsertNodeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
@@ -130,7 +130,11 @@ func (h *NodeHandler) HandlePushUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	uid := h.getUserID(r)
+	uid, ok := authctx.UserID(r.Context())
+	if !ok {
+		writeServiceError(w, service.ErrUnauthenticated, "push_update")
+		return
+	}
 	id := r.PathValue("id")
 	if id == "" {
 		parts := strings.Split(r.URL.Path, "/")

@@ -3,11 +3,13 @@ package service
 import (
 	"context"
 	"testing"
+
+	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
 
 func TestNodeService_NodeUpdates(t *testing.T) {
 	uid := "u1"
-	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	ctx := authctx.With(context.Background(), uid)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
@@ -58,7 +60,7 @@ func TestNodeService_NodeUpdates(t *testing.T) {
 	}
 
 	// 4. Verify isolation: u2 should see 0 updates
-	ctx2 := context.WithValue(context.Background(), UserIDKey, "u2")
+	ctx2 := authctx.With(context.Background(), "u2")
 	updates2, _ := svc.GetUpdates(ctx2, nodeID)
 	if len(updates2) != 0 {
 		t.Errorf("expected 0 updates for u2, got %d", len(updates2))
