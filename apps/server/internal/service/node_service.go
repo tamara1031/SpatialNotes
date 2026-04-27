@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 )
 
 // maxAncestorWalk caps how many ancestors MoveNode follows when checking for
@@ -38,23 +37,36 @@ const UserIDKey contextKey = "user_id"
 func (s *NodeService) getUserID(ctx context.Context) (string, error) {
 	uid, ok := ctx.Value(UserIDKey).(string)
 	if !ok || uid == "" {
-		return "", errors.New("unauthorized: user id not found in context")
+		return "", ErrUnauthenticated
+	}
+	return uid, nil
+}
+
+// authorizeOwner combines two checks every state-mutating endpoint must
+// perform: that the request is authenticated (uid present in context) and
+// that the caller actually owns the resource described by the request
+// payload. It returns the verified uid so call sites can use it without a
+// second context lookup. Read-only endpoints that scope by uid alone keep
+// using getUserID directly.
+func (s *NodeService) authorizeOwner(ctx context.Context, claimedOwnerID string) (string, error) {
+	uid, err := s.getUserID(ctx)
+	if err != nil {
+		return "", err
+	}
+	if claimedOwnerID != uid {
+		return "", ErrForbidden
 	}
 	return uid, nil
 }
 
 func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
-	uid, err := s.getUserID(ctx)
-	if err != nil {
-		return err
-	}
-
 	// Authorise the inbound payload before triggering any side effects: a
 	// malformed request that claims a foreign user id must never reach
 	// repository writes, even if the caller would otherwise be filtered by
 	// uid downstream.
-	if n.UserID() != uid {
-		return errors.New("forbidden: user does not own this node")
+	uid, err := s.authorizeOwner(ctx, n.UserID())
+	if err != nil {
+		return err
 	}
 
 	// On a STANDARD -> E2EE transition, plaintext children become unreadable
@@ -81,16 +93,30 @@ func (s *NodeService) MoveNode(ctx context.Context, id, newParentId string) erro
 	}
 
 	if id == newParentId {
-		return errors.New("circular reference: cannot move node to itself")
+		return ErrCircularRef
+	}
+
+	// Verify the destination parent before doing anything else: unless it is
+	// the virtual root, it must exist as a structure node owned by the
+	// caller. Without this check, the ancestor walk below would silently
+	// treat "parent not found" as "we hit the top of the tree", letting a
+	// caller re-parent their own node onto a foreign or non-existent id.
+	if !IsVirtualRoot(newParentId) {
+		if _, err := s.structureRepo.FindByID(ctx, newParentId, uid); err != nil {
+			return ErrForbidden
+		}
 	}
 
 	curr := newParentId
 	for steps := 0; curr != "" && steps < maxAncestorWalk; steps++ {
 		if curr == id {
-			return errors.New("circular reference: cannot move node into its own descendant")
+			return ErrCircularRef
 		}
 		parent, err := s.structureRepo.FindByID(ctx, curr, uid)
 		if err != nil {
+			// Reached the virtual root or a parent we can't confirm — stop
+			// walking. The pre-check above has already gated unsafe
+			// destinations, so a break here is safe.
 			break
 		}
 		curr = parent.ParentID()
@@ -176,12 +202,8 @@ func (s *NodeService) SearchNodes(ctx context.Context, query string) ([]Node, er
 }
 
 func (s *NodeService) SaveUpdate(ctx context.Context, update *NodeUpdate) error {
-	uid, err := s.getUserID(ctx)
-	if err != nil {
+	if _, err := s.authorizeOwner(ctx, update.UserID); err != nil {
 		return err
-	}
-	if update.UserID != uid {
-		return errors.New("forbidden: user id mismatch")
 	}
 	return s.nodeUpdateRepo.Save(ctx, update)
 }

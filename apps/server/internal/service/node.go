@@ -23,6 +23,19 @@ const (
 	EncryptionE2EE     EncryptionStrategy = "E2EE"
 )
 
+// virtualRootID is the conventional sentinel used as the parent_id of
+// top-level structure nodes. It has no row in any repository — code that
+// validates parent membership must treat it (and the empty string) as
+// "the tree root" rather than "missing parent".
+const virtualRootID = "root"
+
+// IsVirtualRoot reports whether parentID denotes the conceptual top of
+// the tree rather than a real persisted node. Use this to short-circuit
+// existence/ownership checks against the structure repository.
+func IsVirtualRoot(parentID string) bool {
+	return parentID == "" || parentID == virtualRootID
+}
+
 // IsStructureType reports whether the given type belongs to the structural
 // hierarchy (notebooks/chapters) rather than canvas elements. The service
 // uses this to route a node to the correct repository.

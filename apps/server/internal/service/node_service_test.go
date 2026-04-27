@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"strings"
+	"errors"
 	"testing"
 	"time"
 )
@@ -25,13 +25,13 @@ func TestNodeService_CircularReference(t *testing.T) {
 	structureRepo.Save(ctx, n3)
 
 	// 1. Move to itself
-	if err := svc.MoveNode(ctx, "n1", "n1"); err == nil || !strings.Contains(err.Error(), "circular reference") {
-		t.Errorf("expected circular reference error (itself), got %v", err)
+	if err := svc.MoveNode(ctx, "n1", "n1"); !errors.Is(err, ErrCircularRef) {
+		t.Errorf("expected ErrCircularRef (itself), got %v", err)
 	}
 
 	// 2. Move to descendant (n1 to n3)
-	if err := svc.MoveNode(ctx, "n1", "n3"); err == nil || !strings.Contains(err.Error(), "circular reference") {
-		t.Errorf("expected circular reference error (descendant), got %v", err)
+	if err := svc.MoveNode(ctx, "n1", "n3"); !errors.Is(err, ErrCircularRef) {
+		t.Errorf("expected ErrCircularRef (descendant), got %v", err)
 	}
 
 	// 3. Valid move (n3 to root)
@@ -63,14 +63,49 @@ func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T)
 	// different owner must be rejected, and must not destroy any plaintext
 	// elements as a side effect of the rejected request.
 	hostile := NewFullNode(nodeID, NodeTypeNotebook, "root", "attacker", "CANVAS", EncryptionE2EE, nil, 1, false)
-	if err := svc.SaveNode(ctx, hostile); err == nil {
-		t.Fatal("expected forbidden error for foreign user save")
+	if err := svc.SaveNode(ctx, hostile); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden for foreign user save, got %v", err)
 	}
 
 	// Element must still exist - the auth check must short-circuit before
 	// the E2EE purge runs.
 	if _, err := elementRepo.FindByID(ctx, "el-1", uid); err != nil {
 		t.Errorf("element was wrongly purged by a rejected save: %v", err)
+	}
+}
+
+func TestNodeService_MoveNode_RejectsForeignNewParent(t *testing.T) {
+	uid := "u1"
+	ctx := context.WithValue(context.Background(), UserIDKey, uid)
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	// u1 owns node "mine". u2 owns node "victim".
+	mine := NewBaseNode("mine", NodeTypeChapter, "root", uid)
+	victim := NewBaseNode("victim", NodeTypeChapter, "root", "u2")
+	structureRepo.Save(ctx, mine)
+	structureRepo.Save(ctx, victim)
+
+	// Attempting to re-parent our own node onto a foreign user's node must
+	// be rejected. Without ownership validation on newParentId, the
+	// ancestor walk would silently treat "parent not visible to me" as
+	// "I have reached the top of the tree" and let the move succeed.
+	if err := svc.MoveNode(ctx, "mine", "victim"); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden when moving onto a foreign parent, got %v", err)
+	}
+
+	// The node must not have been mutated as a side effect of the rejected
+	// request: parent_id should still point at the virtual root.
+	if got, _ := structureRepo.FindByID(ctx, "mine", uid); got.ParentID() != "root" {
+		t.Errorf("rejected move should not have changed parent_id, got %q", got.ParentID())
+	}
+
+	// Likewise, a non-existent parent id must be rejected so callers cannot
+	// orphan their own subtree onto an unreachable anchor.
+	if err := svc.MoveNode(ctx, "mine", "does-not-exist"); !errors.Is(err, ErrForbidden) {
+		t.Fatalf("expected ErrForbidden when moving onto an unknown parent, got %v", err)
 	}
 }
 
