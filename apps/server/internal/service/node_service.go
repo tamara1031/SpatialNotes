@@ -42,18 +42,31 @@ func (s *NodeService) getUserID(ctx context.Context) (string, error) {
 	return uid, nil
 }
 
-func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
+// authorizeOwner combines two checks every state-mutating endpoint must
+// perform: that the request is authenticated (uid present in context) and
+// that the caller actually owns the resource described by the request
+// payload. It returns the verified uid so call sites can use it without a
+// second context lookup. Read-only endpoints that scope by uid alone keep
+// using getUserID directly.
+func (s *NodeService) authorizeOwner(ctx context.Context, claimedOwnerID string) (string, error) {
 	uid, err := s.getUserID(ctx)
 	if err != nil {
-		return err
+		return "", err
 	}
+	if claimedOwnerID != uid {
+		return "", ErrForbidden
+	}
+	return uid, nil
+}
 
+func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 	// Authorise the inbound payload before triggering any side effects: a
 	// malformed request that claims a foreign user id must never reach
 	// repository writes, even if the caller would otherwise be filtered by
 	// uid downstream.
-	if n.UserID() != uid {
-		return ErrForbidden
+	uid, err := s.authorizeOwner(ctx, n.UserID())
+	if err != nil {
+		return err
 	}
 
 	// On a STANDARD -> E2EE transition, plaintext children become unreadable
@@ -175,12 +188,8 @@ func (s *NodeService) SearchNodes(ctx context.Context, query string) ([]Node, er
 }
 
 func (s *NodeService) SaveUpdate(ctx context.Context, update *NodeUpdate) error {
-	uid, err := s.getUserID(ctx)
-	if err != nil {
+	if _, err := s.authorizeOwner(ctx, update.UserID); err != nil {
 		return err
-	}
-	if update.UserID != uid {
-		return ErrForbidden
 	}
 	return s.nodeUpdateRepo.Save(ctx, update)
 }
