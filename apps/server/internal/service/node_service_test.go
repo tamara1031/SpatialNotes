@@ -268,3 +268,83 @@ func TestNodeService_SaveNode_AllowsUnchangedParent(t *testing.T) {
 		t.Fatalf("expected unchanged-parent re-save to succeed, got %v", err)
 	}
 }
+
+// TestNodeService_SearchNodes pins the three behavioural contracts of
+// SearchNodes at the service layer, now that FakeStructureRepository.Search
+// is implemented:
+//
+//  1. An unauthenticated context returns ErrUnauthenticated.
+//  2. An empty query returns all non-deleted nodes for the caller.
+//  3. A type-prefix query returns only matching nodes.
+func TestNodeService_SearchNodes(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	nodeUpdateRepo := NewFakeNodeUpdateRepository()
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+
+	ch1 := NewBaseNode("ch1", NodeTypeChapter, "", uid)
+	nb1 := NewBaseNode("nb1", NodeTypeNotebook, "ch1", uid)
+	ch2 := NewBaseNode("ch2", NodeTypeChapter, "", uid)
+	// Save directly via repo to bypass service auth checks for foreign node.
+	foreignNode := NewBaseNode("fgn1", NodeTypeChapter, "", "u2")
+
+	for _, n := range []Node{ch1, nb1, ch2} {
+		if err := svc.SaveNode(ctx, n); err != nil {
+			t.Fatalf("setup save %s: %v", n.ID(), err)
+		}
+	}
+	if err := structureRepo.Save(ctx, foreignNode); err != nil {
+		t.Fatalf("setup save foreign: %v", err)
+	}
+
+	t.Run("unauthenticated returns ErrUnauthenticated", func(t *testing.T) {
+		_, err := svc.SearchNodes(context.Background(), "")
+		if !errors.Is(err, ErrUnauthenticated) {
+			t.Errorf("expected ErrUnauthenticated, got %v", err)
+		}
+	})
+
+	t.Run("empty query returns all caller nodes", func(t *testing.T) {
+		nodes, err := svc.SearchNodes(ctx, "")
+		if err != nil {
+			t.Fatalf("SearchNodes: %v", err)
+		}
+		// ch1, nb1, ch2 — foreign node must be excluded.
+		if len(nodes) != 3 {
+			t.Errorf("expected 3 nodes, got %d", len(nodes))
+		}
+		for _, n := range nodes {
+			if n.UserID() != uid {
+				t.Errorf("SearchNodes returned node belonging to %q", n.UserID())
+			}
+		}
+	})
+
+	t.Run("type query filters to matching nodes only", func(t *testing.T) {
+		nodes, err := svc.SearchNodes(ctx, "CHAPTER")
+		if err != nil {
+			t.Fatalf("SearchNodes: %v", err)
+		}
+		if len(nodes) != 2 {
+			t.Errorf("expected 2 CHAPTER nodes, got %d", len(nodes))
+		}
+		for _, n := range nodes {
+			if n.Type() != NodeTypeChapter {
+				t.Errorf("expected type CHAPTER, got %q", n.Type())
+			}
+		}
+	})
+
+	t.Run("unmatched type query returns empty slice", func(t *testing.T) {
+		nodes, err := svc.SearchNodes(ctx, "STROKE")
+		if err != nil {
+			t.Fatalf("SearchNodes: %v", err)
+		}
+		if len(nodes) != 0 {
+			t.Errorf("expected 0 nodes for STROKE query, got %d", len(nodes))
+		}
+	})
+}
