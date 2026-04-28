@@ -2,19 +2,11 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrUserNotFound      = errors.New("user not found")
-	ErrUserAlreadyExists = errors.New("user already exists")
-	ErrInvalidToken      = errors.New("invalid token")
-	ErrUnauthorized      = errors.New("unauthorized")
 )
 
 type User struct {
