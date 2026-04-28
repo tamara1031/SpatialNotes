@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
 import { DeleteNodeUseCase } from "./DeleteNodeUseCase.js";
 
 describe("DeleteNodeUseCase", () => {
@@ -37,15 +36,15 @@ describe("DeleteNodeUseCase", () => {
 			save: vi.fn().mockResolvedValue(undefined),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new DeleteNodeUseCase(repo);
+		const mockBus = { publish: vi.fn() };
+		const useCase = new DeleteNodeUseCase(repo, mockBus);
 
 		await useCase.execute({ id: "n1", userId: "u1" });
 
 		expect(mockNode.delete).toHaveBeenCalled();
 		expect(mockChild.delete).toHaveBeenCalled();
 		expect(repo.save).toHaveBeenCalledTimes(2);
-		expect(publishSpy).toHaveBeenCalledTimes(2);
+		expect(mockBus.publish).toHaveBeenCalledTimes(2);
 	});
 
 	it("should throw error if node not found", async () => {

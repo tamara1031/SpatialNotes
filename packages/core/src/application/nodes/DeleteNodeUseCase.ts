@@ -1,4 +1,7 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import {
+	globalEventBus,
+	type IDomainEventBus,
+} from "../../domain/events/DomainEventBus.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { SubtreeDeletionService } from "../../domain/nodes/SubtreeDeletionService.js";
 
@@ -10,7 +13,10 @@ export interface DeleteNodeInput {
 export class DeleteNodeUseCase {
 	private readonly subtreeService: SubtreeDeletionService;
 
-	constructor(private readonly nodeRepository: INodeRepository) {
+	constructor(
+		private readonly nodeRepository: INodeRepository,
+		private readonly eventBus: IDomainEventBus = globalEventBus,
+	) {
 		this.subtreeService = new SubtreeDeletionService(nodeRepository);
 	}
 
@@ -33,7 +39,7 @@ export class DeleteNodeUseCase {
 		// Publish events that were collected by the entities
 		for (const deletedNode of deletedNodes) {
 			for (const event of deletedNode.domainEvents) {
-				globalEventBus.publish(event);
+				this.eventBus.publish(event);
 			}
 			deletedNode.clearDomainEvents();
 		}
