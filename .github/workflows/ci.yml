@@ -43,12 +43,11 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: apps/server/go.mod
-          cache-dependency-path: apps/server/go.sum
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
       - name: Run Go Tests
-        working-directory: apps/server
-        run: go test ./...
+        run: go test ./apps/server/internal/... ./apps/server/pkg/...
 
   test-unit:
     name: Unit Tests
@@ -120,8 +119,8 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version-file: apps/server/go.mod
-          cache-dependency-path: apps/server/go.sum
+          go-version-file: go.mod
+          cache-dependency-path: go.sum
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
