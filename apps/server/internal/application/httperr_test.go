@@ -60,6 +60,8 @@ func TestWriteServiceError(t *testing.T) {
 		{"user already exists", service.ErrUserAlreadyExists, http.StatusConflict},
 		{"invalid token", service.ErrInvalidToken, http.StatusUnauthorized},
 		{"unauthorized", service.ErrUnauthorized, http.StatusUnauthorized},
+		{"internal error", service.ErrInternal, http.StatusInternalServerError},
+		{"wrapped internal error", fmt.Errorf("node search: %w", service.ErrInternal), http.StatusInternalServerError},
 		{"unknown error falls through to 500", errors.New("boom"), http.StatusInternalServerError},
 		{"wrapped sentinel still maps", fmt.Errorf("upstream: %w", service.ErrForbidden), http.StatusForbidden},
 	}

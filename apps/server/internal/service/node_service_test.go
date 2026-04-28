@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -345,6 +346,18 @@ func TestNodeService_SearchNodes(t *testing.T) {
 		}
 		if len(nodes) != 0 {
 			t.Errorf("expected 0 nodes for STROKE query, got %d", len(nodes))
+		}
+	})
+
+	t.Run("repository ErrInternal propagates to caller", func(t *testing.T) {
+		// Simulate an infrastructure failure (e.g. DB I/O error) that the
+		// real NodeRepository.Search wraps with ErrInternal.
+		structureRepo.searchErr = fmt.Errorf("node search: %w", ErrInternal)
+		defer func() { structureRepo.searchErr = nil }()
+
+		_, err := svc.SearchNodes(ctx, "")
+		if !errors.Is(err, ErrInternal) {
+			t.Errorf("expected ErrInternal to propagate, got %v", err)
 		}
 	})
 }

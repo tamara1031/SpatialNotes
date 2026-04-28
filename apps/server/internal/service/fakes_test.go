@@ -8,6 +8,9 @@ import (
 type FakeStructureRepository struct {
 	nodes       map[string]Node
 	elementRepo *FakeElementRepository
+	// searchErr, when non-nil, is returned by every Search call to simulate
+	// infrastructure failures in service-layer tests.
+	searchErr error
 }
 
 func NewFakeStructureRepository() *FakeStructureRepository {
@@ -89,7 +92,12 @@ func (f *FakeStructureRepository) DeleteMany(ctx context.Context, ids []string, 
 // Search mirrors the repository contract: return all non-deleted nodes owned
 // by userID, optionally narrowed to those whose Type contains query
 // (case-insensitive), consistent with the `type LIKE` SQL implementation.
+// If searchErr is set it is returned immediately to simulate infrastructure
+// failures.
 func (f *FakeStructureRepository) Search(ctx context.Context, query, userID string) ([]Node, error) {
+	if f.searchErr != nil {
+		return nil, f.searchErr
+	}
 	var results []Node
 	q := strings.ToUpper(query)
 	for _, n := range f.nodes {
