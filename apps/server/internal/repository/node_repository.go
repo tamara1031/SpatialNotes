@@ -125,11 +125,17 @@ func (r *NodeRepository) DeleteByNodeID(ctx context.Context, nodeId, userID stri
 	return err
 }
 
+// Search returns structure nodes owned by userID. When query is non-empty it
+// filters by type prefix (case-insensitive via SQLite's default LIKE
+// behaviour), enabling clients to request e.g. "?q=CHAPTER" or "?q=NOTE".
+// The previous implementation referenced a `name` column that does not exist
+// in the schema — node titles live in the encrypted metadata_payload and
+// cannot be searched at the SQL layer.
 func (r *NodeRepository) Search(ctx context.Context, query, userID string) ([]service.Node, error) {
 	var nbs []NotebookNode
 	q := r.db.NewSelect().Model(&nbs).Where("user_id = ? AND is_deleted = 0", userID)
 	if query != "" {
-		q = q.Where("name LIKE ?", "%"+query+"%")
+		q = q.Where("type LIKE ?", "%"+query+"%")
 	}
 	err := q.Scan(ctx)
 	if err != nil {

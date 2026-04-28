@@ -209,6 +209,78 @@ func TestSqliteNodeRepository_GetTree_ExcludesDeleted(t *testing.T) {
 	}
 }
 
+// TestSqliteNodeRepository_Search pins three contracts of the Search method:
+// (1) empty query returns all non-deleted nodes for the owner,
+// (2) non-empty query filters by type prefix (case-insensitive),
+// (3) deleted nodes are excluded from results.
+func TestSqliteNodeRepository_Search(t *testing.T) {
+	db, err := infrastructure.NewDB("sqlite", ":memory:")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	ctx := context.Background()
+	if err := infrastructure.CreateSchema(ctx, db); err != nil {
+		t.Fatal(err)
+	}
+
+	repo := repository.NewNodeRepository(db)
+	uid := "u1"
+
+	chapter := service.NewBaseNode("ch1", service.NodeTypeChapter, "", uid)
+	notebook := service.NewBaseNode("nb1", service.NodeTypeNotebook, "ch1", uid)
+	deleted := service.NewFullNode("del1", service.NodeTypeChapter, "", uid, "", service.EncryptionStandard, nil, 0, true)
+	foreign := service.NewBaseNode("fgn1", service.NodeTypeChapter, "", "u2")
+
+	for _, n := range []service.Node{chapter, notebook, deleted, foreign} {
+		if err := repo.Save(ctx, n); err != nil {
+			t.Fatalf("save %s: %v", n.ID(), err)
+		}
+	}
+
+	t.Run("empty query returns all non-deleted nodes for owner", func(t *testing.T) {
+		results, err := repo.Search(ctx, "", uid)
+		if err != nil {
+			t.Fatalf("Search: %v", err)
+		}
+		if len(results) != 2 {
+			t.Errorf("expected 2 results (chapter + notebook), got %d", len(results))
+		}
+		for _, n := range results {
+			if n.IsDeleted() {
+				t.Errorf("Search returned deleted node %q", n.ID())
+			}
+			if n.UserID() != uid {
+				t.Errorf("Search returned foreign node %q (user=%s)", n.ID(), n.UserID())
+			}
+		}
+	})
+
+	t.Run("type prefix filters results", func(t *testing.T) {
+		results, err := repo.Search(ctx, "CHAPTER", uid)
+		if err != nil {
+			t.Fatalf("Search: %v", err)
+		}
+		if len(results) != 1 {
+			t.Errorf("expected 1 CHAPTER result, got %d", len(results))
+		}
+		if len(results) > 0 && results[0].Type() != service.NodeTypeChapter {
+			t.Errorf("expected type CHAPTER, got %q", results[0].Type())
+		}
+	})
+
+	t.Run("no results for unmatched type query", func(t *testing.T) {
+		results, err := repo.Search(ctx, "STROKE", uid)
+		if err != nil {
+			t.Fatalf("Search: %v", err)
+		}
+		if len(results) != 0 {
+			t.Errorf("expected 0 results for STROKE query, got %d", len(results))
+		}
+	})
+}
+
 func TestSqliteNodeRepository_Delete(t *testing.T) {
 	db, err := infrastructure.NewDB("sqlite", ":memory:")
 	if err != nil {
