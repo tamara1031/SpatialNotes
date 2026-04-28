@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
 import { RenameNodeUseCase } from "./RenameNodeUseCase.js";
 
 describe("RenameNodeUseCase", () => {
@@ -22,14 +21,14 @@ describe("RenameNodeUseCase", () => {
 			save: vi.fn().mockResolvedValue(undefined),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new RenameNodeUseCase(repo);
+		const mockBus = { publish: vi.fn() };
+		const useCase = new RenameNodeUseCase(repo, mockBus);
 
 		await useCase.execute({ id: "n1", newName: "New Name" });
 
 		expect(mockNode.rename).toHaveBeenCalledWith("New Name");
 		expect(repo.save).toHaveBeenCalledWith(mockNode);
-		expect(publishSpy).toHaveBeenCalled();
+		expect(mockBus.publish).toHaveBeenCalled();
 		expect(mockNode.clearDomainEvents).toHaveBeenCalled();
 	});
 
