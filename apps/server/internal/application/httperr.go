@@ -33,9 +33,16 @@ func writeServiceError(w http.ResponseWriter, err error, op string, attrs ...any
 		http.Error(w, "Conflict", http.StatusConflict)
 	case errors.Is(err, service.ErrInvalidToken), errors.Is(err, service.ErrUnauthorized):
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	case errors.Is(err, service.ErrInternal):
+		// Infrastructure failure (DB I/O, storage, etc.) — log the root cause
+		// for observability but return a generic message so internals are not
+		// leaked to the caller.
+		args := append([]any{"op", op, "error", err}, attrs...)
+		logger.Error("infrastructure error", args...)
+		http.Error(w, "Internal server error", http.StatusInternalServerError)
 	default:
-		// Unknown error: log with context for debugging, but only return a
-		// generic message so we don't leak internals to the caller.
+		// Unrecognised error: log with context so we can spot newly added
+		// sentinels that were not wired into this switch.
 		args := append([]any{"op", op, "error", err}, attrs...)
 		logger.Error("unhandled service error", args...)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)

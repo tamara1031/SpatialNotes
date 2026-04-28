@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
 	"github.com/uptrace/bun"
@@ -137,9 +138,8 @@ func (r *NodeRepository) Search(ctx context.Context, query, userID string) ([]se
 	if query != "" {
 		q = q.Where("type LIKE ?", "%"+query+"%")
 	}
-	err := q.Scan(ctx)
-	if err != nil {
-		return nil, err
+	if err := q.Scan(ctx); err != nil {
+		return nil, fmt.Errorf("node search: %w", service.ErrInternal)
 	}
 
 	results := make([]service.Node, len(nbs))
