@@ -1,6 +1,6 @@
 import {
-	type IDomainEventBus,
 	globalEventBus,
+	type IDomainEventBus,
 } from "../../domain/events/DomainEventBus.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { CircularReferenceError } from "../../domain/types.js";
