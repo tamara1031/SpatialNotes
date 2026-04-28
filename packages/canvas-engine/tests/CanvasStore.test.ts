@@ -53,11 +53,14 @@ describe("CanvasStore", () => {
 		const actionCallback = vi.fn();
 		store.onAction(actionCallback);
 
-		store.emitCommand("TEST_ACTION", { foo: "bar" });
+		store.emitCommand({
+			type: "UPDATE_ELEMENTS",
+			payload: [{ id: "el-1", changes: { metadata: { foo: "bar" } } }],
+		});
 
 		expect(actionCallback).toHaveBeenCalledWith({
-			type: "TEST_ACTION",
-			payload: { foo: "bar" },
+			type: "UPDATE_ELEMENTS",
+			payload: [{ id: "el-1", changes: { metadata: { foo: "bar" } } }],
 		});
 	});
 

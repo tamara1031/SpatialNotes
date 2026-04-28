@@ -26,9 +26,10 @@ describe("EraserService", () => {
 		await service.eraseAt(10, 10, 3, false);
 
 		expect(store.getState().elements).toHaveLength(0);
-		expect(emitSpy).toHaveBeenCalledWith("BATCH", [
-			{ type: "DELETE", payload: { id: "el-1" } },
-		]);
+		expect(emitSpy).toHaveBeenCalledWith({
+			type: "BATCH",
+			payload: [{ type: "DELETE", payload: { id: "el-1" } }],
+		});
 	});
 
 	it("should emit a BATCH command for multiple hits in standard mode", async () => {
@@ -61,10 +62,13 @@ describe("EraserService", () => {
 		await service.eraseAt(10, 10, 3, false);
 
 		expect(store.getState().elements).toHaveLength(0);
-		expect(emitSpy).toHaveBeenCalledWith("BATCH", [
-			{ type: "DELETE", payload: { id: "el-1" } },
-			{ type: "DELETE", payload: { id: "el-2" } },
-		]);
+		expect(emitSpy).toHaveBeenCalledWith({
+			type: "BATCH",
+			payload: [
+				{ type: "DELETE", payload: { id: "el-1" } },
+				{ type: "DELETE", payload: { id: "el-2" } },
+			],
+		});
 	});
 
 	it("should handle precision erasure by splitting strokes", async () => {
@@ -108,21 +112,27 @@ describe("EraserService", () => {
 
 		// New dispatch pattern emits BATCH (for delete) and CREATE (per fragment)
 		expect(emitSpy).toHaveBeenCalledWith(
-			"BATCH",
-			expect.arrayContaining([
-				expect.objectContaining({
-					type: "DELETE",
-					payload: { id: "stroke-1" },
-				}),
-			]),
+			expect.objectContaining({
+				type: "BATCH",
+				payload: expect.arrayContaining([
+					expect.objectContaining({
+						type: "DELETE",
+						payload: { id: "stroke-1" },
+					}),
+				]),
+			}),
 		);
 		expect(emitSpy).toHaveBeenCalledWith(
-			"CREATE",
-			expect.objectContaining({ id: "frag-1" }),
+			expect.objectContaining({
+				type: "CREATE",
+				payload: expect.objectContaining({ id: "frag-1" }),
+			}),
 		);
 		expect(emitSpy).toHaveBeenCalledWith(
-			"CREATE",
-			expect.objectContaining({ id: "frag-2" }),
+			expect.objectContaining({
+				type: "CREATE",
+				payload: expect.objectContaining({ id: "frag-2" }),
+			}),
 		);
 	});
 });

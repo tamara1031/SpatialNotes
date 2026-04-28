@@ -36,6 +36,6 @@ describe("DrawingService", () => {
 
 		// Emit command via store
 		expect(emitSpy).toHaveBeenCalledTimes(1);
-		expect(emitSpy).toHaveBeenCalledWith("CREATE", record);
+		expect(emitSpy).toHaveBeenCalledWith({ type: "CREATE", payload: record });
 	});
 });

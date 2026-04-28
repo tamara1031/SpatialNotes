@@ -49,6 +49,6 @@ describe("InteractionHandler", () => {
 		const event = new KeyboardEvent("keydown", { key: "z", ctrlKey: true });
 		handler.handleKeyDown(event);
 
-		expect(emitSpy).toHaveBeenCalledWith("UNDO");
+		expect(emitSpy).toHaveBeenCalledWith({ type: "UNDO" });
 	});
 });

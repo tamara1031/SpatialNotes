@@ -254,12 +254,15 @@ export class CanvasEngine
 			onTextEdit: (id, newContent) => {
 				const el = this.store.getState().elements.find((e) => e.id === id);
 				if (el && el.metadata.content !== newContent) {
-					this.store.emitCommand("UPDATE_ELEMENTS", [
-						{
-							id,
-							changes: { metadata: { ...el.metadata, content: newContent } },
-						},
-					]);
+					this.store.emitCommand({
+						type: "UPDATE_ELEMENTS",
+						payload: [
+							{
+								id,
+								changes: { metadata: { ...el.metadata, content: newContent } },
+							},
+						],
+					});
 				}
 				this.store.update({ editingElementId: null });
 			},
