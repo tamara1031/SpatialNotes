@@ -6,7 +6,14 @@ export interface IDomainEvent<T = any> {
 
 export type DomainEventHandler<T = any> = (event: IDomainEvent<T>) => void;
 
-export class DomainEventBus {
+// Minimal publish-side contract. Use cases depend on this abstraction rather
+// than on the concrete DomainEventBus, enabling injection of a test double
+// without touching the global singleton.
+export interface IDomainEventBus {
+	publish(event: IDomainEvent): void;
+}
+
+export class DomainEventBus implements IDomainEventBus {
 	private handlers = new Map<string, DomainEventHandler[]>();
 
 	publish(event: IDomainEvent): void {
