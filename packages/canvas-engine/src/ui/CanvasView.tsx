@@ -1,12 +1,12 @@
 import type { ElementFactory } from "engine-core";
 import type React from "react";
 import type { CanvasElement } from "../types";
-import { CanvasEngineUI } from "./CanvasEngineUI";
+import { CanvasEngineUI, type CanvasShellCommand } from "./CanvasEngineUI";
 
 export interface CanvasViewProps {
 	activeNodeId: string | null;
 	elements: CanvasElement[];
-	onCommand: (cmd: { type: string; payload?: unknown }) => void;
+	onCommand: (cmd: CanvasShellCommand) => void;
 	onUndo: () => void;
 	onRedo: () => void;
 	canUndo: boolean;

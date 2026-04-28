@@ -11,10 +11,19 @@ import {
 import { CanvasEngine } from "../index";
 import {
 	type CanvasElement,
+	type CanvasEngineEvent,
 	type CanvasLayoutMode,
 	type CanvasOrientation,
+	type CanvasStoreCommand,
 	CanvasTool,
 } from "../types";
+
+// Commands forwarded from engine to the shell (excludes lifecycle events).
+export type CanvasShellCommand = Exclude<
+	CanvasStoreCommand,
+	{ type: "UNDO" } | { type: "REDO" }
+>;
+
 import {
 	EraserIcon,
 	ExportIcon,
@@ -26,6 +35,18 @@ import {
 	SettingsIcon,
 	UndoIcon,
 } from "./Icons";
+
+/* ─── Helpers ─── */
+
+function triggerSVGDownload(svg: string): void {
+	const blob = new Blob([svg], { type: "image/svg+xml" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = "canvas-export.svg";
+	a.click();
+	URL.revokeObjectURL(url);
+}
 
 /* ─── Sub-Components ─── */
 
@@ -105,7 +126,7 @@ export interface CanvasEngineHandle {
 export interface CanvasEngineUIProps {
 	activeNodeId: string;
 	elements: CanvasElement[];
-	onCommand: (cmd: { type: string; payload?: unknown }) => void;
+	onCommand: (cmd: CanvasShellCommand) => void;
 	onUndo?: () => void;
 	onRedo?: () => void;
 	canUndo: boolean;
@@ -172,17 +193,18 @@ export const CanvasEngineUI = forwardRef<
 				);
 				engineRef.current = engine;
 
-				engine.onAction?.((action: { type: string; payload?: unknown }) => {
+				engine.onAction?.((event: CanvasEngineEvent) => {
 					const { onCommand, onUndo, onRedo } = depsRef.current;
-					if (action.type === "STATUS") {
-						if (action.payload === "READY") setEngineReady(true);
-						else setEngineReady(false);
-					} else if (action.type === "UNDO") {
+					if (event.type === "STATUS") {
+						setEngineReady(event.payload === "READY");
+					} else if (event.type === "UNDO") {
 						onUndo?.();
-					} else if (action.type === "REDO") {
+					} else if (event.type === "REDO") {
 						onRedo?.();
+					} else if (event.type === "EXPORT_RESULT") {
+						triggerSVGDownload(event.payload);
 					} else {
-						onCommand(action);
+						onCommand(event);
 					}
 				});
 			}

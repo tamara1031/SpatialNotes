@@ -1,3 +1,4 @@
+import type { ElementFactory } from "engine-core";
 import { baseKeymap } from "prosemirror-commands";
 import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
@@ -11,13 +12,14 @@ import {
 	wrappingInputRule,
 } from "prosemirror-inputrules";
 import { keymap } from "prosemirror-keymap";
+import type { Node as ProseMirrorNode } from "prosemirror-model";
 import { EditorState } from "prosemirror-state";
 import { columnResizing, tableEditing } from "prosemirror-tables";
 import { EditorView } from "prosemirror-view";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { blockIdPlugin } from "../index";
-import type { MarkdownElement } from "../types";
+import type { MarkdownCommand, MarkdownElement } from "../types";
 import { LaTeXNodeView } from "./nodes/LaTeXNodeView";
 import { schema } from "./schema";
 
@@ -29,10 +31,10 @@ import "./styles.css";
 export interface MarkdownViewProps {
 	activeNodeId: string;
 	elements: MarkdownElement[];
-	onCommand: (cmd: any) => void;
+	onCommand: (cmd: MarkdownCommand) => void;
 	canUndo: boolean;
 	canRedo: boolean;
-	elementFactory: any;
+	elementFactory: ElementFactory;
 }
 
 const markdownInputRules = inputRules({
@@ -107,16 +109,18 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 	}, []);
 
 	const mapDocToElements = useCallback(
-		(doc: any): MarkdownElement[] => {
+		(doc: ProseMirrorNode): MarkdownElement[] => {
 			const elements: MarkdownElement[] = [];
-			doc.forEach((node: any) => {
+			doc.forEach((node: ProseMirrorNode) => {
 				elements.push({
-					id: node.attrs.id,
-					type: mapProseMirrorTypeToElement(node.type.name) as any,
+					id: String(node.attrs.id ?? ""),
+					type: mapProseMirrorTypeToElement(
+						node.type.name,
+					) as MarkdownElement["type"],
 					parentId: null,
 					content: node.textContent,
 					metadata: {
-						...node.attrs,
+						...(node.attrs as Record<string, unknown>),
 						kind: node.type.name.toUpperCase(),
 					},
 					updatedAt: Date.now(),
@@ -210,7 +214,7 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 		const { state, dispatch } = viewRef.current;
 		const { tr } = state;
 
-		let node: any;
+		let node: ProseMirrorNode | null;
 		switch (type) {
 			case "h1":
 				node = schema.nodes.heading.createAndFill({ level: 1 });

@@ -17,6 +17,7 @@ import type { InteractionContext, Tool } from "./tools/Tool";
 import {
 	type CanvasElement,
 	type CanvasEngineContext,
+	type CanvasEngineEvent,
 	CanvasTool,
 	type CanvasViewport,
 } from "./types";
@@ -42,7 +43,7 @@ export class CanvasEngine
 	private drawingService: DrawingService;
 	private clipboardService: ClipboardService;
 
-	private onActionCallback?: (action: { type: string; payload?: any }) => void;
+	private onActionCallback?: (event: CanvasEngineEvent) => void;
 	private onViewportChangeCallback:
 		| ((viewport: CanvasViewport) => void)
 		| null = null;
@@ -226,7 +227,7 @@ export class CanvasEngine
 		return patch;
 	}
 
-	onAction(callback: (action: { type: string; payload?: any }) => void) {
+	onAction(callback: (event: CanvasEngineEvent) => void): void {
 		this.onActionCallback = callback;
 	}
 
@@ -254,12 +255,15 @@ export class CanvasEngine
 			onTextEdit: (id, newContent) => {
 				const el = this.store.getState().elements.find((e) => e.id === id);
 				if (el && el.metadata.content !== newContent) {
-					this.store.emitCommand("UPDATE_ELEMENTS", [
-						{
-							id,
-							changes: { metadata: { ...el.metadata, content: newContent } },
-						},
-					]);
+					this.store.emitCommand({
+						type: "UPDATE_ELEMENTS",
+						payload: [
+							{
+								id,
+								changes: { metadata: { ...el.metadata, content: newContent } },
+							},
+						],
+					});
 				}
 				this.store.update({ editingElementId: null });
 			},

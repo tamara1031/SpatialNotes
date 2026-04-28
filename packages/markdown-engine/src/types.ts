@@ -28,8 +28,14 @@ export interface MarkdownBlock extends BaseElement {
 		src?: string;
 		isRendered?: boolean;
 		language?: string;
-		[key: string]: any;
+		[key: string]: unknown;
 	};
 }
+
+// Commands emitted by the markdown engine to the shell.
+export type MarkdownCommand = {
+	type: "UPDATE_ELEMENTS";
+	payload: MarkdownElement[];
+};
 
 export type MarkdownElement = MarkdownBlock;

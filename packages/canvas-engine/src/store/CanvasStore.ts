@@ -1,6 +1,8 @@
 import {
 	type CanvasElement,
+	type CanvasElementUpdate,
 	type CanvasLayoutMode,
+	type CanvasStoreCommand,
 	CanvasTool,
 	type CanvasViewport,
 } from "../types";
@@ -46,7 +48,7 @@ export type CanvasEvent =
 	| { type: "VIEWPORT_CHANGED"; payload: CanvasViewport }
 	| { type: "SELECTION_CHANGED"; payload: string[] }
 	| { type: "TOOL_CHANGED"; payload: CanvasTool }
-	| { type: "COMMAND_EMITTED"; payload: { type: string; payload?: any } }
+	| { type: "COMMAND_EMITTED"; payload: CanvasStoreCommand }
 	| {
 			type: "STATUS_CHANGED";
 			payload: { status: "LOADING" | "READY" | "ERROR"; message?: string };
@@ -54,7 +56,7 @@ export type CanvasEvent =
 
 export type CanvasAction =
 	| { type: "CREATE_ELEMENT"; payload: CanvasElement }
-	| { type: "UPDATE_ELEMENTS"; payload: { id: string; changes: any }[] }
+	| { type: "UPDATE_ELEMENTS"; payload: CanvasElementUpdate[] }
 	| { type: "DELETE_ELEMENTS"; payload: string[] }
 	| { type: "SET_VIEWPORT"; payload: CanvasViewport }
 	| { type: "SET_TOOL"; payload: CanvasTool }
@@ -66,9 +68,8 @@ export class CanvasStore {
 	private state: CanvasState;
 	private listeners: Set<() => void> = new Set();
 	private eventListeners: Map<string, Set<(payload: any) => void>> = new Map();
-	private actionListeners: Set<
-		(action: { type: string; payload?: any }) => void
-	> = new Set();
+	private actionListeners: Set<(command: CanvasStoreCommand) => void> =
+		new Set();
 
 	constructor(initialState?: Partial<CanvasState>) {
 		this.state = {
@@ -152,7 +153,7 @@ export class CanvasStore {
 		switch (action.type) {
 			case "CREATE_ELEMENT":
 				this.update({ elements: [...this.state.elements, action.payload] });
-				this.emitCommand("CREATE", action.payload);
+				this.emitCommand({ type: "CREATE", payload: action.payload });
 				break;
 			case "UPDATE_ELEMENTS": {
 				const nextElements = this.state.elements.map((el) => {
@@ -167,7 +168,7 @@ export class CanvasStore {
 					return el;
 				});
 				this.update({ elements: nextElements });
-				this.emitCommand("UPDATE_ELEMENTS", action.payload);
+				this.emitCommand({ type: "UPDATE_ELEMENTS", payload: action.payload });
 				break;
 			}
 			case "DELETE_ELEMENTS":
@@ -179,10 +180,15 @@ export class CanvasStore {
 						(id) => !action.payload.includes(id),
 					),
 				});
-				this.emitCommand(
-					"BATCH",
-					action.payload.map((id) => ({ type: "DELETE", payload: { id } })),
-				);
+				this.emitCommand({
+					type: "BATCH",
+					payload: action.payload.map(
+						(id): { type: "DELETE"; payload: { id: string } } => ({
+							type: "DELETE",
+							payload: { id },
+						}),
+					),
+				});
 				break;
 			case "SET_VIEWPORT":
 				this.update({ viewport: action.payload });
@@ -191,10 +197,10 @@ export class CanvasStore {
 				this.update({ activeTool: action.payload });
 				break;
 			case "UNDO":
-				this.emitCommand("UNDO");
+				this.emitCommand({ type: "UNDO" });
 				break;
 			case "REDO":
-				this.emitCommand("REDO");
+				this.emitCommand({ type: "REDO" });
 				break;
 			case "BATCH":
 				action.payload.forEach((a) => {
@@ -208,11 +214,10 @@ export class CanvasStore {
 	 * Dispatch a domain event that doesn't necessarily change the state
 	 * but needs to be broadcast (replaces CommandBus)
 	 */
-	emitCommand(type: string, payload?: any) {
-		const action = { type, payload };
-		this.emit("COMMAND_EMITTED", action);
+	emitCommand(command: CanvasStoreCommand): void {
+		this.emit("COMMAND_EMITTED", command);
 		this.actionListeners.forEach((l) => {
-			l(action);
+			l(command);
 		});
 	}
 
@@ -221,7 +226,7 @@ export class CanvasStore {
 		return () => this.listeners.delete(listener);
 	}
 
-	onAction(listener: (action: { type: string; payload?: any }) => void) {
+	onAction(listener: (command: CanvasStoreCommand) => void): () => void {
 		this.actionListeners.add(listener);
 		return () => this.actionListeners.delete(listener);
 	}
