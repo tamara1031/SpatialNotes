@@ -2,7 +2,7 @@ package service
 
 import (
 	"context"
-	"errors"
+	"strings"
 )
 
 type FakeStructureRepository struct {
@@ -86,8 +86,21 @@ func (f *FakeStructureRepository) DeleteMany(ctx context.Context, ids []string, 
 	return nil
 }
 
+// Search mirrors the repository contract: return all non-deleted nodes owned
+// by userID, optionally narrowed to those whose Type contains query
+// (case-insensitive), consistent with the `type LIKE` SQL implementation.
 func (f *FakeStructureRepository) Search(ctx context.Context, query, userID string) ([]Node, error) {
-	return nil, errors.New("not implemented")
+	var results []Node
+	q := strings.ToUpper(query)
+	for _, n := range f.nodes {
+		if n.UserID() != userID || n.IsDeleted() {
+			continue
+		}
+		if q == "" || strings.Contains(strings.ToUpper(n.Type()), q) {
+			results = append(results, n)
+		}
+	}
+	return results, nil
 }
 
 type FakeElementRepository struct {
