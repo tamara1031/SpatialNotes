@@ -23,6 +23,7 @@ export type CanvasShellCommand = Exclude<
 	CanvasStoreCommand,
 	{ type: "UNDO" } | { type: "REDO" }
 >;
+
 import {
 	EraserIcon,
 	ExportIcon,

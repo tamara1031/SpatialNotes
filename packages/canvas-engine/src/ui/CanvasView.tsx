@@ -1,7 +1,7 @@
 import type { ElementFactory } from "engine-core";
 import type React from "react";
 import type { CanvasElement } from "../types";
-import { type CanvasShellCommand, CanvasEngineUI } from "./CanvasEngineUI";
+import { CanvasEngineUI, type CanvasShellCommand } from "./CanvasEngineUI";
 
 export interface CanvasViewProps {
 	activeNodeId: string | null;

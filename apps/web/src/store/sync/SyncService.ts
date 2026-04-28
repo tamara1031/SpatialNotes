@@ -1,12 +1,12 @@
 import {
 	CreateElementCommand,
 	DeleteElementCommand,
-	type IDomainEvent,
-	type NodeRecord,
 	globalEventBus,
+	type IDomainEvent,
 	NODE_CREATED,
 	NODE_DELETED,
 	NODE_RENAMED,
+	type NodeRecord,
 	UpdateNodeCommand,
 } from "@spatial-notes/core";
 import { YjsStoreAdapter } from "../../infrastructure/storage/YjsStoreAdapter";

@@ -1,3 +1,4 @@
+import type { ElementFactory } from "engine-core";
 import { baseKeymap } from "prosemirror-commands";
 import { dropCursor } from "prosemirror-dropcursor";
 import { gapCursor } from "prosemirror-gapcursor";
@@ -18,7 +19,6 @@ import { EditorView } from "prosemirror-view";
 import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { blockIdPlugin } from "../index";
-import type { ElementFactory } from "engine-core";
 import type { MarkdownCommand, MarkdownElement } from "../types";
 import { LaTeXNodeView } from "./nodes/LaTeXNodeView";
 import { schema } from "./schema";
@@ -114,7 +114,9 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 			doc.forEach((node: ProseMirrorNode) => {
 				elements.push({
 					id: String(node.attrs.id ?? ""),
-					type: mapProseMirrorTypeToElement(node.type.name) as MarkdownElement["type"],
+					type: mapProseMirrorTypeToElement(
+						node.type.name,
+					) as MarkdownElement["type"],
 					parentId: null,
 					content: node.textContent,
 					metadata: {
