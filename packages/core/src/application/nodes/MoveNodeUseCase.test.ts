@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import { describe, expect, it, vi } from "vitest";
 import { NODE_MOVED } from "../../domain/nodes/events.js";
 import { CircularReferenceError } from "../../domain/types.js";
 import { MoveNodeUseCase } from "./MoveNodeUseCase.js";
@@ -28,9 +27,6 @@ const makeNode = (
 });
 
 describe("MoveNodeUseCase", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-	});
 	it("should move a node and publish the entity's NodeMovedEvent", async () => {
 		const node = makeNode("n1", null);
 
@@ -39,15 +35,15 @@ describe("MoveNodeUseCase", () => {
 			save: vi.fn().mockResolvedValue(undefined),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new MoveNodeUseCase(repo);
+		const mockBus = { publish: vi.fn() };
+		const useCase = new MoveNodeUseCase(repo, mockBus);
 
 		await useCase.execute({ id: "n1", newParentId: "p1" });
 
 		expect(node.move).toHaveBeenCalledWith("p1");
 		expect(repo.save).toHaveBeenCalledWith(node);
-		expect(publishSpy).toHaveBeenCalledTimes(1);
-		expect(publishSpy.mock.calls[0][0].type).toBe(NODE_MOVED);
+		expect(mockBus.publish).toHaveBeenCalledTimes(1);
+		expect(mockBus.publish.mock.calls[0][0].type).toBe(NODE_MOVED);
 		expect(node.clearDomainEvents).toHaveBeenCalled();
 	});
 
@@ -59,13 +55,13 @@ describe("MoveNodeUseCase", () => {
 			save: vi.fn().mockResolvedValue(undefined),
 		} as any;
 
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
-		const useCase = new MoveNodeUseCase(repo);
+		const mockBus = { publish: vi.fn() };
+		const useCase = new MoveNodeUseCase(repo, mockBus);
 
 		await useCase.execute({ id: "n1", newParentId: null });
 
 		expect(node.move).toHaveBeenCalledWith(null);
-		expect(publishSpy).toHaveBeenCalledTimes(1);
+		expect(mockBus.publish).toHaveBeenCalledTimes(1);
 	});
 
 	it("should throw if node not found", async () => {

@@ -1,5 +1,4 @@
 import { describe, expect, it, vi } from "vitest";
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
 import { NODE_CREATED } from "../../domain/nodes/events.js";
 import { ValidationError } from "../../domain/types.js";
 import { VaultStatus } from "../../domain/vault/VaultStatus.js";
@@ -42,8 +41,8 @@ describe("CreateNodeUseCase", () => {
 	it("should publish a NodeCreatedEvent after saving", async () => {
 		const repo = { save: vi.fn() } as any;
 		const vault = { getStatus: () => VaultStatus.Unlocked() } as any;
-		const useCase = new CreateNodeUseCase(repo, vault);
-		const publishSpy = vi.spyOn(globalEventBus, "publish");
+		const mockBus = { publish: vi.fn() };
+		const useCase = new CreateNodeUseCase(repo, vault, mockBus);
 
 		await useCase.execute({
 			parentId: null,
@@ -52,8 +51,8 @@ describe("CreateNodeUseCase", () => {
 			userId: "u1",
 		});
 
-		expect(publishSpy).toHaveBeenCalledTimes(1);
-		expect(publishSpy.mock.calls[0][0].type).toBe(NODE_CREATED);
+		expect(mockBus.publish).toHaveBeenCalledTimes(1);
+		expect(mockBus.publish.mock.calls[0][0].type).toBe(NODE_CREATED);
 	});
 
 	it("should accept container NodeType variants case-insensitively", async () => {

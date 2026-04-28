@@ -1,4 +1,7 @@
-import { globalEventBus } from "../../domain/events/DomainEventBus.js";
+import {
+	type IDomainEventBus,
+	globalEventBus,
+} from "../../domain/events/DomainEventBus.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { CircularReferenceError } from "../../domain/types.js";
 
@@ -8,7 +11,10 @@ export interface MoveNodeInput {
 }
 
 export class MoveNodeUseCase {
-	constructor(private readonly nodeRepository: INodeRepository) {}
+	constructor(
+		private readonly nodeRepository: INodeRepository,
+		private readonly eventBus: IDomainEventBus = globalEventBus,
+	) {}
 
 	async execute(input: MoveNodeInput): Promise<void> {
 		const node = await this.nodeRepository.findById(input.id);
@@ -33,7 +39,7 @@ export class MoveNodeUseCase {
 
 		// Publish events collected by the entity (mirrors RenameNodeUseCase pattern).
 		for (const event of node.domainEvents) {
-			globalEventBus.publish(event);
+			this.eventBus.publish(event);
 		}
 		node.clearDomainEvents();
 	}
