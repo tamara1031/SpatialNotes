@@ -174,5 +174,5 @@ export interface EngineInterface<E extends BaseElement, V, C>
 	/**
 	 * Register a callback for actions emitted by the engine (status, commands, etc.)
 	 */
-	onAction?(callback: (action: { type: string; payload?: any }) => void): void;
+	onAction?(callback: (action: { type: string; payload?: unknown }) => void): void;
 }
