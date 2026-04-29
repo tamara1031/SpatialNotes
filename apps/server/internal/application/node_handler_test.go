@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -92,7 +93,7 @@ func newMux(h *NodeHandler) *http.ServeMux {
 // --- HandleList ---
 
 func TestHandleList_OK(t *testing.T) {
-	node := service.NewFullNode("n1", "canvas", "", "u1", "", "standard", nil, 0, false)
+	node := service.NewFullNode("n1", service.NodeTypeNotebook, "", "u1", "", service.EncryptionStandard, nil, 0, false)
 	svc := &stubNodeService{
 		searchNodes: func(_ context.Context, _ string) ([]service.Node, error) {
 			return []service.Node{node}, nil
@@ -147,8 +148,8 @@ func TestHandleUpsert_OK(t *testing.T) {
 
 	body, _ := json.Marshal(UpsertNodeRequest{
 		ID:                 "n1",
-		Type:               "canvas",
-		EncryptionStrategy: "standard",
+		Type:               service.NodeTypeNotebook,
+		EncryptionStrategy: service.EncryptionStandard,
 	})
 	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
@@ -169,7 +170,7 @@ func TestHandleUpsert_RejectsUnauthenticated(t *testing.T) {
 	h := NewNodeHandler(svc)
 	mux := newMux(h)
 
-	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: "canvas"})
+	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: service.NodeTypeNotebook, EncryptionStrategy: service.EncryptionStandard})
 	req := httptest.NewRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
@@ -202,13 +203,68 @@ func TestHandleUpsert_ServiceError(t *testing.T) {
 	h := NewNodeHandler(svc)
 	mux := newMux(h)
 
-	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: "canvas"})
+	body, _ := json.Marshal(UpsertNodeRequest{ID: "n1", Type: service.NodeTypeNotebook, EncryptionStrategy: service.EncryptionStandard})
 	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("expected 500, got %d", rr.Code)
+	}
+}
+
+// TestHandleUpsert_ValidationError_Returns422 confirms that a service-layer
+// ErrValidation (e.g. an unknown node type reaching the real NodeService)
+// is correctly surfaced as HTTP 422 Unprocessable Entity rather than 400 or
+// 500. The stub here mimics what the real service does when validateNode
+// rejects a payload so that the handler→httperr path is pinned.
+func TestHandleUpsert_ValidationError_Returns422(t *testing.T) {
+	svc := &stubNodeService{
+		saveNode: func(_ context.Context, _ service.Node) error {
+			return service.ErrValidation
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(UpsertNodeRequest{
+		ID:                 "n1",
+		Type:               "UNKNOWN_TYPE",
+		EncryptionStrategy: service.EncryptionStandard,
+	})
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422 on validation error, got %d", rr.Code)
+	}
+}
+
+// TestHandleUpsert_WrappedValidationError_Returns422 verifies that a
+// validation error wrapped with additional context (fmt.Errorf + %w) still
+// maps to 422 — not 500 — so the errors.Is unwrapping in httperr.go is
+// exercised through the full handler path.
+func TestHandleUpsert_WrappedValidationError_Returns422(t *testing.T) {
+	svc := &stubNodeService{
+		saveNode: func(_ context.Context, _ service.Node) error {
+			return fmt.Errorf("save_node: %w", service.ErrValidation)
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(UpsertNodeRequest{
+		ID:                 "n1",
+		Type:               service.NodeTypeChapter,
+		EncryptionStrategy: service.EncryptionStandard,
+	})
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnprocessableEntity {
+		t.Fatalf("expected 422 on wrapped validation error, got %d", rr.Code)
 	}
 }
 
