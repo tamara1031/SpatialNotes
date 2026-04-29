@@ -15,6 +15,7 @@ export type * from "./domain/crypto/ICryptoProvider.js";
 export type * from "./domain/crypto/types.js";
 export * from "./domain/crypto/VaultManager.js";
 export * from "./domain/events/DomainEventBus.js";
+export * from "./domain/nodes/errors.js";
 export * from "./domain/nodes/events.js";
 export type * from "./domain/nodes/INodePresenter.js";
 export type * from "./domain/nodes/INodeRepository.js";
