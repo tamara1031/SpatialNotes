@@ -33,6 +33,8 @@ func writeServiceError(w http.ResponseWriter, err error, op string, attrs ...any
 		http.Error(w, "Conflict", http.StatusConflict)
 	case errors.Is(err, service.ErrInvalidToken), errors.Is(err, service.ErrUnauthorized):
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+	case errors.Is(err, service.ErrValidation):
+		http.Error(w, "Unprocessable entity", http.StatusUnprocessableEntity)
 	case errors.Is(err, service.ErrInternal):
 		// Infrastructure failure (DB I/O, storage, etc.) — log the root cause
 		// for observability but return a generic message so internals are not

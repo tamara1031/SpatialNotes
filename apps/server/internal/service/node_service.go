@@ -56,6 +56,12 @@ func (s *NodeService) authorizeOwner(ctx context.Context, claimedOwnerID string)
 }
 
 func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
+	// Reject structurally invalid nodes before touching auth or the DB so
+	// that ErrValidation surfaces as 422 before any side effects occur.
+	if err := validateNode(n); err != nil {
+		return err
+	}
+
 	// Authorise the inbound payload before triggering any side effects: a
 	// malformed request that claims a foreign user id must never reach
 	// repository writes, even if the caller would otherwise be filtered by

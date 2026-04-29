@@ -55,4 +55,11 @@ var (
 	// this sentinel lets httperr.go map them to 500 explicitly and log the
 	// root cause, rather than relying on the silent default branch.
 	ErrInternal = errors.New("internal error")
+
+	// ErrValidation indicates the request payload was syntactically valid but
+	// contained values that violate domain invariants — for example, an
+	// unrecognised node type or an empty required field. It maps to 422 so
+	// clients can distinguish a malformed JSON body (400) from a well-formed
+	// body that the domain cannot accept (422).
+	ErrValidation = errors.New("validation error")
 )

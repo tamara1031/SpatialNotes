@@ -2,6 +2,7 @@ package service
 
 import (
 	"encoding/json"
+	"fmt"
 )
 
 // NodeType enumerates the kinds of nodes the service understands.
@@ -46,6 +47,29 @@ func IsStructureType(t NodeType) bool {
 	default:
 		return false
 	}
+}
+
+// validateNode is the single source of truth for "is this node
+// structurally sound?". It is called by SaveNode before any authorization
+// or repository interaction so that invalid inputs are rejected with a
+// domain error rather than silently stored as garbage data.
+func validateNode(n Node) error {
+	if n.ID() == "" {
+		return fmt.Errorf("%w: node id must not be empty", ErrValidation)
+	}
+	switch n.Type() {
+	case NodeTypeChapter, NodeTypeNotebook, NodeTypeElementStroke:
+		// valid
+	default:
+		return fmt.Errorf("%w: unknown node type %q", ErrValidation, n.Type())
+	}
+	switch n.EncryptionStrategy() {
+	case EncryptionStandard, EncryptionE2EE:
+		// valid
+	default:
+		return fmt.Errorf("%w: unknown encryption strategy %q", ErrValidation, n.EncryptionStrategy())
+	}
+	return nil
 }
 
 type Node interface {

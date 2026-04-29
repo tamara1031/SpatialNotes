@@ -349,6 +349,16 @@ func TestNodeService_SearchNodes(t *testing.T) {
 		}
 	})
 
+	t.Run("unrecognised query string returns empty slice", func(t *testing.T) {
+		nodes, err := svc.SearchNodes(ctx, "DOES_NOT_EXIST")
+		if err != nil {
+			t.Fatalf("SearchNodes: %v", err)
+		}
+		if len(nodes) != 0 {
+			t.Errorf("expected 0 results, got %d", len(nodes))
+		}
+	})
+
 	t.Run("repository ErrInternal propagates to caller", func(t *testing.T) {
 		// Simulate an infrastructure failure (e.g. DB I/O error) that the
 		// real NodeRepository.Search wraps with ErrInternal.
@@ -360,4 +370,79 @@ func TestNodeService_SearchNodes(t *testing.T) {
 			t.Errorf("expected ErrInternal to propagate, got %v", err)
 		}
 	})
+}
+
+// TestNodeService_SaveNode_Validation pins the domain invariants that
+// SaveNode must enforce before touching auth or the repository. Each
+// sub-test represents one broken invariant so regressions are pinpointed
+// immediately.
+func TestNodeService_SaveNode_Validation(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+	svc := NewNodeService(
+		NewFakeStructureRepository(),
+		NewFakeElementRepository(),
+		NewFakeNodeUpdateRepository(),
+	)
+
+	cases := []struct {
+		name string
+		node Node
+	}{
+		{
+			"empty ID",
+			NewFullNode("", NodeTypeChapter, "root", uid, "", EncryptionStandard, nil, 0, false),
+		},
+		{
+			"unknown node type",
+			NewFullNode("n1", "CANVAS_ELEMENT", "root", uid, "", EncryptionStandard, nil, 0, false),
+		},
+		{
+			"empty node type",
+			NewFullNode("n1", "", "root", uid, "", EncryptionStandard, nil, 0, false),
+		},
+		{
+			"unknown encryption strategy",
+			NewFullNode("n1", NodeTypeChapter, "root", uid, "", "PLAIN_TEXT", nil, 0, false),
+		},
+		{
+			"empty encryption strategy",
+			NewFullNode("n1", NodeTypeChapter, "root", uid, "", "", nil, 0, false),
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := svc.SaveNode(ctx, tc.node)
+			if !errors.Is(err, ErrValidation) {
+				t.Errorf("expected ErrValidation, got %v", err)
+			}
+		})
+	}
+}
+
+// TestNodeService_SaveNode_Validation_ValidInputsPass confirms that all
+// combinations of known types and strategies are accepted, guarding against
+// an overly strict validateNode that rejects legitimate domain values.
+func TestNodeService_SaveNode_Validation_ValidInputsPass(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+	svc := NewNodeService(
+		NewFakeStructureRepository(),
+		NewFakeElementRepository(),
+		NewFakeNodeUpdateRepository(),
+	)
+
+	valid := []Node{
+		NewFullNode("ch1", NodeTypeChapter, "root", uid, "", EncryptionStandard, nil, 0, false),
+		NewFullNode("nb1", NodeTypeNotebook, "root", uid, "", EncryptionStandard, nil, 0, false),
+		NewFullNode("el1", NodeTypeElementStroke, "nb1", uid, "", EncryptionStandard, nil, 0, false),
+		NewFullNode("ch2", NodeTypeChapter, "root", uid, "", EncryptionE2EE, nil, 0, false),
+	}
+
+	for _, n := range valid {
+		if err := svc.SaveNode(ctx, n); err != nil {
+			t.Errorf("SaveNode(%q, %q): unexpected error %v", n.Type(), n.EncryptionStrategy(), err)
+		}
+	}
 }

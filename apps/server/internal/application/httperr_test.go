@@ -62,6 +62,8 @@ func TestWriteServiceError(t *testing.T) {
 		{"unauthorized", service.ErrUnauthorized, http.StatusUnauthorized},
 		{"internal error", service.ErrInternal, http.StatusInternalServerError},
 		{"wrapped internal error", fmt.Errorf("node search: %w", service.ErrInternal), http.StatusInternalServerError},
+		{"validation error", service.ErrValidation, http.StatusUnprocessableEntity},
+		{"wrapped validation error", fmt.Errorf("save: %w", service.ErrValidation), http.StatusUnprocessableEntity},
 		{"unknown error falls through to 500", errors.New("boom"), http.StatusInternalServerError},
 		{"wrapped sentinel still maps", fmt.Errorf("upstream: %w", service.ErrForbidden), http.StatusForbidden},
 	}
