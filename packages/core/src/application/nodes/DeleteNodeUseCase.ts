@@ -8,6 +8,7 @@ import {
 } from "../../domain/nodes/errors.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { SubtreeDeletionService } from "../../domain/nodes/SubtreeDeletionService.js";
+import { publishAndClear } from "./publishAndClear.js";
 
 export interface DeleteNodeInput {
 	id: string;
@@ -40,12 +41,8 @@ export class DeleteNodeUseCase {
 			input.userId,
 		);
 
-		// Publish events that were collected by the entities
 		for (const deletedNode of deletedNodes) {
-			for (const event of deletedNode.domainEvents) {
-				this.eventBus.publish(event);
-			}
-			deletedNode.clearDomainEvents();
+			publishAndClear(deletedNode, this.eventBus);
 		}
 	}
 }

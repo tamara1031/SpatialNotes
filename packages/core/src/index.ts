@@ -7,6 +7,7 @@ export type * from "./application/common/IStore.js";
 export * from "./application/nodes/CreateNodeUseCase.js";
 export * from "./application/nodes/DeleteNodeUseCase.js";
 export * from "./application/nodes/MoveNodeUseCase.js";
+export * from "./application/nodes/publishAndClear.js";
 export * from "./application/nodes/RenameNodeUseCase.js";
 export * from "./application/vault/RegisterVaultUseCase.js";
 export * from "./application/vault/UnlockVaultUseCase.js";

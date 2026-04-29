@@ -5,6 +5,7 @@ import {
 import { NodeNotFoundError } from "../../domain/nodes/errors.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { ValidationError } from "../../domain/types.js";
+import { publishAndClear } from "./publishAndClear.js";
 
 export interface RenameNodeInput {
 	id: string;
@@ -29,11 +30,6 @@ export class RenameNodeUseCase {
 
 		node.rename(input.newName);
 		await this.nodeRepository.save(node);
-
-		// Publish collected domain events
-		for (const event of node.domainEvents) {
-			this.eventBus.publish(event);
-		}
-		node.clearDomainEvents();
+		publishAndClear(node, this.eventBus);
 	}
 }
