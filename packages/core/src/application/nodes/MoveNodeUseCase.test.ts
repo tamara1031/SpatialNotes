@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+import { NodeNotFoundError } from "../../domain/nodes/errors.js";
 import { NODE_MOVED } from "../../domain/nodes/events.js";
 import { CircularReferenceError } from "../../domain/types.js";
 import { MoveNodeUseCase } from "./MoveNodeUseCase.js";
@@ -64,7 +65,7 @@ describe("MoveNodeUseCase", () => {
 		expect(mockBus.publish).toHaveBeenCalledTimes(1);
 	});
 
-	it("should throw if node not found", async () => {
+	it("should throw NodeNotFoundError if node not found", async () => {
 		const repo = {
 			findById: vi.fn().mockResolvedValue(null),
 		} as any;
@@ -73,7 +74,7 @@ describe("MoveNodeUseCase", () => {
 
 		await expect(
 			useCase.execute({ id: "missing", newParentId: "p1" }),
-		).rejects.toThrow("Node not found: missing");
+		).rejects.toThrow(NodeNotFoundError);
 	});
 
 	it("should throw CircularReferenceError when target is a descendant", async () => {

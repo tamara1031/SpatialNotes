@@ -2,6 +2,7 @@ import {
 	globalEventBus,
 	type IDomainEventBus,
 } from "../../domain/events/DomainEventBus.js";
+import { NodeNotFoundError } from "../../domain/nodes/errors.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { CircularReferenceError } from "../../domain/types.js";
 
@@ -19,7 +20,7 @@ export class MoveNodeUseCase {
 	async execute(input: MoveNodeInput): Promise<void> {
 		const node = await this.nodeRepository.findById(input.id);
 		if (!node) {
-			throw new Error(`Node not found: ${input.id}`);
+			throw new NodeNotFoundError(input.id);
 		}
 
 		// Guard against circular references by traversing ancestors via persistence.

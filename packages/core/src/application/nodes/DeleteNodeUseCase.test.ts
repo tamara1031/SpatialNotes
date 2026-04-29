@@ -1,4 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
+import {
+	NodeNotFoundError,
+	NodeOwnershipError,
+} from "../../domain/nodes/errors.js";
 import { DeleteNodeUseCase } from "./DeleteNodeUseCase.js";
 
 describe("DeleteNodeUseCase", () => {
@@ -47,7 +51,7 @@ describe("DeleteNodeUseCase", () => {
 		expect(mockBus.publish).toHaveBeenCalledTimes(2);
 	});
 
-	it("should throw error if node not found", async () => {
+	it("should throw NodeNotFoundError if node not found", async () => {
 		const repo = {
 			findById: vi.fn().mockResolvedValue(null),
 		} as any;
@@ -56,10 +60,10 @@ describe("DeleteNodeUseCase", () => {
 
 		await expect(
 			useCase.execute({ id: "unknown", userId: "u1" }),
-		).rejects.toThrow("Node not found: unknown");
+		).rejects.toThrow(NodeNotFoundError);
 	});
 
-	it("should throw error if unauthorized", async () => {
+	it("should throw NodeOwnershipError if caller does not own node", async () => {
 		const mockNode = {
 			id: "n1",
 			userId: "other",
@@ -72,7 +76,7 @@ describe("DeleteNodeUseCase", () => {
 		const useCase = new DeleteNodeUseCase(repo);
 
 		await expect(useCase.execute({ id: "n1", userId: "u1" })).rejects.toThrow(
-			"Unauthorized to delete this node",
+			NodeOwnershipError,
 		);
 	});
 });
