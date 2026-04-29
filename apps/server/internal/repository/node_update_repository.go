@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
@@ -26,7 +27,6 @@ type NodeUpdateModel struct {
 }
 
 func (r *NodeUpdateRepository) Save(ctx context.Context, update *service.NodeUpdate) error {
-
 	model := &NodeUpdateModel{
 		NodeID:    update.NodeID,
 		UserID:    update.UserID,
@@ -34,17 +34,19 @@ func (r *NodeUpdateRepository) Save(ctx context.Context, update *service.NodeUpd
 		CreatedAt: time.Now().Unix(),
 	}
 	_, err := r.db.NewInsert().Model(model).Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("node update save: %w", service.ErrInternal)
+	}
+	return nil
 }
 
 func (r *NodeUpdateRepository) FindAllByNodeID(ctx context.Context, nodeId, userID string) ([]*service.NodeUpdate, error) {
-
 	var models []NodeUpdateModel
 	err := r.db.NewSelect().Model(&models).
 		Where("node_id = ? AND user_id = ?", nodeId, userID).
 		Order("id ASC").Scan(ctx)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("node updates find: %w", service.ErrInternal)
 	}
 
 	results := make([]*service.NodeUpdate, len(models))

@@ -48,7 +48,10 @@ func (r *NodeRepository) Save(ctx context.Context, n service.Node) error {
 	_, err := r.db.NewInsert().Model(model).
 		On("CONFLICT (id) DO UPDATE SET parent_id = EXCLUDED.parent_id, user_id = EXCLUDED.user_id, engine_type = EXCLUDED.engine_type, encryption_strategy = EXCLUDED.encryption_strategy, metadata_payload = EXCLUDED.metadata_payload, updated_at = EXCLUDED.updated_at, is_deleted = EXCLUDED.is_deleted").
 		Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("node save: %w", service.ErrInternal)
+	}
+	return nil
 }
 
 func (r *NodeRepository) FindByID(ctx context.Context, id, userID string) (service.Node, error) {
@@ -110,7 +113,10 @@ func (r *NodeRepository) Delete(ctx context.Context, id, userID string) error {
 		Set("is_deleted = 1").
 		Where("id = ? AND user_id = ?", id, userID).
 		Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("node delete: %w", service.ErrInternal)
+	}
+	return nil
 }
 
 func (r *NodeRepository) DeleteMany(ctx context.Context, ids []string, userID string) error {
@@ -121,16 +127,21 @@ func (r *NodeRepository) DeleteMany(ctx context.Context, ids []string, userID st
 		Set("is_deleted = 1").
 		Where("id IN (?) AND user_id = ?", bun.In(ids), userID).
 		Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("node delete many: %w", service.ErrInternal)
+	}
+	return nil
 }
 
 func (r *NodeRepository) DeleteByNodeID(ctx context.Context, nodeId, userID string) error {
-	// In the hybrid element-less model, this might delete children elements if they exist.
 	_, err := r.db.NewUpdate().Table("notebook_nodes").
 		Set("is_deleted = 1").
 		Where("parent_id = ? AND user_id = ?", nodeId, userID).
 		Exec(ctx)
-	return err
+	if err != nil {
+		return fmt.Errorf("node delete by parent: %w", service.ErrInternal)
+	}
+	return nil
 }
 
 // Search returns structure nodes owned by userID. When query is non-empty it
