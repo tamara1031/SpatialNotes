@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/authctx"
 )
@@ -171,11 +172,17 @@ func (s *NodeService) GetNode(ctx context.Context, id string) (Node, error) {
 		return nil, err
 	}
 
-	// Try structure first
-	if n, err := s.structureRepo.FindByID(ctx, id, uid); err == nil {
+	n, err := s.structureRepo.FindByID(ctx, id, uid)
+	if err == nil {
 		return n, nil
 	}
-	// Try element
+	// Only fall through to the element repo when the structure repo
+	// confirmed the node is absent. An infrastructure error from the
+	// structure repo must propagate so callers see 500, not a silent
+	// retry that returns ErrNodeNotFound from the element repo.
+	if !errors.Is(err, ErrNodeNotFound) {
+		return nil, err
+	}
 	return s.elementRepo.FindByID(ctx, id, uid)
 }
 
@@ -187,7 +194,10 @@ func (s *NodeService) DeleteNode(ctx context.Context, id string) error {
 
 	nodes, err := s.structureRepo.GetTree(ctx, id, uid)
 	if err != nil {
-		// If not in structure, might be element
+		if errors.Is(err, ErrInternal) {
+			return err
+		}
+		// ErrNodeNotFound: not a structure node, try element repo.
 		return s.elementRepo.Delete(ctx, id, uid)
 	}
 

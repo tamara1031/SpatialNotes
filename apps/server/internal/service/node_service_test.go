@@ -446,3 +446,51 @@ func TestNodeService_SaveNode_Validation_ValidInputsPass(t *testing.T) {
 		}
 	}
 }
+
+// TestNodeService_GetNode_PropagatesErrInternal pins that GetNode does not
+// silently fall through to the element repository when the structure
+// repository returns an infrastructure error. Before the fix, any error
+// from structureRepo.FindByID was treated as "not found" and the element
+// repo was consulted — masking DB failures as ErrNodeNotFound (404).
+func TestNodeService_GetNode_PropagatesErrInternal(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository())
+
+	// Seed an element so that, if the service incorrectly falls through,
+	// it would find something and return nil error — exposing the regression.
+	el := NewBaseNode("el-1", NodeTypeElementStroke, "nb1", uid)
+	elementRepo.elements["el-1"] = el
+
+	// Simulate an infrastructure failure in the structure repo.
+	structureRepo.findErr = fmt.Errorf("db timeout: %w", ErrInternal)
+
+	_, err := svc.GetNode(ctx, "el-1")
+	if !errors.Is(err, ErrInternal) {
+		t.Errorf("expected ErrInternal to propagate from structureRepo, got %v", err)
+	}
+}
+
+// TestNodeService_DeleteNode_PropagatesErrInternal pins that DeleteNode does
+// not silently fall through to elementRepo.Delete when structureRepo.GetTree
+// returns an infrastructure error. Before the fix, any GetTree error was
+// treated as "node is an element" and element deletion was attempted instead.
+func TestNodeService_DeleteNode_PropagatesErrInternal(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository())
+
+	// Simulate an infrastructure failure from GetTree.
+	structureRepo.treeErr = fmt.Errorf("db closed: %w", ErrInternal)
+
+	err := svc.DeleteNode(ctx, "any-id")
+	if !errors.Is(err, ErrInternal) {
+		t.Errorf("expected ErrInternal to propagate from structureRepo.GetTree, got %v", err)
+	}
+}

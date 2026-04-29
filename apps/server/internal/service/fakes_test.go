@@ -8,9 +8,14 @@ import (
 type FakeStructureRepository struct {
 	nodes       map[string]Node
 	elementRepo *FakeElementRepository
-	// searchErr, when non-nil, is returned by every Search call to simulate
-	// infrastructure failures in service-layer tests.
+	// searchErr, when non-nil, is returned by every Search call.
 	searchErr error
+	// findErr, when non-nil, is returned by every FindByID call instead of
+	// the normal lookup — used to simulate infrastructure failures.
+	findErr error
+	// treeErr, when non-nil, is returned by every GetTree call — used to
+	// simulate infrastructure failures during delete/move operations.
+	treeErr error
 }
 
 func NewFakeStructureRepository() *FakeStructureRepository {
@@ -27,6 +32,9 @@ func (f *FakeStructureRepository) Save(ctx context.Context, n Node) error {
 }
 
 func (f *FakeStructureRepository) FindByID(ctx context.Context, id, userID string) (Node, error) {
+	if f.findErr != nil {
+		return nil, f.findErr
+	}
 	n, ok := f.nodes[id]
 	if !ok || n.UserID() != userID {
 		return nil, ErrNodeNotFound
@@ -35,6 +43,9 @@ func (f *FakeStructureRepository) FindByID(ctx context.Context, id, userID strin
 }
 
 func (f *FakeStructureRepository) GetTree(ctx context.Context, rootId, userID string) ([]Node, error) {
+	if f.treeErr != nil {
+		return nil, f.treeErr
+	}
 	root, ok := f.nodes[rootId]
 	if !ok || root.UserID() != userID {
 		return nil, ErrNodeNotFound
