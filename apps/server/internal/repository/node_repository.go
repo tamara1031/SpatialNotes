@@ -2,6 +2,8 @@ package repository
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/tamara1031/spatial-notes/apps/server/internal/service"
@@ -56,8 +58,10 @@ func (r *NodeRepository) FindByID(ctx context.Context, id, userID string) (servi
 		node := service.NewFullNode(nb.NodeId, nb.NodeType, nb.ParentNodeId, nb.UserID, nb.NodeEngineType, nb.NodeEncryptionStrategy, nb.NodeMetadataPayload, nb.NodeUpdatedAt, nb.IsDeleted)
 		return node, nil
 	}
-
-	return nil, service.ErrNodeNotFound
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, service.ErrNodeNotFound
+	}
+	return nil, fmt.Errorf("node find by id: %w", service.ErrInternal)
 }
 
 // GetTree fetches the complete subtree rooted at rootId for the given user
@@ -84,7 +88,10 @@ func (r *NodeRepository) GetTree(ctx context.Context, rootId, userID string) ([]
 		SELECT * FROM tree`,
 		rootId, userID, userID,
 	).Scan(ctx, &rows)
-	if err != nil || len(rows) == 0 {
+	if err != nil {
+		return nil, fmt.Errorf("node tree query: %w", service.ErrInternal)
+	}
+	if len(rows) == 0 {
 		return nil, service.ErrNodeNotFound
 	}
 	results := make([]service.Node, len(rows))
