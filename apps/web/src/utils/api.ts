@@ -42,6 +42,19 @@ export const api = {
 		return resp.json();
 	},
 
+	async getNode(id: string): Promise<any> {
+		const token = $sessionToken.get();
+		const resp = await fetch(`/api/nodes/${id}`, {
+			headers: {
+				...(token ? { Authorization: `Bearer ${token}` } : {}),
+			},
+		});
+		if (!resp.ok) {
+			throw new Error(`Failed to get node: ${resp.statusText}`);
+		}
+		return resp.json();
+	},
+
 	async getUpdates(nodeId: string): Promise<Uint8Array[]> {
 		const token = $sessionToken.get();
 		const resp = await fetch(`/api/nodes/${nodeId}/updates`, {
