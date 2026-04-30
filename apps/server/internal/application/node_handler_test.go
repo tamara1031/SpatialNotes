@@ -241,6 +241,39 @@ func TestHandleUpsert_ValidationError_Returns422(t *testing.T) {
 	}
 }
 
+// TestHandleUpsert_EmptyID_Returns400 pins that a missing node id is rejected
+// at the handler layer with 400, not at the service layer with 422. The
+// distinction matters: missing id is malformed HTTP input (400 Bad Request),
+// not a domain invariant violation (422 Unprocessable Entity). The service
+// must not be called at all in this path.
+func TestHandleUpsert_EmptyID_Returns400(t *testing.T) {
+	var svcCalled bool
+	svc := &stubNodeService{
+		saveNode: func(_ context.Context, _ service.Node) error {
+			svcCalled = true
+			return nil
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	body, _ := json.Marshal(UpsertNodeRequest{
+		Type:               service.NodeTypeNotebook,
+		EncryptionStrategy: service.EncryptionStandard,
+		// ID intentionally omitted
+	})
+	req := authedRequest(http.MethodPost, "/api/nodes", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 for missing id, got %d", rr.Code)
+	}
+	if svcCalled {
+		t.Error("service must not be called when id is missing")
+	}
+}
+
 // TestHandleUpsert_WrappedValidationError_Returns422 verifies that a
 // validation error wrapped with additional context (fmt.Errorf + %w) still
 // maps to 422 — not 500 — so the errors.Is unwrapping in httperr.go is
