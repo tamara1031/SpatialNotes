@@ -1,6 +1,7 @@
 package application
 
 import (
+	"errors"
 	"net/http"
 	"time"
 
@@ -59,6 +60,13 @@ type UpsertNodeRequest struct {
 	IsDeleted          bool   `json:"isDeleted"`
 }
 
+func (r UpsertNodeRequest) validate() error {
+	if r.ID == "" {
+		return errors.New("id is required")
+	}
+	return nil
+}
+
 type MoveNodeRequest struct {
 	ParentID string `json:"parentId"`
 }
@@ -84,6 +92,9 @@ func (h *NodeHandler) HandleUpsert(w http.ResponseWriter, r *http.Request) {
 	}
 	var req UpsertNodeRequest
 	if !decodeJSON(w, r, &req) {
+		return
+	}
+	if !validateRequest(w, req) {
 		return
 	}
 

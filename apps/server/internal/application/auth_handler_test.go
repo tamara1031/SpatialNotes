@@ -172,6 +172,42 @@ func TestHandleRegister_MissingFields(t *testing.T) {
 	}
 }
 
+// TestRegisterRequest_Validate_FieldSpecificErrors confirms that validate()
+// identifies the first empty required field by name. This pins the shift from
+// the old opaque "Missing required fields" message to field-specific messages
+// that help API clients programmatically identify which field is missing.
+func TestRegisterRequest_Validate_FieldSpecificErrors(t *testing.T) {
+	cases := []struct {
+		name    string
+		req     RegisterRequest
+		wantMsg string
+	}{
+		{"missing email", RegisterRequest{SaltAuth: "s", EncryptionSalt: "e", WrappedDEK: "d", AuthToken: "a"}, "email is required"},
+		{"missing salt_auth", RegisterRequest{Email: "e@x.com", EncryptionSalt: "e", WrappedDEK: "d", AuthToken: "a"}, "salt_auth is required"},
+		{"missing encryption_salt", RegisterRequest{Email: "e@x.com", SaltAuth: "s", WrappedDEK: "d", AuthToken: "a"}, "encryption_salt is required"},
+		{"missing wrapped_dek", RegisterRequest{Email: "e@x.com", SaltAuth: "s", EncryptionSalt: "e", AuthToken: "a"}, "wrapped_dek is required"},
+		{"missing auth_token", RegisterRequest{Email: "e@x.com", SaltAuth: "s", EncryptionSalt: "e", WrappedDEK: "d"}, "auth_token is required"},
+		{"all fields set", RegisterRequest{Email: "e@x.com", SaltAuth: "s", EncryptionSalt: "e", WrappedDEK: "d", AuthToken: "a"}, ""},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := tc.req.validate()
+			if tc.wantMsg == "" {
+				if err != nil {
+					t.Errorf("expected no error, got %v", err)
+				}
+				return
+			}
+			if err == nil {
+				t.Fatalf("expected error %q, got nil", tc.wantMsg)
+			}
+			if err.Error() != tc.wantMsg {
+				t.Errorf("expected %q, got %q", tc.wantMsg, err.Error())
+			}
+		})
+	}
+}
+
 // --- HandleLogin ---
 
 func TestHandleLogin_OK(t *testing.T) {

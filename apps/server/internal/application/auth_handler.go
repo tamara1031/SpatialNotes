@@ -1,6 +1,7 @@
 package application
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/tamara1031/spatial-notes/apps/server/pkg/logger"
@@ -53,14 +54,28 @@ type RegisterRequest struct {
 	AuthToken      string `json:"auth_token"`
 }
 
+func (r RegisterRequest) validate() error {
+	switch {
+	case r.Email == "":
+		return errors.New("email is required")
+	case r.SaltAuth == "":
+		return errors.New("salt_auth is required")
+	case r.EncryptionSalt == "":
+		return errors.New("encryption_salt is required")
+	case r.WrappedDEK == "":
+		return errors.New("wrapped_dek is required")
+	case r.AuthToken == "":
+		return errors.New("auth_token is required")
+	}
+	return nil
+}
+
 func (h *AuthHandler) HandleRegister(w http.ResponseWriter, r *http.Request) {
 	var req RegisterRequest
 	if !decodeJSON(w, r, &req) {
 		return
 	}
-
-	if req.Email == "" || req.SaltAuth == "" || req.EncryptionSalt == "" || req.WrappedDEK == "" || req.AuthToken == "" {
-		http.Error(w, "Missing required fields", http.StatusBadRequest)
+	if !validateRequest(w, req) {
 		return
 	}
 
