@@ -200,22 +200,80 @@ func (f *FakeNodeUpdateRepository) FindAllByNodeID(ctx context.Context, nodeId, 
 
 var _ NodeUpdateRepository = (*FakeNodeUpdateRepository)(nil)
 
-// FakeTransactor executes fn against a FakeNodeWriter without a real DB
-// transaction. It satisfies the Transactor contract for unit tests where
-// in-memory repos have no rollback semantics.
+// FakeTransactor satisfies the Transactor contract for unit tests.
 //
-// Set failAfter to N>0 to simulate an infrastructure failure after N
-// successful NodeWriter calls inside fn, enabling atomicity tests to verify
-// that the service aborts before committing partial state.
+// Two modes:
+//  1. Normal (failAfter == 0): fn receives a FakeCombinedNodeWriter that
+//     delegates writes to the underlying fake repos, so tests that inspect
+//     repo state after a DeleteNode call continue to work correctly.
+//  2. Failure simulation (failAfter > 0): fn receives a FakeNodeWriter that
+//     returns ErrInternal on the Nth call without touching any repo, letting
+//     atomicity tests assert that no partial state leaked.
 type FakeTransactor struct {
-	failAfter int // 0 = always succeed; N = fail on Nth write inside fn
+	structure *FakeStructureRepository
+	element   *FakeElementRepository
+	failAfter int
 }
 
+// NewFakeTransactor returns a transactor whose writer is a no-op combined
+// writer (suitable for tests that don't exercise the transactional delete path).
 func NewFakeTransactor() *FakeTransactor { return &FakeTransactor{} }
 
+// NewFakeTransactorWithRepos returns a transactor that routes NodeWriter calls
+// to the provided fake repos — mirrors how NodeTransactor binds a
+// NodeRepository to a bun.Tx that targets the same notebook_nodes table.
+func NewFakeTransactorWithRepos(structure *FakeStructureRepository, element *FakeElementRepository) *FakeTransactor {
+	return &FakeTransactor{structure: structure, element: element}
+}
+
 func (t *FakeTransactor) RunInTx(ctx context.Context, fn func(ctx context.Context, w NodeWriter) error) error {
-	w := &FakeNodeWriter{failAfter: t.failAfter}
-	return fn(ctx, w)
+	if t.failAfter > 0 {
+		return fn(ctx, &FakeNodeWriter{failAfter: t.failAfter})
+	}
+	return fn(ctx, &FakeCombinedNodeWriter{structure: t.structure, element: t.element})
+}
+
+// FakeCombinedNodeWriter routes NodeWriter calls to the underlying fake repos,
+// mirroring the real NodeRepository that uses a single notebook_nodes table for
+// both structure and element nodes.
+type FakeCombinedNodeWriter struct {
+	structure *FakeStructureRepository
+	element   *FakeElementRepository
+}
+
+func (w *FakeCombinedNodeWriter) Save(ctx context.Context, n Node) error {
+	if w.structure == nil {
+		return nil
+	}
+	if IsStructureType(n.Type()) {
+		return w.structure.Save(ctx, n)
+	}
+	if w.element != nil {
+		return w.element.Save(ctx, n)
+	}
+	return nil
+}
+
+func (w *FakeCombinedNodeWriter) DeleteMany(ctx context.Context, ids []string, userID string) error {
+	if w.structure == nil {
+		return nil
+	}
+	// Real NodeRepository uses one table for both node kinds; the combined
+	// writer tries both repos so tests don't need to pre-classify IDs.
+	if err := w.structure.DeleteMany(ctx, ids, userID); err != nil {
+		return err
+	}
+	if w.element != nil {
+		return w.element.DeleteMany(ctx, ids, userID)
+	}
+	return nil
+}
+
+func (w *FakeCombinedNodeWriter) DeleteByNodeID(ctx context.Context, nodeID, userID string) error {
+	if w.element == nil {
+		return nil
+	}
+	return w.element.DeleteByNodeID(ctx, nodeID, userID)
 }
 
 // FakeNodeWriter records every write call and returns ErrInternal once

@@ -150,7 +150,9 @@ func TestNodeService_RecursiveDelete(t *testing.T) {
 	structureRepo.SetExternalRepos(elementRepo)
 
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
+	// Use a transactor wired to the repos so DeleteNode's transactional
+	// path actually propagates deletes to the in-memory stores.
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactorWithRepos(structureRepo, elementRepo))
 
 	// Hierarchy: root -> n1 -> e1
 	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
@@ -494,5 +496,47 @@ func TestNodeService_DeleteNode_PropagatesErrInternal(t *testing.T) {
 	err := svc.DeleteNode(ctx, "any-id")
 	if !errors.Is(err, ErrInternal) {
 		t.Errorf("expected ErrInternal to propagate from structureRepo.GetTree, got %v", err)
+	}
+}
+
+// TestNodeService_DeleteNode_Atomicity pins that a mid-transaction failure
+// during the two-step subtree delete (structure IDs first, element IDs second)
+// aborts the entire operation without leaving partial state. Before the
+// Transactor was introduced, a failure on the second DeleteMany left structure
+// nodes soft-deleted while their element children remained visible — orphaned
+// records that consumed storage and could confuse future reads.
+func TestNodeService_DeleteNode_Atomicity(t *testing.T) {
+	uid := "u1"
+	ctx := authctx.With(context.Background(), uid)
+
+	structureRepo := NewFakeStructureRepository()
+	elementRepo := NewFakeElementRepository()
+	structureRepo.SetExternalRepos(elementRepo)
+
+	// failAfter=1: the FakeNodeWriter succeeds on call 1 (structureIDs delete)
+	// and returns ErrInternal on call 2 (elementIDs delete), simulating the
+	// infrastructure failure that the Transactor must roll back.
+	transactor := &FakeTransactor{failAfter: 2}
+	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository(), transactor)
+
+	// Hierarchy: root -> n1 (structure) -> e1 (element)
+	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
+	e1 := NewBaseNode("e1", NodeTypeElementStroke, "n1", uid)
+	structureRepo.Save(ctx, n1)
+	elementRepo.Save(ctx, e1)
+
+	// The deletion must fail (the tx writer reported ErrInternal).
+	err := svc.DeleteNode(ctx, "n1")
+	if !errors.Is(err, ErrInternal) {
+		t.Fatalf("expected ErrInternal from mid-tx failure, got %v", err)
+	}
+
+	// Both nodes must still exist in the repos — the FakeTransactor's
+	// failing writer never touched them, modelling a rolled-back transaction.
+	if _, err := structureRepo.FindByID(ctx, "n1", uid); err != nil {
+		t.Errorf("n1 should still exist after aborted delete, got: %v", err)
+	}
+	if _, err := elementRepo.FindByID(ctx, "e1", uid); err != nil {
+		t.Errorf("e1 should still exist after aborted delete, got: %v", err)
 	}
 }

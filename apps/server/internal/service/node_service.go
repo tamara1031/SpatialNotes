@@ -215,19 +215,23 @@ func (s *NodeService) DeleteNode(ctx context.Context, id string) error {
 		}
 	}
 
-	if len(structureIDs) > 0 {
-		if err := s.structureRepo.DeleteMany(ctx, structureIDs, uid); err != nil {
-			return err
+	// Both DeleteMany calls target the same underlying table; wrapping them in
+	// a single transaction guarantees that a failure on the second call rolls
+	// back the first, preventing orphaned element records whose structure
+	// parents have already been soft-deleted.
+	return s.transactor.RunInTx(ctx, func(ctx context.Context, w NodeWriter) error {
+		if len(structureIDs) > 0 {
+			if err := w.DeleteMany(ctx, structureIDs, uid); err != nil {
+				return err
+			}
 		}
-	}
-
-	if len(elementIDs) > 0 {
-		if err := s.elementRepo.DeleteMany(ctx, elementIDs, uid); err != nil {
-			return err
+		if len(elementIDs) > 0 {
+			if err := w.DeleteMany(ctx, elementIDs, uid); err != nil {
+				return err
+			}
 		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *NodeService) SearchNodes(ctx context.Context, query string) ([]Node, error) {
