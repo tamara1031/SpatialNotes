@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
+import { NodeNotFoundError } from "../../domain/nodes/errors.js";
+import { ValidationError } from "../../domain/types.js";
 import { RenameNodeUseCase } from "./RenameNodeUseCase.js";
 
 describe("RenameNodeUseCase", () => {
@@ -32,7 +34,7 @@ describe("RenameNodeUseCase", () => {
 		expect(mockNode.clearDomainEvents).toHaveBeenCalled();
 	});
 
-	it("should throw error if node not found", async () => {
+	it("should throw NodeNotFoundError if node not found", async () => {
 		const repo = {
 			findById: vi.fn().mockResolvedValue(null),
 		} as any;
@@ -41,16 +43,16 @@ describe("RenameNodeUseCase", () => {
 
 		await expect(
 			useCase.execute({ id: "unknown", newName: "New" }),
-		).rejects.toThrow("Node not found: unknown");
+		).rejects.toThrow(NodeNotFoundError);
 	});
 
-	it("should throw error if name is empty", async () => {
+	it("should throw ValidationError if name is empty", async () => {
 		const mockNode = { id: "n1" };
 		const repo = { findById: vi.fn().mockResolvedValue(mockNode) } as any;
 		const useCase = new RenameNodeUseCase(repo);
 
 		await expect(useCase.execute({ id: "n1", newName: "  " })).rejects.toThrow(
-			"Name cannot be empty",
+			ValidationError,
 		);
 	});
 });

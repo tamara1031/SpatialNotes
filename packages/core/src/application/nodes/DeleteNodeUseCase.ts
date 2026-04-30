@@ -2,8 +2,13 @@ import {
 	globalEventBus,
 	type IDomainEventBus,
 } from "../../domain/events/DomainEventBus.js";
+import {
+	NodeNotFoundError,
+	NodeOwnershipError,
+} from "../../domain/nodes/errors.js";
 import type { INodeRepository } from "../../domain/nodes/INodeRepository.js";
 import { SubtreeDeletionService } from "../../domain/nodes/SubtreeDeletionService.js";
+import { publishAndClear } from "./publishAndClear.js";
 
 export interface DeleteNodeInput {
 	id: string;
@@ -23,11 +28,11 @@ export class DeleteNodeUseCase {
 	async execute(input: DeleteNodeInput): Promise<void> {
 		const node = await this.nodeRepository.findById(input.id);
 		if (!node) {
-			throw new Error(`Node not found: ${input.id}`);
+			throw new NodeNotFoundError(input.id);
 		}
 
 		if (node.userId !== input.userId) {
-			throw new Error("Unauthorized to delete this node");
+			throw new NodeOwnershipError();
 		}
 
 		// Use domain service for recursive deletion
@@ -36,12 +41,8 @@ export class DeleteNodeUseCase {
 			input.userId,
 		);
 
-		// Publish events that were collected by the entities
 		for (const deletedNode of deletedNodes) {
-			for (const event of deletedNode.domainEvents) {
-				this.eventBus.publish(event);
-			}
-			deletedNode.clearDomainEvents();
+			publishAndClear(deletedNode, this.eventBus);
 		}
 	}
 }
