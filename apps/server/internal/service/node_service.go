@@ -17,17 +17,20 @@ type NodeService struct {
 	structureRepo  StructureRepository
 	elementRepo    ElementRepository
 	nodeUpdateRepo NodeUpdateRepository
+	transactor     Transactor
 }
 
 func NewNodeService(
 	structureRepo StructureRepository,
 	elementRepo ElementRepository,
 	nodeUpdateRepo NodeUpdateRepository,
+	transactor Transactor,
 ) *NodeService {
 	return &NodeService{
 		structureRepo:  structureRepo,
 		elementRepo:    elementRepo,
 		nodeUpdateRepo: nodeUpdateRepo,
+		transactor:     transactor,
 	}
 }
 

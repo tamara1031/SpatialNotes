@@ -13,7 +13,7 @@ func TestNodeService_NodeUpdates(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	nodeID := "test-node-1"
 	payload1 := []byte("encrypted-delta-1")

@@ -19,7 +19,7 @@ func BenchmarkNodeService_DeleteNode(b *testing.B) {
 		elementRepo := service.NewFakeElementRepository()
 		structureRepo.SetExternalRepos(elementRepo)
 		nodeUpdateRepo := service.NewFakeNodeUpdateRepository()
-		svc := service.NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+		svc := service.NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, service.NewFakeTransactor())
 
 		// Create root
 		root := service.NewBaseNode("root", "CHAPTER", "", uid)

@@ -199,3 +199,69 @@ func (f *FakeNodeUpdateRepository) FindAllByNodeID(ctx context.Context, nodeId, 
 }
 
 var _ NodeUpdateRepository = (*FakeNodeUpdateRepository)(nil)
+
+// FakeTransactor executes fn against a FakeNodeWriter without a real DB
+// transaction. It satisfies the Transactor contract for unit tests where
+// in-memory repos have no rollback semantics.
+//
+// Set failAfter to N>0 to simulate an infrastructure failure after N
+// successful NodeWriter calls inside fn, enabling atomicity tests to verify
+// that the service aborts before committing partial state.
+type FakeTransactor struct {
+	failAfter int // 0 = always succeed; N = fail on Nth write inside fn
+}
+
+func NewFakeTransactor() *FakeTransactor { return &FakeTransactor{} }
+
+func (t *FakeTransactor) RunInTx(ctx context.Context, fn func(ctx context.Context, w NodeWriter) error) error {
+	w := &FakeNodeWriter{failAfter: t.failAfter}
+	return fn(ctx, w)
+}
+
+// FakeNodeWriter records every write call and returns ErrInternal once
+// callCount reaches failAfter (when failAfter > 0). It intentionally does
+// NOT touch the fake repos — that is the point: callers that check state
+// after a simulated failure should find the repos unchanged.
+type FakeNodeWriter struct {
+	callCount int
+	failAfter int
+	// savedNodes and deletedIDs capture calls that succeeded before failure,
+	// so atomicity tests can assert that no partial state was applied.
+	savedNodes []Node
+	deletedIDs []string
+}
+
+func (w *FakeNodeWriter) tickOrFail() error {
+	w.callCount++
+	if w.failAfter > 0 && w.callCount >= w.failAfter {
+		return ErrInternal
+	}
+	return nil
+}
+
+func (w *FakeNodeWriter) Save(_ context.Context, n Node) error {
+	if err := w.tickOrFail(); err != nil {
+		return err
+	}
+	w.savedNodes = append(w.savedNodes, n)
+	return nil
+}
+
+func (w *FakeNodeWriter) DeleteMany(_ context.Context, ids []string, _ string) error {
+	if err := w.tickOrFail(); err != nil {
+		return err
+	}
+	w.deletedIDs = append(w.deletedIDs, ids...)
+	return nil
+}
+
+func (w *FakeNodeWriter) DeleteByNodeID(_ context.Context, nodeID, _ string) error {
+	if err := w.tickOrFail(); err != nil {
+		return err
+	}
+	w.deletedIDs = append(w.deletedIDs, nodeID)
+	return nil
+}
+
+var _ Transactor = (*FakeTransactor)(nil)
+var _ NodeWriter = (*FakeNodeWriter)(nil)

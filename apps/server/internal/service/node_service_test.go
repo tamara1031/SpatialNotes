@@ -16,7 +16,7 @@ func TestNodeService_CircularReference(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// Hierarchy: root -> n1 -> n2 -> n3
 	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
@@ -49,7 +49,7 @@ func TestNodeService_SaveNode_RejectsForeignOwnerBeforeSideEffects(t *testing.T)
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// Existing STANDARD node owned by u1 with one plaintext element child.
 	nodeID := "nb1"
@@ -83,7 +83,7 @@ func TestNodeService_MoveNode_RejectsForeignNewParent(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// u1 owns node "mine". u2 owns node "victim".
 	mine := NewBaseNode("mine", NodeTypeChapter, "root", uid)
@@ -118,7 +118,7 @@ func TestNodeService_MoveNode_DepthGuardOnCorruptParentChain(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// Construct a corrupted parent cycle: a <-> b. This should never occur
 	// in well-formed data but must not be able to hang the server.
@@ -150,7 +150,7 @@ func TestNodeService_RecursiveDelete(t *testing.T) {
 	structureRepo.SetExternalRepos(elementRepo)
 
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// Hierarchy: root -> n1 -> e1
 	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
@@ -185,7 +185,7 @@ func TestNodeService_SaveNode_RejectsCycleViaUpsert(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// Hierarchy: root -> n1 -> n2 -> n3
 	n1 := NewBaseNode("n1", NodeTypeChapter, "root", uid)
@@ -226,7 +226,7 @@ func TestNodeService_SaveNode_RejectsForeignParentViaUpsert(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// u1 owns "mine" at root. u2 owns "victim" at root.
 	mine := NewBaseNode("mine", NodeTypeChapter, "root", uid)
@@ -256,7 +256,7 @@ func TestNodeService_SaveNode_AllowsUnchangedParent(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	original := NewFullNode("nb1", NodeTypeNotebook, "root", uid, "CANVAS", EncryptionStandard, []byte("meta-v1"), 0, false)
 	if err := svc.SaveNode(ctx, original); err != nil {
@@ -284,7 +284,7 @@ func TestNodeService_SearchNodes(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	ch1 := NewBaseNode("ch1", NodeTypeChapter, "", uid)
 	nb1 := NewBaseNode("nb1", NodeTypeNotebook, "ch1", uid)
@@ -383,6 +383,7 @@ func TestNodeService_SaveNode_Validation(t *testing.T) {
 		NewFakeStructureRepository(),
 		NewFakeElementRepository(),
 		NewFakeNodeUpdateRepository(),
+		NewFakeTransactor(),
 	)
 
 	cases := []struct {
@@ -431,6 +432,7 @@ func TestNodeService_SaveNode_Validation_ValidInputsPass(t *testing.T) {
 		NewFakeStructureRepository(),
 		NewFakeElementRepository(),
 		NewFakeNodeUpdateRepository(),
+		NewFakeTransactor(),
 	)
 
 	valid := []Node{
@@ -458,7 +460,7 @@ func TestNodeService_GetNode_PropagatesErrInternal(t *testing.T) {
 
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
-	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository())
+	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository(), NewFakeTransactor())
 
 	// Seed an element so that, if the service incorrectly falls through,
 	// it would find something and return nil error — exposing the regression.
@@ -484,7 +486,7 @@ func TestNodeService_DeleteNode_PropagatesErrInternal(t *testing.T) {
 
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
-	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository())
+	svc := NewNodeService(structureRepo, elementRepo, NewFakeNodeUpdateRepository(), NewFakeTransactor())
 
 	// Simulate an infrastructure failure from GetTree.
 	structureRepo.treeErr = fmt.Errorf("db closed: %w", ErrInternal)

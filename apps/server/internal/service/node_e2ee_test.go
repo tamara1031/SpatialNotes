@@ -14,7 +14,7 @@ func TestNodeService_E2EE_Transition_Purge(t *testing.T) {
 	structureRepo := NewFakeStructureRepository()
 	elementRepo := NewFakeElementRepository()
 	nodeUpdateRepo := NewFakeNodeUpdateRepository()
-	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo)
+	svc := NewNodeService(structureRepo, elementRepo, nodeUpdateRepo, NewFakeTransactor())
 
 	// 1. Setup a STANDARD node with plaintext elements
 	nodeID := "node-123"
