@@ -31,6 +31,7 @@ type stubNodeService struct {
 	searchNodes func(ctx context.Context, query string) ([]service.Node, error)
 	saveNode    func(ctx context.Context, n service.Node) error
 	moveNode    func(ctx context.Context, id, newParentId string) error
+	getNode     func(ctx context.Context, id string) (service.Node, error)
 	deleteNode  func(ctx context.Context, id string) error
 	saveUpdate  func(ctx context.Context, u *service.NodeUpdate) error
 	getUpdates  func(ctx context.Context, nodeId string) ([]*service.NodeUpdate, error)
@@ -54,7 +55,10 @@ func (s *stubNodeService) MoveNode(ctx context.Context, id, newParentId string) 
 	}
 	return nil
 }
-func (s *stubNodeService) GetNode(_ context.Context, _ string) (service.Node, error) {
+func (s *stubNodeService) GetNode(ctx context.Context, id string) (service.Node, error) {
+	if s.getNode != nil {
+		return s.getNode(ctx, id)
+	}
 	return nil, nil
 }
 func (s *stubNodeService) DeleteNode(ctx context.Context, id string) error {
@@ -82,6 +86,7 @@ func newMux(h *NodeHandler) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/nodes", h.HandleList)
 	mux.HandleFunc("POST /api/nodes", h.HandleUpsert)
+	mux.HandleFunc("GET /api/nodes/{id}", h.HandleGet)
 	mux.HandleFunc("PATCH /api/nodes/{id}", h.HandleMove)
 	mux.HandleFunc("DELETE /api/nodes/{id}", h.HandleDelete)
 	mux.HandleFunc("GET /api/search", h.HandleSearch)
@@ -548,6 +553,127 @@ func TestHandleMove_ServiceError_Returns500(t *testing.T) {
 
 	body, _ := json.Marshal(MoveNodeRequest{ParentID: "p1"})
 	req := authedRequest(http.MethodPatch, "/api/nodes/node-abc", bytes.NewReader(body))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusInternalServerError {
+		t.Fatalf("expected 500 on unexpected error, got %d", rr.Code)
+	}
+}
+
+// --- HandleGet ---
+
+func TestHandleGet_OK(t *testing.T) {
+	node := service.NewFullNode("n1", service.NodeTypeNotebook, "root", "u1", "", service.EncryptionStandard, nil, 0, false)
+	svc := &stubNodeService{
+		getNode: func(_ context.Context, id string) (service.Node, error) {
+			if id != "n1" {
+				return nil, service.ErrNodeNotFound
+			}
+			return node, nil
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	req := authedRequest(http.MethodGet, "/api/nodes/n1", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200, got %d", rr.Code)
+	}
+	if ct := rr.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("expected Content-Type application/json, got %q", ct)
+	}
+	var got map[string]any
+	if err := json.Unmarshal(rr.Body.Bytes(), &got); err != nil {
+		t.Fatalf("body not valid JSON: %v — body: %s", err, rr.Body.String())
+	}
+	if got["id"] != "n1" {
+		t.Errorf("expected id=n1 in response body, got %v", got["id"])
+	}
+}
+
+func TestHandleGet_MissingID(t *testing.T) {
+	svc := &stubNodeService{}
+	h := NewNodeHandler(svc)
+
+	req := authedRequest(http.MethodGet, "/api/nodes/", nil)
+	rr := httptest.NewRecorder()
+	// Call directly without mux to simulate missing path param.
+	h.HandleGet(rr, req)
+
+	if rr.Code != http.StatusBadRequest {
+		t.Fatalf("expected 400 on missing id, got %d", rr.Code)
+	}
+}
+
+func TestHandleGet_NotFound_Returns404(t *testing.T) {
+	svc := &stubNodeService{
+		getNode: func(_ context.Context, _ string) (service.Node, error) {
+			return nil, service.ErrNodeNotFound
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	req := authedRequest(http.MethodGet, "/api/nodes/ghost", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("expected 404, got %d", rr.Code)
+	}
+}
+
+func TestHandleGet_Unauthenticated_Returns401(t *testing.T) {
+	svc := &stubNodeService{
+		getNode: func(_ context.Context, _ string) (service.Node, error) {
+			return nil, service.ErrUnauthenticated
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	// Deliberately unauthenticated request — no authctx.With on context.
+	req := httptest.NewRequest(http.MethodGet, "/api/nodes/n1", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusUnauthorized {
+		t.Fatalf("expected 401 on unauthenticated get, got %d", rr.Code)
+	}
+}
+
+func TestHandleGet_Forbidden_Returns403(t *testing.T) {
+	svc := &stubNodeService{
+		getNode: func(_ context.Context, _ string) (service.Node, error) {
+			return nil, service.ErrForbidden
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	req := authedRequest(http.MethodGet, "/api/nodes/foreign-node", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusForbidden {
+		t.Fatalf("expected 403 on forbidden get, got %d", rr.Code)
+	}
+}
+
+func TestHandleGet_ServiceError_Returns500(t *testing.T) {
+	svc := &stubNodeService{
+		getNode: func(_ context.Context, _ string) (service.Node, error) {
+			return nil, errors.New("db connection lost")
+		},
+	}
+	h := NewNodeHandler(svc)
+	mux := newMux(h)
+
+	req := authedRequest(http.MethodGet, "/api/nodes/n1", nil)
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 

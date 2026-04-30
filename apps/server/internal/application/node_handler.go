@@ -130,6 +130,24 @@ func (h *NodeHandler) HandleMove(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// HandleGet fetches a single node by its path {id}. Authentication is
+// enforced by the service layer (GetNode calls getUserID internally); any
+// request without a valid bearer token receives a 401 via writeServiceError.
+func (h *NodeHandler) HandleGet(w http.ResponseWriter, r *http.Request) {
+	id, ok := requireNodeID(w, r)
+	if !ok {
+		return
+	}
+
+	node, err := h.service.GetNode(r.Context(), id)
+	if err != nil {
+		writeServiceError(w, err, "get_node", "id", id)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, node)
+}
+
 func (h *NodeHandler) HandleDelete(w http.ResponseWriter, r *http.Request) {
 	id, ok := requireNodeID(w, r)
 	if !ok {
