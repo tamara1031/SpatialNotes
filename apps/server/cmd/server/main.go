@@ -65,10 +65,11 @@ func main() {
 
 	nodeRepo := repository.NewNodeRepository(db)
 	nodeUpdateRepo := repository.NewNodeUpdateRepository(db)
+	nodeTransactor := repository.NewNodeTransactor(db)
 	userRepo := repository.NewUserRepository(db)
 	authRepo := repository.NewAuthenticatorRepository(db)
 
-	nodeSvc := service.NewNodeService(nodeRepo, nodeRepo, nodeUpdateRepo)
+	nodeSvc := service.NewNodeService(nodeRepo, nodeRepo, nodeUpdateRepo, nodeTransactor)
 	nodeHandler := application.NewNodeHandler(nodeSvc)
 
 	jwtSecret := os.Getenv("JWT_SECRET")
