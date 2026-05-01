@@ -11,10 +11,17 @@ import (
 )
 
 type NodeRepository struct {
-	db *bun.DB
+	db bun.IDB
 }
 
 func NewNodeRepository(db *bun.DB) *NodeRepository {
+	return &NodeRepository{db: db}
+}
+
+// newNodeRepositoryFromIDB constructs a NodeRepository from any bun.IDB
+// (either *bun.DB or bun.Tx). Used by NodeTransactor to bind a repo to an
+// open transaction without exposing the concrete type to the service layer.
+func newNodeRepositoryFromIDB(db bun.IDB) *NodeRepository {
 	return &NodeRepository{db: db}
 }
 

@@ -17,17 +17,20 @@ type NodeService struct {
 	structureRepo  StructureRepository
 	elementRepo    ElementRepository
 	nodeUpdateRepo NodeUpdateRepository
+	transactor     Transactor
 }
 
 func NewNodeService(
 	structureRepo StructureRepository,
 	elementRepo ElementRepository,
 	nodeUpdateRepo NodeUpdateRepository,
+	transactor Transactor,
 ) *NodeService {
 	return &NodeService{
 		structureRepo:  structureRepo,
 		elementRepo:    elementRepo,
 		nodeUpdateRepo: nodeUpdateRepo,
+		transactor:     transactor,
 	}
 }
 
@@ -72,22 +75,28 @@ func (s *NodeService) SaveNode(ctx context.Context, n Node) error {
 		return err
 	}
 
-	// Inspect the existing node (if any) once, then act on each transition:
-	//   - STANDARD -> E2EE flips the encryption strategy and must purge
-	//     plaintext children, which become unreadable by design.
-	//   - parent_id changes via upsert must be cycle-safe. Without this,
-	//     callers could bypass MoveNode and create cycles by issuing a
-	//     plain SaveNode with a malicious parent_id.
+	// Inspect the existing node (if any) once, then handle each transition:
+	//   - parent_id changes must be cycle-safe (validated before any writes).
+	//   - STANDARD -> E2EE must purge plaintext children atomically with the
+	//     node update: without a transaction, a Save failure after DeleteByNodeID
+	//     leaves children gone while the node retains STANDARD strategy.
 	if old, err := s.GetNode(ctx, n.ID()); err == nil {
-		if old.EncryptionStrategy() == EncryptionStandard && n.EncryptionStrategy() == EncryptionE2EE {
-			if err := s.elementRepo.DeleteByNodeID(ctx, n.ID(), uid); err != nil {
-				return err
-			}
-		}
+		// Cycle detection is read-only; always run it before any destructive write.
 		if old.ParentID() != n.ParentID() {
 			if err := s.validateNewParent(ctx, n.ID(), n.ParentID(), uid); err != nil {
 				return err
 			}
+		}
+
+		if old.EncryptionStrategy() == EncryptionStandard && n.EncryptionStrategy() == EncryptionE2EE {
+			// Purge element children and persist the updated node in a single
+			// transaction so the two writes are never partially committed.
+			return s.transactor.RunInTx(ctx, func(ctx context.Context, w NodeWriter) error {
+				if err := w.DeleteByNodeID(ctx, n.ID(), uid); err != nil {
+					return err
+				}
+				return w.Save(ctx, n)
+			})
 		}
 	}
 
@@ -212,19 +221,23 @@ func (s *NodeService) DeleteNode(ctx context.Context, id string) error {
 		}
 	}
 
-	if len(structureIDs) > 0 {
-		if err := s.structureRepo.DeleteMany(ctx, structureIDs, uid); err != nil {
-			return err
+	// Both DeleteMany calls target the same underlying table; wrapping them in
+	// a single transaction guarantees that a failure on the second call rolls
+	// back the first, preventing orphaned element records whose structure
+	// parents have already been soft-deleted.
+	return s.transactor.RunInTx(ctx, func(ctx context.Context, w NodeWriter) error {
+		if len(structureIDs) > 0 {
+			if err := w.DeleteMany(ctx, structureIDs, uid); err != nil {
+				return err
+			}
 		}
-	}
-
-	if len(elementIDs) > 0 {
-		if err := s.elementRepo.DeleteMany(ctx, elementIDs, uid); err != nil {
-			return err
+		if len(elementIDs) > 0 {
+			if err := w.DeleteMany(ctx, elementIDs, uid); err != nil {
+				return err
+			}
 		}
-	}
-
-	return nil
+		return nil
+	})
 }
 
 func (s *NodeService) SearchNodes(ctx context.Context, query string) ([]Node, error) {
