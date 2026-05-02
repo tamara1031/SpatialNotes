@@ -62,6 +62,13 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 	const onCommandRef = useRef(onCommand);
 	const [showSlashMenu, setShowSlashMenu] = useState(false);
 	const [slashMenuPos, setSlashMenuPos] = useState({ top: 0, left: 0 });
+	const [selectedSlashIndex, setSelectedSlashIndex] = useState(0);
+	const slashMenuOptions = [
+		{ type: "h1", label: "Heading 1", icon: "#" },
+		{ type: "h2", label: "Heading 2", icon: "##" },
+		{ type: "table", label: "Table", icon: "田" },
+		{ type: "latex", label: "LaTeX", icon: "Σ" },
+	] as const;
 
 	useEffect(() => {
 		onCommandRef.current = onCommand;
@@ -131,6 +138,36 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 		[mapProseMirrorTypeToElement],
 	);
 
+	const insertBlock = useCallback((type: string) => {
+		if (!viewRef.current) return;
+		const { state, dispatch } = viewRef.current;
+		const { tr } = state;
+
+		let node: ProseMirrorNode | null;
+		switch (type) {
+			case "h1":
+				node = schema.nodes.heading.createAndFill({ level: 1 });
+				break;
+			case "h2":
+				node = schema.nodes.heading.createAndFill({ level: 2 });
+				break;
+			case "table":
+				node = schema.nodes.table.createAndFill();
+				break;
+			case "latex":
+				node = schema.nodes.latex.createAndFill();
+				break;
+			default:
+				node = schema.nodes.paragraph.createAndFill();
+		}
+
+		if (node) {
+			dispatch(tr.replaceSelectionWith(node).scrollIntoView());
+		}
+		setShowSlashMenu(false);
+		viewRef.current.focus();
+	}, []);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: reinitialize only on note switch; elements/onCommand changes within the same note are handled internally by ProseMirror
 	useEffect(() => {
 		if (!editorRef.current) return;
@@ -157,23 +194,6 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 				gapCursor(),
 				columnResizing(),
 				tableEditing(),
-				keymap({
-					"/": (state, _dispatch) => {
-						const { from, to } = state.selection;
-						if (from !== to) return false;
-
-						const coords = viewRef.current?.coordsAtPos(from);
-						if (coords) {
-							setSlashMenuPos({ top: coords.bottom, left: coords.left });
-							setShowSlashMenu(true);
-						}
-						return false;
-					},
-					Escape: () => {
-						setShowSlashMenu(false);
-						return false;
-					},
-				}),
 			],
 		});
 
@@ -209,35 +229,50 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 		};
 	}, [activeNodeId]);
 
-	const insertBlock = (type: string) => {
-		if (!viewRef.current) return;
-		const { state, dispatch } = viewRef.current;
-		const { tr } = state;
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (!showSlashMenu) return;
+			if (event.key === "Escape") {
+				setShowSlashMenu(false);
+				return;
+			}
+			if (event.key === "ArrowDown") {
+				event.preventDefault();
+				setSelectedSlashIndex((prev) => (prev + 1) % slashMenuOptions.length);
+				return;
+			}
+			if (event.key === "ArrowUp") {
+				event.preventDefault();
+				setSelectedSlashIndex(
+					(prev) =>
+						(prev - 1 + slashMenuOptions.length) % slashMenuOptions.length,
+				);
+				return;
+			}
+			if (event.key === "Enter") {
+				event.preventDefault();
+				insertBlock(slashMenuOptions[selectedSlashIndex].type);
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [insertBlock, selectedSlashIndex, showSlashMenu, slashMenuOptions]);
 
-		let node: ProseMirrorNode | null;
-		switch (type) {
-			case "h1":
-				node = schema.nodes.heading.createAndFill({ level: 1 });
-				break;
-			case "h2":
-				node = schema.nodes.heading.createAndFill({ level: 2 });
-				break;
-			case "table":
-				node = schema.nodes.table.createAndFill();
-				break;
-			case "latex":
-				node = schema.nodes.latex.createAndFill();
-				break;
-			default:
-				node = schema.nodes.paragraph.createAndFill();
-		}
-
-		if (node) {
-			dispatch(tr.replaceSelectionWith(node).scrollIntoView());
-		}
-		setShowSlashMenu(false);
-		viewRef.current.focus();
-	};
+	useEffect(() => {
+		const onKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== "/" || showSlashMenu) return;
+			const view = viewRef.current;
+			if (!view) return;
+			const { from, to } = view.state.selection;
+			if (from !== to) return;
+			const coords = view.coordsAtPos(from);
+			setSlashMenuPos({ top: coords.bottom, left: coords.left });
+			setSelectedSlashIndex(0);
+			setShowSlashMenu(true);
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [showSlashMenu]);
 
 	return (
 		<div className="editor-container relative overflow-auto h-full">
@@ -255,18 +290,16 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({
 					}}
 				>
 					<div className="slash-menu-header">Insert Block</div>
-					<div className="slash-menu-item" onClick={() => insertBlock("h1")}>
-						<span className="slash-menu-icon">#</span> Heading 1
-					</div>
-					<div className="slash-menu-item" onClick={() => insertBlock("h2")}>
-						<span className="slash-menu-icon">##</span> Heading 2
-					</div>
-					<div className="slash-menu-item" onClick={() => insertBlock("table")}>
-						<span className="slash-menu-icon">田</span> Table
-					</div>
-					<div className="slash-menu-item" onClick={() => insertBlock("latex")}>
-						<span className="slash-menu-icon">Σ</span> LaTeX
-					</div>
+					{slashMenuOptions.map((option, index) => (
+						<div
+							key={option.type}
+							className={`slash-menu-item ${selectedSlashIndex === index ? "selected" : ""}`}
+							onClick={() => insertBlock(option.type)}
+						>
+							<span className="slash-menu-icon">{option.icon}</span>{" "}
+							{option.label}
+						</div>
+					))}
 				</div>
 			)}
 		</div>

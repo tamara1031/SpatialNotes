@@ -37,4 +37,28 @@ describe("MarkdownView Slash Command", () => {
 			{ timeout: 3000 },
 		);
 	});
+
+	it("should move selection and insert with keyboard navigation", async () => {
+		const user = userEvent.setup();
+		const onCommand = vi.fn();
+		render(
+			<MarkdownView
+				activeNodeId="test-node"
+				elements={[]}
+				onCommand={onCommand}
+				canUndo={false}
+				canRedo={false}
+				elementFactory={vi.fn()}
+			/>,
+		);
+
+		const editor = document.querySelector(".ProseMirror") as HTMLElement;
+		await user.click(editor);
+		await user.keyboard("/");
+		await user.keyboard("{ArrowDown}{ArrowDown}{Enter}");
+
+		await waitFor(() => {
+			expect(onCommand).toHaveBeenCalled();
+		});
+	});
 });
