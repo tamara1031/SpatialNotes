@@ -1,5 +1,6 @@
 import type { WorkerGateway } from "../bridge/WorkerGateway";
 import type { CanvasStore } from "../store/CanvasStore";
+import { ElementUtils } from "../utils/ElementUtils";
 
 export class SelectionService {
 	constructor(
@@ -9,48 +10,43 @@ export class SelectionService {
 
 	public bringToFront(ids: string[]) {
 		const state = this.store.getState();
-		const elementsToMove = state.elements.filter((el) => ids.includes(el.id));
 		const unchanged = state.elements.filter((el) => !ids.includes(el.id));
-		const nextElements = [...unchanged, ...elementsToMove];
-
-		this.store.update({ elements: nextElements });
-		this.store.emitCommand(
-			"UPDATE_ELEMENTS",
-			elementsToMove.map((el) => ({ id: el.id, changes: {} })),
+		const maxZ = unchanged.reduce(
+			(m, el) => Math.max(m, (el.metadata.z_index as number) || 0),
+			0,
 		);
+		const updates = state.elements
+			.filter((el) => ids.includes(el.id))
+			.map((el, i) => ({
+				id: el.id,
+				changes: { metadata: { z_index: maxZ + i + 1 } },
+			}));
+		this.store.dispatch({ type: "UPDATE_ELEMENTS", payload: updates });
 	}
 
 	public sendToBack(ids: string[]) {
 		const state = this.store.getState();
-		const elementsToMove = state.elements.filter((el) => ids.includes(el.id));
 		const unchanged = state.elements.filter((el) => !ids.includes(el.id));
-		const nextElements = [...elementsToMove, ...unchanged];
-
-		this.store.update({ elements: nextElements });
-		this.store.emitCommand(
-			"UPDATE_ELEMENTS",
-			elementsToMove.map((el) => ({ id: el.id, changes: {} })),
+		const minZ = unchanged.reduce(
+			(m, el) => Math.min(m, (el.metadata.z_index as number) || 0),
+			0,
 		);
+		const updates = state.elements
+			.filter((el) => ids.includes(el.id))
+			.map((el, i) => ({
+				id: el.id,
+				changes: { metadata: { z_index: minZ - (ids.length - i) } },
+			}));
+		this.store.dispatch({ type: "UPDATE_ELEMENTS", payload: updates });
 	}
 
 	public moveElements(ids: string[], dx: number, dy: number) {
-		const updates = ids
-			.map((id) => {
-				const el = this.store.getState().elements.find((e) => e.id === id);
-				if (!el) return null;
-				return {
-					id,
-					changes: {
-						metadata: {
-							...el.metadata,
-							x: (el.metadata.x || 0) + dx,
-							y: (el.metadata.y || 0) + dy,
-						},
-					},
-				};
-			})
-			.filter(Boolean) as any[];
-
+		const updates = ElementUtils.moveElements(
+			this.store.getState().elements,
+			ids,
+			dx,
+			dy,
+		);
 		this.store.dispatch({ type: "UPDATE_ELEMENTS", payload: updates });
 	}
 
