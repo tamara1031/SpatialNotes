@@ -133,9 +133,9 @@ describe("MoveNodeUseCase", () => {
 
 		const useCase = new MoveNodeUseCase(repo);
 
-	await expect(
-		useCase.execute({ id: "n1", newParentId: "n1" }),
-	).rejects.toThrow(CircularReferenceError);
+		await expect(
+			useCase.execute({ id: "n1", newParentId: "n1" }),
+		).rejects.toThrow(CircularReferenceError);
 	});
 
 	it("should throw NodeNotFoundError if target parent does not exist", async () => {
