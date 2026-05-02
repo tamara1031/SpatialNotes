@@ -3,11 +3,7 @@ import { SelectionService } from "../../src/services/SelectionService";
 import { CanvasStore } from "../../src/store/CanvasStore";
 import type { CanvasElement } from "../../src/types";
 
-function makeStroke(
-	id: string,
-	points: number[],
-	zIndex = 0,
-): CanvasElement {
+function makeStroke(id: string, points: number[], zIndex = 0): CanvasElement {
 	return {
 		id,
 		type: "ELEMENT_STROKE",
@@ -41,6 +37,13 @@ function makeGateway() {
 	return { queryAt: vi.fn().mockResolvedValue([]) } as any;
 }
 
+function zIndexOf(store: CanvasStore, id: string): number {
+	return (
+		(store.getState().elements.find((e) => e.id === id)?.metadata
+			.z_index as number) ?? 0
+	);
+}
+
 // ── bringToFront ────────────────────────────────────────────────────────────
 
 describe("SelectionService.bringToFront", () => {
@@ -57,10 +60,8 @@ describe("SelectionService.bringToFront", () => {
 
 		service.bringToFront(["a"]);
 
-		const el = store.getState().elements.find((e) => e.id === "a")!;
-		expect(el.metadata.z_index as number).toBeGreaterThan(3);
+		expect(zIndexOf(store, "a")).toBeGreaterThan(3);
 
-		// Persisted command carries the new z_index
 		expect(emitSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
 				type: "UPDATE_ELEMENTS",
@@ -68,7 +69,9 @@ describe("SelectionService.bringToFront", () => {
 					expect.objectContaining({
 						id: "a",
 						changes: expect.objectContaining({
-							metadata: expect.objectContaining({ z_index: expect.any(Number) }),
+							metadata: expect.objectContaining({
+								z_index: expect.any(Number),
+							}),
 						}),
 					}),
 				]),
@@ -88,15 +91,12 @@ describe("SelectionService.bringToFront", () => {
 
 		service.bringToFront(["a", "b"]);
 
-		const elements = store.getState().elements;
-		const zA = elements.find((e) => e.id === "a")!.metadata.z_index as number;
-		const zB = elements.find((e) => e.id === "b")!.metadata.z_index as number;
-		const zC = elements.find((e) => e.id === "c")!.metadata.z_index as number;
+		const zA = zIndexOf(store, "a");
+		const zB = zIndexOf(store, "b");
+		const zC = zIndexOf(store, "c");
 
-		// Both moved elements sit above the unchanged one
 		expect(zA).toBeGreaterThan(zC);
 		expect(zB).toBeGreaterThan(zC);
-		// Original order preserved: a was before b
 		expect(zA).toBeLessThan(zB);
 	});
 
@@ -109,11 +109,10 @@ describe("SelectionService.bringToFront", () => {
 
 		service.bringToFront([]);
 
-		// dispatch still fires UPDATE_ELEMENTS with an empty payload
 		expect(emitSpy).toHaveBeenCalledWith(
 			expect.objectContaining({ type: "UPDATE_ELEMENTS", payload: [] }),
 		);
-		expect(store.getState().elements[0].metadata.z_index).toBe(1);
+		expect(zIndexOf(store, "a")).toBe(1);
 	});
 });
 
@@ -133,8 +132,7 @@ describe("SelectionService.sendToBack", () => {
 
 		service.sendToBack(["c"]);
 
-		const el = store.getState().elements.find((e) => e.id === "c")!;
-		expect(el.metadata.z_index as number).toBeLessThan(1);
+		expect(zIndexOf(store, "c")).toBeLessThan(1);
 
 		expect(emitSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -143,7 +141,9 @@ describe("SelectionService.sendToBack", () => {
 					expect.objectContaining({
 						id: "c",
 						changes: expect.objectContaining({
-							metadata: expect.objectContaining({ z_index: expect.any(Number) }),
+							metadata: expect.objectContaining({
+								z_index: expect.any(Number),
+							}),
 						}),
 					}),
 				]),
@@ -163,15 +163,12 @@ describe("SelectionService.sendToBack", () => {
 
 		service.sendToBack(["b", "c"]);
 
-		const elements = store.getState().elements;
-		const zA = elements.find((e) => e.id === "a")!.metadata.z_index as number;
-		const zB = elements.find((e) => e.id === "b")!.metadata.z_index as number;
-		const zC = elements.find((e) => e.id === "c")!.metadata.z_index as number;
+		const zA = zIndexOf(store, "a");
+		const zB = zIndexOf(store, "b");
+		const zC = zIndexOf(store, "c");
 
-		// Both moved elements sit below the unchanged one
 		expect(zB).toBeLessThan(zA);
 		expect(zC).toBeLessThan(zA);
-		// Original relative order preserved: b was before c
 		expect(zB).toBeLessThan(zC);
 	});
 });
@@ -188,8 +185,8 @@ describe("SelectionService.moveElements", () => {
 
 		service.moveElements(["s1"], 5, -3);
 
-		const updated = store.getState().elements.find((e) => e.id === "s1")!;
-		expect(updated.metadata.points).toEqual([15, 17, 35, 37]);
+		const updated = store.getState().elements.find((e) => e.id === "s1");
+		expect(updated?.metadata.points).toEqual([15, 17, 35, 37]);
 
 		expect(emitSpy).toHaveBeenCalledWith(
 			expect.objectContaining({
@@ -216,11 +213,11 @@ describe("SelectionService.moveElements", () => {
 
 		service.moveElements(["img1"], 10, -5);
 
-		const updated = store.getState().elements.find((e) => e.id === "img1")!;
-		expect(updated.metadata.min_x).toBe(20);
-		expect(updated.metadata.min_y).toBe(15);
-		expect(updated.metadata.max_x).toBe(60);
-		expect(updated.metadata.max_y).toBe(55);
+		const updated = store.getState().elements.find((e) => e.id === "img1");
+		expect(updated?.metadata.min_x).toBe(20);
+		expect(updated?.metadata.min_y).toBe(15);
+		expect(updated?.metadata.max_x).toBe(60);
+		expect(updated?.metadata.max_y).toBe(55);
 	});
 
 	it("silently skips ids not present in the store", () => {
@@ -232,7 +229,6 @@ describe("SelectionService.moveElements", () => {
 
 		service.moveElements(["nonexistent"], 5, 5);
 
-		// UPDATE_ELEMENTS dispatched with an empty payload (no-op)
 		expect(emitSpy).toHaveBeenCalledWith(
 			expect.objectContaining({ type: "UPDATE_ELEMENTS", payload: [] }),
 		);
