@@ -3,13 +3,14 @@ import { AnimatePresence, motion } from "framer-motion";
 import type React from "react";
 import {
 	$notifications,
+	type Notification,
 	removeNotification,
 } from "../../store/notificationStore";
 
 export const NotificationIsland: React.FC = () => {
 	const notifications = useStore($notifications);
 
-	const handleUndo = (n: any) => {
+	const handleUndo = (n: Notification) => {
 		if (n.onUndo) n.onUndo();
 		removeNotification(n.id);
 	};
