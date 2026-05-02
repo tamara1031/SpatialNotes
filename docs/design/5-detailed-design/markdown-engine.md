@@ -7,27 +7,28 @@ Accepted
 The Markdown Engine provides a full WYSIWYG editing experience for structured text within SpatialNotes. It supports GitHub Flavored Markdown (GFM), LaTeX (via KaTeX), and real-time collaboration using Yjs. The design follows a block-based model to maintain performance and consistency across different engines.
 
 ## Architecture
-The engine uses **ProseMirror** as its core editing framework, integrated into the `NoteViewShell`.
+The engine uses **ProseMirror** as its core editing framework, rendered by the `MarkdownView` component and synchronized through command callbacks.
 
-- **Block-Based Data Model**: A document is represented as a collection of `MarkdownElement` objects (e.g., PARAGRAPH, HEADER, LIST, MATH).
+- **Block-Based Data Model**: A document is represented as a collection of `MarkdownElement` objects (e.g., PARAGRAPH, HEADING, TABLE, LATEX).
 - **WASM-Accelerated Parsing**: Utilizes `pulldown-cmark` (Wasm) for high-fidelity Markdown parsing during initial import and final export.
-- **Yjs Bridge**: A custom ProseMirror plugin bridges the editor state with the shared Yjs `Y.Doc`, ensuring granular updates at the block level.
+- **Command Bridge**: ProseMirror transactions are converted into `UPDATE_ELEMENTS` commands that are emitted to the host via `onCommand`.
 
 ## Components
 - **ProseMirror Editor**: The main UI component handling text input, selections, and commands.
 - **KaTeX Integration**: Custom ProseMirror NodeViews for interactive LaTeX blocks that toggle between raw code and rendered math.
 - **MarkdownParser (WASM)**: Processes raw strings into an Abstract Syntax Tree (AST) for the editor.
-- **BlockManager**: Manages the mapping between the editor's document structure and the flattened `MarkdownElement[]` array used in the domain layer.
-- **SyncGateway**: Interfaces with the `SyncService` to push and pull binary deltas.
+- **Document Mapping**: `mapDocToElements` transforms ProseMirror nodes into `MarkdownElement[]`.
+- **Command Emitter**: `onCommand` receives normalized updates for the host engine/shell.
+- **Block ID Plugin**: `blockIdPlugin` keeps block identity stable while editing.
 
 ## Sequence/Data Flow
 ### 1. Markdown Editing (UC12)
 1. **User Interaction**: The user types content or uses the editor toolbar.
-2. **Block Update**: The `EditorInterface` notifies the `BlockManager` of content changes at a specific block ID.
+2. **Block Update**: `dispatchTransaction` applies changes and maps the updated ProseMirror document into `MarkdownElement[]`.
 3. **Parsing/Rendering**:
     - Raw content is parsed via `pulldown-cmark` (WASM).
     - The resulting AST is rendered using specialized Wasm or React-based renderers.
-4. **Auto-save**: The `EditorInterface` periodically gets the document state and pushes binary deltas via the `SyncGateway`.
+4. **State Propagation**: The view emits `UPDATE_ELEMENTS` through `onCommand`, and the host coordinates persistence/sync responsibilities.
 
 ### 2. LaTeX Rendering (ADR-006)
 1. **Detection**: The parser identifies LaTeX delimiters (e.g., `$`, `$$`) in the text.

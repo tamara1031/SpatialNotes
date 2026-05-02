@@ -100,6 +100,29 @@ describe("MoveNodeUseCase", () => {
 		).rejects.toThrow(CircularReferenceError);
 	});
 
+	it("should throw CircularReferenceError when ancestor chain already contains a cycle", async () => {
+		// n2 -> n3 -> n2 is already cyclic in persistence; moving n1 under n2 must fail fast.
+		const n1 = makeNode("n1", null);
+		const n2 = makeNode("n2", "n3");
+		const n3 = makeNode("n3", "n2");
+
+		const repo = {
+			findById: vi.fn().mockImplementation((id: string) => {
+				if (id === "n1") return Promise.resolve(n1);
+				if (id === "n2") return Promise.resolve(n2);
+				if (id === "n3") return Promise.resolve(n3);
+				return Promise.resolve(null);
+			}),
+			save: vi.fn(),
+		} as any;
+
+		const useCase = new MoveNodeUseCase(repo);
+
+		await expect(
+			useCase.execute({ id: "n1", newParentId: "n2" }),
+		).rejects.toThrow(CircularReferenceError);
+	});
+
 	it("should throw CircularReferenceError when target is the node itself", async () => {
 		const node = makeNode("n1", null);
 
