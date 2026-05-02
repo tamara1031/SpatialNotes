@@ -137,4 +137,22 @@ describe("MoveNodeUseCase", () => {
 			useCase.execute({ id: "n1", newParentId: "n1" }),
 		).rejects.toThrow(CircularReferenceError);
 	});
+
+	it("should throw NodeNotFoundError if target parent does not exist", async () => {
+		const node = makeNode("n1", null);
+
+		const repo = {
+			findById: vi.fn().mockImplementation((id: string) => {
+				if (id === "n1") return Promise.resolve(node);
+				return Promise.resolve(null);
+			}),
+			save: vi.fn(),
+		} as any;
+
+		const useCase = new MoveNodeUseCase(repo);
+
+		await expect(
+			useCase.execute({ id: "n1", newParentId: "missing-parent" }),
+		).rejects.toThrow(NodeNotFoundError);
+	});
 });

@@ -36,7 +36,10 @@ export class MoveNodeUseCase {
 
 				visited.add(currentId);
 				const parent = await this.nodeRepository.findById(currentId);
-				currentId = parent ? parent.toRecord().parentId : null;
+				if (!parent) {
+					throw new NodeNotFoundError(currentId);
+				}
+				currentId = parent.toRecord().parentId;
 			}
 		}
 
