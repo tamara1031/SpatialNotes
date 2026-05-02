@@ -4,39 +4,38 @@
 Accepted
 
 ## Context/Goal
-The Markdown Engine provides a full WYSIWYG editing experience for structured text within SpatialNotes. It supports GitHub Flavored Markdown (GFM), LaTeX (via KaTeX), and real-time collaboration using Yjs. The design follows a block-based model to maintain performance and consistency across different engines.
+The Markdown Engine provides a WYSIWYG editing experience for structured text in SpatialNotes. It supports GFM-style authoring, LaTeX blocks, and command-based synchronization with the host shell.
 
 ## Architecture
-The engine uses **ProseMirror** as its core editing framework, rendered by the `MarkdownView` component and synchronized through command callbacks.
+The engine uses **ProseMirror** as its editing runtime and `MarkdownView` as the UI integration point.
 
-- **Block-Based Data Model**: A document is represented as a collection of `MarkdownElement` objects (e.g., PARAGRAPH, HEADING, TABLE, LATEX).
-- **WASM-Accelerated Parsing**: Utilizes `pulldown-cmark` (Wasm) for high-fidelity Markdown parsing during initial import and final export.
-- **Command Bridge**: ProseMirror transactions are converted into `UPDATE_ELEMENTS` commands that are emitted to the host via `onCommand`.
+- **Block Data Model**: A document is represented as `MarkdownElement[]` where each element type is one of `PARAGRAPH | HEADING | TABLE | IMAGE | LATEX | CODE`.
+- **Transaction-to-Command Bridge**: `dispatchTransaction` maps changed ProseMirror docs into `MarkdownElement[]` and emits `UPDATE_ELEMENTS` through `onCommand`.
+- **Stable Block Identity**: `blockIdPlugin` preserves/assigns block IDs to reduce churn during editing.
+- **Worker-backed Markdown Utilities**: `MarkdownWorkerGateway` wraps `MarkdownWorker` for `parseMarkdown` and `renderHtml` using `markdown-wasm`.
 
 ## Components
-- **ProseMirror Editor**: The main UI component handling text input, selections, and commands.
-- **KaTeX Integration**: Custom ProseMirror NodeViews for interactive LaTeX blocks that toggle between raw code and rendered math.
-- **MarkdownParser (WASM)**: Processes raw strings into an Abstract Syntax Tree (AST) for the editor.
-- **Document Mapping**: `mapDocToElements` transforms ProseMirror nodes into `MarkdownElement[]`.
-- **Command Emitter**: `onCommand` receives normalized updates for the host engine/shell.
-- **Block ID Plugin**: `blockIdPlugin` keeps block identity stable while editing.
+- **`MarkdownView`**: Creates/destroys `EditorView` per active note, applies editor plugins, and emits normalized update commands.
+- **ProseMirror Plugins**: Input rules, history, gap/drop cursor, table editing, and slash-menu key handling.
+- **`LaTeXNodeView`**: Specialized NodeView for editable/rendered LaTeX blocks.
+- **`mapDocToElements`**: Converts ProseMirror nodes to `MarkdownElement` for shell persistence.
+- **`MarkdownWorkerGateway` / `MarkdownWorker`**: Async parse/render utilities backed by Wasm.
 
 ## Sequence/Data Flow
-### 1. Markdown Editing (UC12)
-1. **User Interaction**: The user types content or uses the editor toolbar.
-2. **Block Update**: `dispatchTransaction` applies changes and maps the updated ProseMirror document into `MarkdownElement[]`.
-3. **Parsing/Rendering**:
-    - Raw content is parsed via `pulldown-cmark` (WASM).
-    - The resulting AST is rendered using specialized Wasm or React-based renderers.
-4. **State Propagation**: The view emits `UPDATE_ELEMENTS` through `onCommand`, and the host coordinates persistence/sync responsibilities.
+### 1. Markdown Editing
+1. User edits content in `MarkdownView`.
+2. ProseMirror applies a transaction in `dispatchTransaction`.
+3. If the document changed, `mapDocToElements` converts the doc into `MarkdownElement[]`.
+4. The engine emits `UPDATE_ELEMENTS` via `onCommand` to the host application.
 
-### 2. LaTeX Rendering (ADR-006)
-1. **Detection**: The parser identifies LaTeX delimiters (e.g., `$`, `$$`) in the text.
-2. **Interactive NodeView**: The editor renders a specialized `KaTeX` block.
-3. **Live Preview**: Mathematical formulas are rendered in real-time as the user types.
+### 2. Markdown Parse/Render Utilities
+1. Host/client calls `MarkdownWorkerGateway.parseMarkdown` or `renderHtml`.
+2. Gateway sends RPC messages to `MarkdownWorker`.
+3. Worker calls `parse_to_blocks` or `markdown_to_html` from `markdown-wasm`.
+4. Worker returns results (or errors) through RPC responses.
 
 ## Testing Considerations
-- **Concurrency Verification**: Ensure that concurrent edits on the same or adjacent blocks resolve correctly without data loss via Yjs.
-- **Parser Performance**: Benchmark `pulldown-cmark` (WASM) for large document imports.
-- **KaTeX Fidelity**: Verify complex LaTeX formulas render correctly and match the exported SVG/PDF output.
-- **Flicker-Free Rendering**: Ensure that block-level updates do not cause visible UI jumps or lost focus.
+- Verify `UPDATE_ELEMENTS` is emitted only on `docChanged` transactions.
+- Validate block type mapping between ProseMirror node names and `MarkdownElement.type`.
+- Ensure LaTeX NodeView edit/render behavior remains stable.
+- Test worker gateway parse/render behavior and error propagation.
