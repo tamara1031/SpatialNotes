@@ -27,10 +27,14 @@ export class MoveNodeUseCase {
 		// Guard against circular references by traversing ancestors via persistence.
 		if (input.newParentId) {
 			let currentId: string | null = input.newParentId;
+			const visited = new Set<string>();
+
 			while (currentId) {
-				if (currentId === input.id) {
+				if (currentId === input.id || visited.has(currentId)) {
 					throw new CircularReferenceError();
 				}
+
+				visited.add(currentId);
 				const parent = await this.nodeRepository.findById(currentId);
 				currentId = parent ? parent.toRecord().parentId : null;
 			}
