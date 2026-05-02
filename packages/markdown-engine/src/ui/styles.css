@@ -110,6 +110,10 @@
 	background-color: var(--accent-subtle);
 }
 
+.slash-menu-item.selected {
+	background-color: var(--accent-subtle);
+}
+
 .slash-menu-icon {
 	color: var(--text-secondary);
 	width: 20px;
