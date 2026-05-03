@@ -366,7 +366,10 @@ describe("CanvasStore — typed event subscriptions (on)", () => {
 		});
 
 		expect(listener).toHaveBeenCalledTimes(1);
-		expect(listener).toHaveBeenCalledWith({ pan: { x: 50, y: 50 }, scale: 1.5 });
+		expect(listener).toHaveBeenCalledWith({
+			pan: { x: 50, y: 50 },
+			scale: 1.5,
+		});
 	});
 
 	it("on(TOOL_CHANGED) fires when SET_TOOL changes the active tool", () => {

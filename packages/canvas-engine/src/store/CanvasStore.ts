@@ -208,7 +208,7 @@ export class CanvasStore {
 			case "BATCH":
 				this.batchDepth++;
 				try {
-					action.payload.forEach((a) => this.dispatch(a));
+					for (const a of action.payload) this.dispatch(a);
 				} finally {
 					this.batchDepth--;
 					if (this.batchDepth === 0) {
