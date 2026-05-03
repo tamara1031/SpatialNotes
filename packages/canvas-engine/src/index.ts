@@ -59,7 +59,7 @@ export class CanvasEngine
 		this.eraserService = new EraserService(this.store, this.gateway);
 		this.selectionService = new SelectionService(this.store, this.gateway);
 		this.drawingService = new DrawingService(this.store, elementFactory);
-		this.clipboardService = new ClipboardService();
+		this.clipboardService = new ClipboardService(elementFactory);
 
 		this.reportStatus("LOADING");
 
@@ -301,9 +301,13 @@ export class CanvasEngine
 	async pasteClipboard() {
 		try {
 			const text = await navigator.clipboard.readText();
-			const commands = this.clipboardService.pasteClipboard(text);
-			commands.forEach((cmd) => {
-				this.store.emitCommand(cmd.type, cmd.payload);
+			const state = this.store.getState();
+			const elements = this.clipboardService.paste(
+				text,
+				state.activeNodeId ?? "root",
+			);
+			elements.forEach((el) => {
+				this.store.dispatch({ type: "CREATE_ELEMENT", payload: el });
 			});
 		} catch (e) {
 			console.error("Failed to paste", e);

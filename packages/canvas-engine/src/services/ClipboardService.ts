@@ -1,10 +1,10 @@
+import type { ElementFactory } from "engine-core";
 import type { CanvasElement } from "../types";
 
 export class ClipboardService {
-	public copySelection(
-		selectedIds: string[],
-		elements: CanvasElement[],
-	): string {
+	constructor(private elementFactory: ElementFactory<CanvasElement>) {}
+
+	copySelection(selectedIds: string[], elements: CanvasElement[]): string {
 		const selectedElements = elements.filter((el) =>
 			selectedIds.includes(el.id),
 		);
@@ -16,35 +16,54 @@ export class ClipboardService {
 		});
 	}
 
-	public pasteClipboard(text: string): { type: string; payload: any }[] {
+	/**
+	 * Parse clipboard text and return a list of new CanvasElements ready to be
+	 * dispatched as CREATE_ELEMENT actions.  Each element receives a fresh ID
+	 * from the injected factory so that repeated pastes never collide.
+	 *
+	 * @param text        Raw text from navigator.clipboard.readText().
+	 * @param activeNodeId The parentId to assign to every pasted element.
+	 */
+	paste(text: string, activeNodeId: string): CanvasElement[] {
 		try {
 			const data = JSON.parse(text);
-			if (data?.source === "spatial-notes" && Array.isArray(data.payload)) {
-				return data.payload.map((el: any) => {
-					const dx = 10,
-						dy = 10;
-					const newMetadata = { ...el.metadata };
-					if (el.type === "ELEMENT_STROKE") {
-						const points = el.metadata.points as number[];
-						if (points)
-							newMetadata.points = points.map((p: number, i: number) =>
-								i % 2 === 0 ? p + dx : p + dy,
-							);
-					} else {
-						if (newMetadata.min_x !== undefined) newMetadata.min_x += dx;
-						if (newMetadata.min_y !== undefined) newMetadata.min_y += dy;
-						if (newMetadata.max_x !== undefined) newMetadata.max_x += dx;
-						if (newMetadata.max_y !== undefined) newMetadata.max_y += dy;
-					}
-					return {
-						type: "CREATE",
-						payload: { type: el.type, metadata: newMetadata },
-					};
-				});
+			if (
+				data?.source !== "spatial-notes" ||
+				!Array.isArray(data.payload) ||
+				data.payload.length === 0
+			) {
+				return [];
 			}
-		} catch (e) {
-			console.error("Failed to parse clipboard data", e);
+
+			return (data.payload as Array<{ type: string; metadata: Record<string, unknown> }>).map(
+				(el) => {
+					const metadata = this.offsetMetadata(el.type, el.metadata, 10, 10);
+					return this.elementFactory(el.type, activeNodeId, metadata);
+				},
+			);
+		} catch {
+			return [];
 		}
-		return [];
+	}
+
+	private offsetMetadata(
+		type: string,
+		metadata: Record<string, unknown>,
+		dx: number,
+		dy: number,
+	): Record<string, unknown> {
+		const m = { ...metadata };
+		if (type === "ELEMENT_STROKE") {
+			const points = m.points as number[] | undefined;
+			if (points) {
+				m.points = points.map((p, i) => (i % 2 === 0 ? p + dx : p + dy));
+			}
+		} else {
+			if (m.min_x !== undefined) m.min_x = (m.min_x as number) + dx;
+			if (m.min_y !== undefined) m.min_y = (m.min_y as number) + dy;
+			if (m.max_x !== undefined) m.max_x = (m.max_x as number) + dx;
+			if (m.max_y !== undefined) m.max_y = (m.max_y as number) + dy;
+		}
+		return m;
 	}
 }
