@@ -339,3 +339,116 @@ describe("CanvasStore.dispatch — BATCH atomicity", () => {
 		expect(notifySpy).toHaveBeenCalledTimes(1);
 	});
 });
+
+describe("CanvasStore — typed event subscriptions (on)", () => {
+	it("on(ELEMENTS_CHANGED) fires with new element list when elements are added", () => {
+		const store = new CanvasStore();
+		const listener = vi.fn();
+		store.on("ELEMENTS_CHANGED", listener);
+
+		const el = makeElement("el-1");
+		store.dispatch({ type: "CREATE_ELEMENT", payload: el });
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith(
+			expect.arrayContaining([expect.objectContaining({ id: "el-1" })]),
+		);
+	});
+
+	it("on(VIEWPORT_CHANGED) fires when SET_VIEWPORT changes the viewport", () => {
+		const store = new CanvasStore();
+		const listener = vi.fn();
+		store.on("VIEWPORT_CHANGED", listener);
+
+		store.dispatch({
+			type: "SET_VIEWPORT",
+			payload: { pan: { x: 50, y: 50 }, scale: 1.5 },
+		});
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith({ pan: { x: 50, y: 50 }, scale: 1.5 });
+	});
+
+	it("on(TOOL_CHANGED) fires when SET_TOOL changes the active tool", () => {
+		const store = new CanvasStore({ activeTool: CanvasTool.PEN });
+		const listener = vi.fn();
+		store.on("TOOL_CHANGED", listener);
+
+		store.dispatch({ type: "SET_TOOL", payload: CanvasTool.HIGHLIGHTER });
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith(CanvasTool.HIGHLIGHTER);
+	});
+
+	it("on() returns an unsubscribe function that stops future events", () => {
+		const store = new CanvasStore();
+		const listener = vi.fn();
+		const unsub = store.on("ELEMENTS_CHANGED", listener);
+
+		store.dispatch({ type: "CREATE_ELEMENT", payload: makeElement("el-1") });
+		expect(listener).toHaveBeenCalledTimes(1);
+
+		unsub();
+		store.dispatch({ type: "CREATE_ELEMENT", payload: makeElement("el-2") });
+		expect(listener).toHaveBeenCalledTimes(1); // no additional call
+	});
+
+	it("on(SELECTION_CHANGED) fires when selectedElementIds changes via UPDATE_ELEMENTS path", () => {
+		const store = new CanvasStore({
+			elements: [makeElement("el-1")],
+			selectedElementIds: ["el-1"],
+		});
+		const listener = vi.fn();
+		store.on("SELECTION_CHANGED", listener);
+
+		store.dispatch({ type: "DELETE_ELEMENTS", payload: ["el-1"] });
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith([]);
+	});
+});
+
+describe("CanvasStore — snapshot round-trip", () => {
+	it("getSnapshot returns a deep clone — mutating it does not affect store state", () => {
+		const el = makeElement("el-1");
+		const store = new CanvasStore({ elements: [el] });
+
+		const snap = store.getSnapshot();
+		(snap.elements[0].metadata as Record<string, unknown>).color = "mutated";
+
+		expect(
+			(store.getState().elements[0].metadata as Record<string, unknown>).color,
+		).toBe("#fff");
+	});
+
+	it("applySnapshot restores state and notifies subscribers", () => {
+		const store = new CanvasStore({ elements: [makeElement("el-1")] });
+		const notifySpy = vi.fn();
+		store.subscribe(notifySpy);
+
+		const snap = store.getSnapshot();
+		snap.elements = [makeElement("el-2"), makeElement("el-3")];
+
+		store.applySnapshot(snap);
+
+		expect(store.getState().elements.map((e) => e.id)).toEqual([
+			"el-2",
+			"el-3",
+		]);
+		expect(notifySpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("applySnapshot deep-clones elements so subsequent mutations stay isolated", () => {
+		const store = new CanvasStore();
+		const snap = store.getSnapshot();
+		snap.elements = [makeElement("el-1")];
+
+		store.applySnapshot(snap);
+		// Mutate the source snapshot after applying it
+		(snap.elements[0].metadata as Record<string, unknown>).color = "mutated";
+
+		expect(
+			(store.getState().elements[0].metadata as Record<string, unknown>).color,
+		).toBe("#fff");
+	});
+});
