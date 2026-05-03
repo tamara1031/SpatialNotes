@@ -2,6 +2,7 @@ import type { ElementFactory, EngineInterface } from "engine-core";
 import { WorkerGateway } from "./bridge/WorkerGateway";
 import { InteractionHandler } from "./InteractionHandler";
 import { InteractionManager } from "./InteractionManager";
+import { getString, MetadataKey } from "./metadata/ElementMetadata";
 import type { CanvasRenderer } from "./render/Renderer";
 import { SVGRenderer } from "./render/SVGRenderer";
 import { WebGPURenderer } from "./render/WebGPURenderer";
@@ -254,7 +255,7 @@ export class CanvasEngine
 		return new SVGRenderer({
 			onTextEdit: (id, newContent) => {
 				const el = this.store.getState().elements.find((e) => e.id === id);
-				if (el && el.metadata.content !== newContent) {
+				if (el && getString(el.metadata, MetadataKey.CONTENT) !== newContent) {
 					this.store.emitCommand({
 						type: "UPDATE_ELEMENTS",
 						payload: [

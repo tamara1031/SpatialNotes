@@ -1,10 +1,10 @@
 import katex from "katex";
 import type { WorkerGateway } from "../bridge/WorkerGateway";
 import {
-	MetadataKey,
 	getNumber,
 	getNumberArray,
 	getString,
+	MetadataKey,
 } from "../metadata/ElementMetadata";
 import type { CanvasState } from "../store/CanvasStore";
 import { type CanvasElement, CanvasTool } from "../types";
@@ -349,7 +349,10 @@ export class SVGRenderer implements CanvasRenderer {
 		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 		path.setAttribute("d", d);
 		path.setAttribute("fill", "none");
-		path.setAttribute("stroke", getString(el.metadata, MetadataKey.COLOR, "#fff"));
+		path.setAttribute(
+			"stroke",
+			getString(el.metadata, MetadataKey.COLOR, "#fff"),
+		);
 		path.setAttribute(
 			"stroke-width",
 			getNumber(el.metadata, MetadataKey.WIDTH, 1.2).toString(),
