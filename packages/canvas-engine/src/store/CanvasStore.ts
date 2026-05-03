@@ -70,6 +70,9 @@ export class CanvasStore {
 	private eventListeners: Map<string, Set<(payload: any) => void>> = new Map();
 	private actionListeners: Set<(command: CanvasStoreCommand) => void> =
 		new Set();
+	// Tracks nesting depth of BATCH dispatch calls. notify() is suppressed
+	// while > 0; a single consolidated flush happens when depth returns to 0.
+	private batchDepth = 0;
 
 	constructor(initialState?: Partial<CanvasState>) {
 		this.state = {
@@ -203,9 +206,15 @@ export class CanvasStore {
 				this.emitCommand({ type: "REDO" });
 				break;
 			case "BATCH":
-				action.payload.forEach((a) => {
-					this.dispatch(a);
-				});
+				this.batchDepth++;
+				try {
+					action.payload.forEach((a) => this.dispatch(a));
+				} finally {
+					this.batchDepth--;
+					if (this.batchDepth === 0) {
+						this.notify();
+					}
+				}
 				break;
 		}
 	}
@@ -243,6 +252,7 @@ export class CanvasStore {
 	}
 
 	private notify() {
+		if (this.batchDepth > 0) return;
 		this.listeners.forEach((l) => {
 			l();
 		});
