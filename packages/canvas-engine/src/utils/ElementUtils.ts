@@ -1,9 +1,9 @@
-import type { CanvasElement, CanvasLayoutMode } from "../types";
 import {
-	MetadataKey,
 	getNumber,
 	getNumberArray,
+	MetadataKey,
 } from "../metadata/ElementMetadata";
+import type { CanvasElement, CanvasLayoutMode } from "../types";
 
 export interface Bounds {
 	minX: number;
@@ -86,7 +86,9 @@ export const ElementUtils = {
 				if (!el) return null;
 				return {
 					id,
-					changes: { metadata: ElementUtils.offsetMetadata(el.type, el.metadata, dx, dy) },
+					changes: {
+						metadata: ElementUtils.offsetMetadata(el.type, el.metadata, dx, dy),
+					},
 				};
 			})
 			.filter(

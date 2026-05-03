@@ -72,7 +72,14 @@ describe("ElementUtils", () => {
 		});
 
 		it("preserves unrelated metadata fields", () => {
-			const meta = { min_x: 0, min_y: 0, max_x: 10, max_y: 10, z_index: 7, color: "#fff" };
+			const meta = {
+				min_x: 0,
+				min_y: 0,
+				max_x: 10,
+				max_y: 10,
+				z_index: 7,
+				color: "#fff",
+			};
 			const result = ElementUtils.offsetMetadata("ELEMENT_IMAGE", meta, 1, 1);
 			expect(result.z_index).toBe(7);
 			expect(result.color).toBe("#fff");

@@ -29,7 +29,9 @@ export function getNumber(
 	const v = meta[key];
 	if (v === undefined || v === null) return fallback;
 	if (typeof v === "number") return v;
-	console.warn(`ElementMetadata: expected number for "${key}", got ${typeof v}`);
+	console.warn(
+		`ElementMetadata: expected number for "${key}", got ${typeof v}`,
+	);
 	return fallback;
 }
 

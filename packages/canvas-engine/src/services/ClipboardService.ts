@@ -2,7 +2,6 @@ import type { ElementFactory } from "engine-core";
 import type { CanvasElement } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
 
-
 export class ClipboardService {
 	constructor(private elementFactory: ElementFactory<CanvasElement>) {}
 
@@ -61,7 +60,12 @@ export class ClipboardService {
 
 			// Default: nudge each element by +10/+10 mm.
 			return rawItems.map((el) => {
-				const metadata = ElementUtils.offsetMetadata(el.type, el.metadata, 10, 10);
+				const metadata = ElementUtils.offsetMetadata(
+					el.type,
+					el.metadata,
+					10,
+					10,
+				);
 				return this.elementFactory(el.type, activeNodeId, metadata);
 			});
 		} catch {

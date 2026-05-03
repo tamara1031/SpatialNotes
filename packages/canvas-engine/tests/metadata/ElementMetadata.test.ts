@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-	MetadataKey,
 	getNumber,
 	getNumberArray,
+	MetadataKey,
 } from "../../src/metadata/ElementMetadata";
 
 describe("MetadataKey", () => {
@@ -41,9 +41,7 @@ describe("getNumber", () => {
 	it("returns the fallback and warns when the value is a non-number", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		expect(getNumber({ z_index: "high" }, "z_index", 42)).toBe(42);
-		expect(warn).toHaveBeenCalledWith(
-			expect.stringContaining('"z_index"'),
-		);
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining('"z_index"'));
 		warn.mockRestore();
 	});
 
