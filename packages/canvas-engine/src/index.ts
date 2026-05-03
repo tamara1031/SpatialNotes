@@ -59,7 +59,7 @@ export class CanvasEngine
 		this.eraserService = new EraserService(this.store, this.gateway);
 		this.selectionService = new SelectionService(this.store, this.gateway);
 		this.drawingService = new DrawingService(this.store, elementFactory);
-		this.clipboardService = new ClipboardService();
+		this.clipboardService = new ClipboardService(elementFactory);
 
 		this.reportStatus("LOADING");
 
@@ -301,13 +301,39 @@ export class CanvasEngine
 	async pasteClipboard() {
 		try {
 			const text = await navigator.clipboard.readText();
-			const commands = this.clipboardService.pasteClipboard(text);
-			commands.forEach((cmd) => {
-				this.store.emitCommand(cmd.type, cmd.payload);
+			const state = this.store.getState();
+			// Express the viewport centre in canvas-MM coordinates so the
+			// paste operation places content where the user is looking.
+			const pasteOrigin = this.viewportCenterMm();
+			const elements = this.clipboardService.paste(
+				text,
+				state.activeNodeId ?? "root",
+				pasteOrigin,
+			);
+			elements.forEach((el) => {
+				this.store.dispatch({ type: "CREATE_ELEMENT", payload: el });
 			});
 		} catch (e) {
 			console.error("Failed to paste", e);
 		}
+	}
+
+	/**
+	 * Return the centre of the current viewport expressed in canvas-MM
+	 * coordinates, used as the default paste target so content appears
+	 * at the location the user is looking at.  Falls back to origin when
+	 * the canvas container is not yet mounted.
+	 */
+	private viewportCenterMm(): { x: number; y: number } {
+		const container = this.renderer.container;
+		const { viewport } = this.store.getState();
+		const PIXELS_PER_MM = 3.78;
+		const w = container?.clientWidth ?? 0;
+		const h = container?.clientHeight ?? 0;
+		return {
+			x: (w / 2 - viewport.pan.x) / (viewport.scale * PIXELS_PER_MM),
+			y: (h / 2 - viewport.pan.y) / (viewport.scale * PIXELS_PER_MM),
+		};
 	}
 
 	async exportToSVG(): Promise<string> {
