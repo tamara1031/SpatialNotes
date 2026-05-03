@@ -258,3 +258,84 @@ describe("CanvasStore.dispatch — action contracts", () => {
 		expect(commandSpy).toHaveBeenCalledWith({ type: "REDO" });
 	});
 });
+
+describe("CanvasStore.dispatch — BATCH atomicity", () => {
+	it("BATCH notifies subscribers exactly once regardless of sub-action count", () => {
+		const store = new CanvasStore();
+		const notifySpy = vi.fn();
+		store.subscribe(notifySpy);
+
+		store.dispatch({
+			type: "BATCH",
+			payload: [
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-1") },
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-2") },
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-3") },
+			],
+		});
+
+		expect(notifySpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("BATCH applies all sub-actions to state before the single notification fires", () => {
+		const store = new CanvasStore();
+		let capturedCount = -1;
+		store.subscribe(() => {
+			capturedCount = store.getState().elements.length;
+		});
+
+		store.dispatch({
+			type: "BATCH",
+			payload: [
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-1") },
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-2") },
+			],
+		});
+
+		// The subscriber observed the fully-applied state (both elements present)
+		expect(capturedCount).toBe(2);
+	});
+
+	it("BATCH correctly applies mixed action types (CREATE then DELETE)", () => {
+		const store = new CanvasStore({
+			elements: [makeElement("el-existing")],
+		});
+		const notifySpy = vi.fn();
+		store.subscribe(notifySpy);
+
+		store.dispatch({
+			type: "BATCH",
+			payload: [
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-new") },
+				{ type: "DELETE_ELEMENTS", payload: ["el-existing"] },
+			],
+		});
+
+		const ids = store.getState().elements.map((e) => e.id);
+		expect(ids).toEqual(["el-new"]);
+		expect(notifySpy).toHaveBeenCalledTimes(1);
+	});
+
+	it("nested BATCH still results in exactly one notification per outer BATCH", () => {
+		const store = new CanvasStore();
+		const notifySpy = vi.fn();
+		store.subscribe(notifySpy);
+
+		store.dispatch({
+			type: "BATCH",
+			payload: [
+				{
+					type: "BATCH",
+					payload: [
+						{ type: "CREATE_ELEMENT", payload: makeElement("el-1") },
+						{ type: "CREATE_ELEMENT", payload: makeElement("el-2") },
+					],
+				},
+				{ type: "CREATE_ELEMENT", payload: makeElement("el-3") },
+			],
+		});
+
+		expect(store.getState().elements).toHaveLength(3);
+		expect(notifySpy).toHaveBeenCalledTimes(1);
+	});
+});
