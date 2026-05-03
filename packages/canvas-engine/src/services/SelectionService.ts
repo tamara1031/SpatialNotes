@@ -1,4 +1,5 @@
 import type { WorkerGateway } from "../bridge/WorkerGateway";
+import { getNumber, MetadataKey } from "../metadata/ElementMetadata";
 import type { CanvasStore } from "../store/CanvasStore";
 import { ElementUtils } from "../utils/ElementUtils";
 
@@ -12,7 +13,7 @@ export class SelectionService {
 		const state = this.store.getState();
 		const unchanged = state.elements.filter((el) => !ids.includes(el.id));
 		const maxZ = unchanged.reduce(
-			(m, el) => Math.max(m, (el.metadata.z_index as number) || 0),
+			(m, el) => Math.max(m, getNumber(el.metadata, MetadataKey.Z_INDEX)),
 			0,
 		);
 		const updates = state.elements
@@ -28,7 +29,7 @@ export class SelectionService {
 		const state = this.store.getState();
 		const unchanged = state.elements.filter((el) => !ids.includes(el.id));
 		const minZ = unchanged.reduce(
-			(m, el) => Math.min(m, (el.metadata.z_index as number) || 0),
+			(m, el) => Math.min(m, getNumber(el.metadata, MetadataKey.Z_INDEX)),
 			0,
 		);
 		const updates = state.elements
