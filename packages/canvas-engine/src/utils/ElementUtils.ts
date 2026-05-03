@@ -1,4 +1,9 @@
 import type { CanvasElement, CanvasLayoutMode } from "../types";
+import {
+	MetadataKey,
+	getNumber,
+	getNumberArray,
+} from "../metadata/ElementMetadata";
 
 export interface Bounds {
 	minX: number;
@@ -8,14 +13,10 @@ export interface Bounds {
 }
 
 export const ElementUtils = {
-	/**
-	 * Calculates the bounding box for a given element.
-	 */
 	getBounds(el: CanvasElement): Bounds {
 		if (el.type === "ELEMENT_STROKE") {
-			const points = el.metadata.points as number[];
-			if (!points || points.length < 2)
-				return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+			const points = getNumberArray(el.metadata, MetadataKey.POINTS);
+			if (points.length < 2) return { minX: 0, minY: 0, maxX: 0, maxY: 0 };
 
 			let minX = points[0];
 			let minY = points[1];
@@ -29,21 +30,50 @@ export const ElementUtils = {
 			}
 			return { minX, minY, maxX, maxY };
 		}
-		const minX = (el.metadata.min_x as number) || 0;
-		const minY = (el.metadata.min_y as number) || 0;
+		const minX = getNumber(el.metadata, MetadataKey.MIN_X);
+		const minY = getNumber(el.metadata, MetadataKey.MIN_Y);
 		const maxX =
-			(el.metadata.max_x as number) ||
-			minX + ((el.metadata.width as number) || 60);
+			getNumber(el.metadata, MetadataKey.MAX_X) ||
+			minX + (getNumber(el.metadata, MetadataKey.WIDTH) || 60);
 		const maxY =
-			(el.metadata.max_y as number) ||
-			minY + ((el.metadata.height as number) || 45);
+			getNumber(el.metadata, MetadataKey.MAX_Y) ||
+			minY + (getNumber(el.metadata, MetadataKey.HEIGHT) || 45);
 		return { minX, minY, maxX, maxY };
 	},
 
 	/**
-	 * Applies a delta (dx, dy) to a list of elements.
-	 * Returns a list of updates ({ id, changes }).
+	 * Translates element metadata by (dx, dy).
+	 * Handles ELEMENT_STROKE (shifts the flat points array) and all other types
+	 * (shifts min_x / min_y / max_x / max_y bounding-box fields).
+	 * Returns a shallow copy — the original metadata object is never mutated.
 	 */
+	offsetMetadata(
+		type: string,
+		metadata: Record<string, unknown>,
+		dx: number,
+		dy: number,
+	): Record<string, unknown> {
+		const m = { ...metadata };
+		if (type === "ELEMENT_STROKE") {
+			const pts = getNumberArray(m, MetadataKey.POINTS);
+			if (pts.length > 0) {
+				m[MetadataKey.POINTS] = pts.map((p, i) =>
+					i % 2 === 0 ? p + dx : p + dy,
+				);
+			}
+		} else {
+			if (m[MetadataKey.MIN_X] !== undefined)
+				m[MetadataKey.MIN_X] = getNumber(m, MetadataKey.MIN_X) + dx;
+			if (m[MetadataKey.MIN_Y] !== undefined)
+				m[MetadataKey.MIN_Y] = getNumber(m, MetadataKey.MIN_Y) + dy;
+			if (m[MetadataKey.MAX_X] !== undefined)
+				m[MetadataKey.MAX_X] = getNumber(m, MetadataKey.MAX_X) + dx;
+			if (m[MetadataKey.MAX_Y] !== undefined)
+				m[MetadataKey.MAX_Y] = getNumber(m, MetadataKey.MAX_Y) + dy;
+		}
+		return m;
+	},
+
 	moveElements(
 		elements: CanvasElement[],
 		ids: string[],
@@ -54,26 +84,10 @@ export const ElementUtils = {
 			.map((id) => {
 				const el = elements.find((e) => e.id === id);
 				if (!el) return null;
-
-				const metadata: Record<string, unknown> = { ...el.metadata };
-				if (el.type === "ELEMENT_STROKE") {
-					const pts = (el.metadata.points as number[]).slice();
-					for (let i = 0; i < pts.length; i += 2) {
-						pts[i] += dx;
-						pts[i + 1] += dy;
-					}
-					metadata.points = pts;
-				} else {
-					if (metadata.min_x !== undefined)
-						metadata.min_x = (metadata.min_x as number) + dx;
-					if (metadata.min_y !== undefined)
-						metadata.min_y = (metadata.min_y as number) + dy;
-					if (metadata.max_x !== undefined)
-						metadata.max_x = (metadata.max_x as number) + dx;
-					if (metadata.max_y !== undefined)
-						metadata.max_y = (metadata.max_y as number) + dy;
-				}
-				return { id, changes: { metadata } };
+				return {
+					id,
+					changes: { metadata: ElementUtils.offsetMetadata(el.type, el.metadata, dx, dy) },
+				};
 			})
 			.filter(
 				(

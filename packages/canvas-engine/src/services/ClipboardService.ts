@@ -2,6 +2,7 @@ import type { ElementFactory } from "engine-core";
 import type { CanvasElement } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
 
+
 export class ClipboardService {
 	constructor(private elementFactory: ElementFactory<CanvasElement>) {}
 
@@ -60,7 +61,7 @@ export class ClipboardService {
 
 			// Default: nudge each element by +10/+10 mm.
 			return rawItems.map((el) => {
-				const metadata = this.offsetMetadata(el.type, el.metadata, 10, 10);
+				const metadata = ElementUtils.offsetMetadata(el.type, el.metadata, 10, 10);
 				return this.elementFactory(el.type, activeNodeId, metadata);
 			});
 		} catch {
@@ -94,28 +95,7 @@ export class ClipboardService {
 
 		return elements.map((el) => ({
 			...el,
-			metadata: this.offsetMetadata(el.type, el.metadata, dx, dy),
+			metadata: ElementUtils.offsetMetadata(el.type, el.metadata, dx, dy),
 		}));
-	}
-
-	private offsetMetadata(
-		type: string,
-		metadata: Record<string, unknown>,
-		dx: number,
-		dy: number,
-	): Record<string, unknown> {
-		const m = { ...metadata };
-		if (type === "ELEMENT_STROKE") {
-			const points = m.points as number[] | undefined;
-			if (points) {
-				m.points = points.map((p, i) => (i % 2 === 0 ? p + dx : p + dy));
-			}
-		} else {
-			if (m.min_x !== undefined) m.min_x = (m.min_x as number) + dx;
-			if (m.min_y !== undefined) m.min_y = (m.min_y as number) + dy;
-			if (m.max_x !== undefined) m.max_x = (m.max_x as number) + dx;
-			if (m.max_y !== undefined) m.max_y = (m.max_y as number) + dy;
-		}
-		return m;
 	}
 }
