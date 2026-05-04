@@ -60,8 +60,12 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 
 			case "GET_ELEMENT_AT": {
-				const elId = engine.queryEraser([payload.x, payload.y], 5); // Example radius
-				self.postMessage({ type: "DONE", id, payload: elId });
+				// queryEraser returns string[]; pick the closest hit or null.
+				const hits = engine.queryEraser(
+					[payload.x, payload.y],
+					payload.radius ?? 5,
+				);
+				self.postMessage({ type: "DONE", id, payload: hits[0] ?? null });
 				break;
 			}
 
@@ -103,12 +107,12 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 
 			case "QUERY_AT": {
+				// query_eraser expects a flat point path [x0, y0, x1, y1, ...].
+				// For a single-point hit-test we synthesise a 1-point path.
 				const hitIds = engine.queryEraser(
-					payload.interactionPoints || [],
+					[payload.x, payload.y],
 					payload.radius,
 				);
-				// Note: Rust version of query_eraser takes (path, radius)
-				// If it's a single point, we wrap it in a path
 				self.postMessage({ type: "DONE", id, payload: hitIds });
 				break;
 			}

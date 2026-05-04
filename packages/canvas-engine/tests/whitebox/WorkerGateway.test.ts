@@ -78,4 +78,28 @@ describe("WorkerGateway White-box Tests", () => {
 
 		await expect(requestPromise).rejects.toThrow("Simulated Failure");
 	});
+
+	it("queryAt should send {x, y, radius} — not interactionPoints", () => {
+		bridge.queryAt(42, 17, 8);
+
+		const call = mockWorker.postMessage.mock.calls[0][0];
+		expect(call.type).toBe("QUERY_AT");
+		expect(call.payload).toEqual({ x: 42, y: 17, radius: 8 });
+		expect(call.payload).not.toHaveProperty("interactionPoints");
+	});
+
+	it("getElementAt should send {x, y, radius} with default radius 5", () => {
+		bridge.getElementAt(10, 20);
+
+		const call = mockWorker.postMessage.mock.calls[0][0];
+		expect(call.type).toBe("GET_ELEMENT_AT");
+		expect(call.payload).toMatchObject({ x: 10, y: 20, radius: 5 });
+	});
+
+	it("getElementAt should forward an explicit radius", () => {
+		bridge.getElementAt(10, 20, 12);
+
+		const call = mockWorker.postMessage.mock.calls[0][0];
+		expect(call.payload).toMatchObject({ radius: 12 });
+	});
 });

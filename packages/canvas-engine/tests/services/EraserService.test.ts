@@ -134,5 +134,11 @@ describe("EraserService", () => {
 				payload: expect.objectContaining({ id: "frag-2" }),
 			}),
 		);
+
+		// Fragment element type must come from data.type, not be duplicated in metadata
+		const frag1 = state.elements.find((e) => e.id === "frag-1");
+		expect(frag1?.type).toBe("ELEMENT_STROKE");
+		expect(frag1?.metadata).not.toHaveProperty("type");
+		expect(frag1?.metadata.points).toEqual([0, 0, 4, 4]);
 	});
 });

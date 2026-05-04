@@ -67,17 +67,19 @@ export class EraserService {
 					if (fragments) {
 						const updates: PrecisionUpdate[] = [
 							{ id: el.id, changes: { isDeleted: true } },
-							...fragments.map(
-								(f): PrecisionUpdate => ({
+							...fragments.map((f): PrecisionUpdate => {
+								// Destructure so element `type` stays separate from metadata.
+								const { type: fragmentType, ...fragmentMetadata } = f.data;
+								return {
 									id: f.id,
 									changes: {
-										type: f.data.type ?? "ELEMENT_STROKE",
+										type: fragmentType,
 										parentId: f.parent_id,
-										metadata: { ...f.data },
+										metadata: fragmentMetadata,
 										isDeleted: false,
 									},
-								}),
-							),
+								};
+							}),
 						];
 						allUpdates.push(...updates);
 					}
