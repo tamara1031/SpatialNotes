@@ -1,5 +1,11 @@
 import katex from "katex";
 import type { WorkerGateway } from "../bridge/WorkerGateway";
+import {
+	getNumber,
+	getNumberArray,
+	getString,
+	MetadataKey,
+} from "../metadata/ElementMetadata";
 import type { CanvasState } from "../store/CanvasStore";
 import { type CanvasElement, CanvasTool } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
@@ -167,7 +173,7 @@ export class SVGRenderer implements CanvasRenderer {
 					const b = ElementUtils.getBounds(el);
 					const w = b.maxX - b.minX;
 					const h = b.maxY - b.minY;
-					return `<image x="${b.minX}" y="${b.minY}" width="${w}" height="${h}" href="${el.metadata.src}" />`;
+					return `<image x="${b.minX}" y="${b.minY}" width="${w}" height="${h}" href="${getString(el.metadata, MetadataKey.SRC)}" />`;
 				})
 				.join("\n");
 
@@ -297,8 +303,8 @@ export class SVGRenderer implements CanvasRenderer {
 			this.htmlElementsLayer.removeChild(this.htmlElementsLayer.firstChild);
 
 		const sortedElements = [...state.elements].sort((a, b) => {
-			const az = (a.metadata.z_index as number) || 0;
-			const bz = (b.metadata.z_index as number) || 0;
+			const az = getNumber(a.metadata, MetadataKey.Z_INDEX);
+			const bz = getNumber(b.metadata, MetadataKey.Z_INDEX);
 			return az - bz;
 		});
 
@@ -331,8 +337,8 @@ export class SVGRenderer implements CanvasRenderer {
 		dx: number,
 		dy: number,
 	) {
-		const points = el.metadata.points as number[];
-		if (!points || points.length < 4) return;
+		const points = getNumberArray(el.metadata, MetadataKey.POINTS);
+		if (points.length < 4) return;
 
 		const shiftedPoints =
 			dx !== 0 || dy !== 0
@@ -343,8 +349,14 @@ export class SVGRenderer implements CanvasRenderer {
 		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
 		path.setAttribute("d", d);
 		path.setAttribute("fill", "none");
-		path.setAttribute("stroke", el.metadata.color || "#fff");
-		path.setAttribute("stroke-width", (el.metadata.width || 1.2).toString());
+		path.setAttribute(
+			"stroke",
+			getString(el.metadata, MetadataKey.COLOR, "#fff"),
+		);
+		path.setAttribute(
+			"stroke-width",
+			getNumber(el.metadata, MetadataKey.WIDTH, 1.2).toString(),
+		);
 		path.setAttribute("stroke-linecap", "round");
 		path.setAttribute("stroke-linejoin", "round");
 
@@ -365,12 +377,12 @@ export class SVGRenderer implements CanvasRenderer {
 		dy: number,
 	) {
 		const img = document.createElement("img");
-		img.src = el.metadata.src;
+		img.src = getString(el.metadata, MetadataKey.SRC);
 		img.style.position = "absolute";
-		img.style.left = `${((el.metadata.min_x as number) + dx) * MM_TO_PX}px`;
-		img.style.top = `${((el.metadata.min_y as number) + dy) * MM_TO_PX}px`;
-		img.style.width = `${((el.metadata.width as number) || 60) * MM_TO_PX}px`;
-		img.style.height = `${((el.metadata.height as number) || 45) * MM_TO_PX}px`;
+		img.style.left = `${(getNumber(el.metadata, MetadataKey.MIN_X) + dx) * MM_TO_PX}px`;
+		img.style.top = `${(getNumber(el.metadata, MetadataKey.MIN_Y) + dy) * MM_TO_PX}px`;
+		img.style.width = `${getNumber(el.metadata, MetadataKey.WIDTH, 60) * MM_TO_PX}px`;
+		img.style.height = `${getNumber(el.metadata, MetadataKey.HEIGHT, 45) * MM_TO_PX}px`;
 		img.style.objectFit = "cover";
 		img.style.borderRadius = "var(--radius-sm)";
 		img.style.border = isSelected
@@ -389,8 +401,8 @@ export class SVGRenderer implements CanvasRenderer {
 	) {
 		const div = document.createElement("div");
 		div.style.position = "absolute";
-		div.style.left = `${((el.metadata.min_x as number) + dx) * MM_TO_PX}px`;
-		div.style.top = `${((el.metadata.min_y as number) + dy) * MM_TO_PX}px`;
+		div.style.left = `${(getNumber(el.metadata, MetadataKey.MIN_X) + dx) * MM_TO_PX}px`;
+		div.style.top = `${(getNumber(el.metadata, MetadataKey.MIN_Y) + dy) * MM_TO_PX}px`;
 		div.style.color = "white";
 		div.style.padding = "12px 16px";
 		div.style.fontSize = "15px";
@@ -405,7 +417,7 @@ export class SVGRenderer implements CanvasRenderer {
 		div.style.maxWidth = "400px";
 		div.style.pointerEvents = "auto";
 
-		const content = el.metadata.content || "";
+		const content = getString(el.metadata, MetadataKey.CONTENT);
 		if (content.includes("$")) {
 			const parts = content.split(/(\$.*?\$)/);
 			div.innerHTML = parts

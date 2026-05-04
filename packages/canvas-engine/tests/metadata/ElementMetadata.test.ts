@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
 	getNumber,
 	getNumberArray,
+	getString,
 	MetadataKey,
 } from "../../src/metadata/ElementMetadata";
 
@@ -16,6 +17,8 @@ describe("MetadataKey", () => {
 		expect(MetadataKey.WIDTH).toBe("width");
 		expect(MetadataKey.HEIGHT).toBe("height");
 		expect(MetadataKey.COLOR).toBe("color");
+		expect(MetadataKey.SRC).toBe("src");
+		expect(MetadataKey.CONTENT).toBe("content");
 	});
 });
 
@@ -79,6 +82,39 @@ describe("getNumberArray", () => {
 		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
 		expect(getNumberArray({ points: null }, "points")).toEqual([]);
 		expect(warn).not.toHaveBeenCalled();
+		warn.mockRestore();
+	});
+});
+
+describe("getString", () => {
+	it("returns the value when key holds a valid string", () => {
+		expect(getString({ color: "#ff0000" }, "color")).toBe("#ff0000");
+	});
+
+	it("returns an empty string when key holds an empty string", () => {
+		expect(getString({ content: "" }, "content")).toBe("");
+	});
+
+	it("returns the fallback when the key is missing", () => {
+		expect(getString({}, "color")).toBe("");
+		expect(getString({}, "color", "#fff")).toBe("#fff");
+	});
+
+	it("returns the fallback when the value is null", () => {
+		expect(getString({ color: null }, "color", "#abc")).toBe("#abc");
+	});
+
+	it("returns the fallback and warns when the value is a non-string", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		expect(getString({ color: 42 }, "color", "#default")).toBe("#default");
+		expect(warn).toHaveBeenCalledWith(expect.stringContaining('"color"'));
+		warn.mockRestore();
+	});
+
+	it("returns the fallback and warns when the value is a boolean", () => {
+		const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+		expect(getString({ src: true }, "src", "")).toBe("");
+		expect(warn).toHaveBeenCalled();
 		warn.mockRestore();
 	});
 });

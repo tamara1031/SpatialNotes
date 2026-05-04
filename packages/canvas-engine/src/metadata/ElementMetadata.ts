@@ -12,6 +12,10 @@ export const MetadataKey = {
 	MAX_X: "max_x",
 	MAX_Y: "max_y",
 	HEIGHT: "height",
+	// Image
+	SRC: "src",
+	// Text
+	CONTENT: "content",
 } as const;
 
 export type MetadataKey = (typeof MetadataKey)[keyof typeof MetadataKey];
@@ -53,4 +57,23 @@ export function getNumberArray(
 		return [];
 	}
 	return v as number[];
+}
+
+/**
+ * Safely read a string metadata field (e.g. color, src, content).
+ * Returns `fallback` (default "") when the key is absent or not a string,
+ * and emits a console.warn so bugs surface in development without crashing.
+ */
+export function getString(
+	meta: Record<string, unknown>,
+	key: string,
+	fallback = "",
+): string {
+	const v = meta[key];
+	if (v === undefined || v === null) return fallback;
+	if (typeof v === "string") return v;
+	console.warn(
+		`ElementMetadata: expected string for "${key}", got ${typeof v}`,
+	);
+	return fallback;
 }
