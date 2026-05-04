@@ -39,10 +39,7 @@ describe("SelectionTool — onDoubleClick", () => {
 		const tool = new SelectionTool();
 
 		const coords = { x: 42, y: 77 };
-		tool.onDoubleClick({} as MouseEvent, ctx, coords);
-
-		// Allow the microtask queue to flush
-		await Promise.resolve();
+		await tool.onDoubleClick({} as MouseEvent, ctx, coords);
 
 		expect(getElementAt).toHaveBeenCalledWith(42, 77);
 		expect(getElementAt).not.toHaveBeenCalledWith(0, 0);
@@ -66,8 +63,7 @@ describe("SelectionTool — onDoubleClick", () => {
 		});
 		const tool = new SelectionTool();
 
-		tool.onDoubleClick({} as MouseEvent, ctx, { x: 10, y: 20 });
-		await Promise.resolve();
+		await tool.onDoubleClick({} as MouseEvent, ctx, { x: 10, y: 20 });
 
 		expect(store.getState().editingElementId).toBe("text-el");
 		expect(store.getState().selectedElementIds).toContain("text-el");
@@ -91,8 +87,7 @@ describe("SelectionTool — onDoubleClick", () => {
 		});
 		const tool = new SelectionTool();
 
-		tool.onDoubleClick({} as MouseEvent, ctx, { x: 5, y: 5 });
-		await Promise.resolve();
+		await tool.onDoubleClick({} as MouseEvent, ctx, { x: 5, y: 5 });
 
 		expect(store.getState().editingElementId).toBeNull();
 	});
@@ -106,11 +101,9 @@ describe("SelectionTool — async error recovery", () => {
 		});
 		const tool = new SelectionTool();
 
-		// Should not throw; error is caught internally
+		// Error is caught internally; await ensures the rejection is handled
 		await expect(
-			Promise.resolve(
-				tool.onPointerDown({} as PointerEvent, ctx, { x: 10, y: 10 }),
-			).then(() => Promise.resolve()),
+			tool.onPointerDown({} as PointerEvent, ctx, { x: 10, y: 10 }),
 		).resolves.toBeUndefined();
 	});
 
@@ -121,12 +114,11 @@ describe("SelectionTool — async error recovery", () => {
 		});
 		const tool = new SelectionTool();
 
-		tool.onDoubleClick({} as MouseEvent, ctx, { x: 5, y: 5 });
+		// Error is caught internally; state must remain clean
+		await expect(
+			tool.onDoubleClick({} as MouseEvent, ctx, { x: 5, y: 5 }),
+		).resolves.toBeUndefined();
 
-		// Allow rejection to propagate through the catch handler
-		await new Promise((r) => setTimeout(r, 0));
-
-		// State must remain clean — no unhandled rejection
 		expect(store.getState().editingElementId).toBeNull();
 	});
 });
