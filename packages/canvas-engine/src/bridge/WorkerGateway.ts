@@ -61,8 +61,8 @@ export class WorkerGateway extends WorkerRpcClient {
 		return this.request<string[]>("QUERY_AT", { x, y, radius });
 	}
 
-	async getElementAt(x: number, y: number): Promise<string | null> {
-		return this.request<string | null>("GET_ELEMENT_AT", { x, y });
+	async getElementAt(x: number, y: number, radius = 5): Promise<string | null> {
+		return this.request<string | null>("GET_ELEMENT_AT", { x, y, radius });
 	}
 
 	// --- Performance & Debugging ---
