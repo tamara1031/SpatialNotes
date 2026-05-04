@@ -1,6 +1,7 @@
 import { PanningTool } from "./tools/PanningTool";
 import type { InteractionContext, Tool } from "./tools/Tool";
 import type { CanvasTool } from "./types";
+import { clientPixelToMm } from "./utils/coordinates";
 
 export class InteractionManager {
 	private tools: Map<CanvasTool, Tool> = new Map();
@@ -37,18 +38,11 @@ export class InteractionManager {
 	getMmCoords(e: MouseEvent): { x: number; y: number } {
 		if (!this.container) return { x: 0, y: 0 };
 		const rect = this.container.getBoundingClientRect();
-		const state = this.context.store.getState();
-
-		// CSS pixels -> MM (assuming 96 DPI for now, or scaled by viewport)
-		const PIXELS_PER_MM = 3.78;
-		const x =
-			(e.clientX - rect.left - state.viewport.pan.x) /
-			(state.viewport.scale * PIXELS_PER_MM);
-		const y =
-			(e.clientY - rect.top - state.viewport.pan.y) /
-			(state.viewport.scale * PIXELS_PER_MM);
-
-		return { x, y };
+		const { viewport } = this.context.store.getState();
+		return {
+			x: clientPixelToMm(e.clientX - rect.left, viewport.pan.x, viewport.scale),
+			y: clientPixelToMm(e.clientY - rect.top, viewport.pan.y, viewport.scale),
+		};
 	}
 
 	// --- Event Handlers ---

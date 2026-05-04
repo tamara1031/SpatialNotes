@@ -22,6 +22,7 @@ import {
 	CanvasTool,
 	type CanvasViewport,
 } from "./types";
+import { clientPixelToMm } from "./utils/coordinates";
 
 export * from "./types";
 export * from "./ui/CanvasView";
@@ -328,12 +329,11 @@ export class CanvasEngine
 	private viewportCenterMm(): { x: number; y: number } {
 		const container = this.renderer.container;
 		const { viewport } = this.store.getState();
-		const PIXELS_PER_MM = 3.78;
 		const w = container?.clientWidth ?? 0;
 		const h = container?.clientHeight ?? 0;
 		return {
-			x: (w / 2 - viewport.pan.x) / (viewport.scale * PIXELS_PER_MM),
-			y: (h / 2 - viewport.pan.y) / (viewport.scale * PIXELS_PER_MM),
+			x: clientPixelToMm(w / 2, viewport.pan.x, viewport.scale),
+			y: clientPixelToMm(h / 2, viewport.pan.y, viewport.scale),
 		};
 	}
 
