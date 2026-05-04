@@ -255,27 +255,82 @@ describe("SelectionService.moveElements", () => {
 // ── selectArea ──────────────────────────────────────────────────────────────
 
 describe("SelectionService.selectArea", () => {
-	it("queries the worker with midpoint and half-diagonal radius", async () => {
+	it("queries the worker with the half-diagonal bounding-circle radius", async () => {
+		const store = new CanvasStore({ elements: [] });
+		const gateway = { queryAt: vi.fn().mockResolvedValue([]) } as any;
+		const service = new SelectionService(store, gateway);
+
+		await service.selectArea(0, 0, 10, 10);
+
+		// midpoint (5, 5), half-diagonal = sqrt(10²+10²)/2 ≈ 7.071
+		const [cx, cy, r] = gateway.queryAt.mock.calls[0];
+		expect(cx).toBeCloseTo(5);
+		expect(cy).toBeCloseTo(5);
+		expect(r).toBeCloseTo(Math.sqrt(200) / 2, 5);
+	});
+
+	it("uses half-diagonal (not max-side/2) so rectangle corners are covered", async () => {
+		const store = new CanvasStore({ elements: [] });
+		const gateway = { queryAt: vi.fn().mockResolvedValue([]) } as any;
+		const service = new SelectionService(store, gateway);
+
+		// 20×6 rectangle: max-side/2 = 10, half-diagonal = sqrt(400+36)/2 ≈ 10.44
+		await service.selectArea(0, 0, 20, 6);
+
+		const [, , r] = gateway.queryAt.mock.calls[0];
+		const halfDiag = Math.sqrt(20 * 20 + 6 * 6) / 2;
+		expect(r).toBeCloseTo(halfDiag, 5);
+		expect(r).toBeGreaterThan(10); // strictly larger than max-side/2
+	});
+
+	it("returns only elements whose bounds intersect the selection rectangle", async () => {
+		const inside = makeStroke("inside", [3, 3, 4, 4]);
+		const outside = makeStroke("outside", [15, 15, 20, 20]);
+		const corner = makeStroke("corner", [8, 8, 9, 9]); // in circle but outside rect
+		const store = new CanvasStore({ elements: [inside, outside, corner] });
+
+		// Worker returns all three as candidates (simulating over-selection)
+		const gateway = {
+			queryAt: vi.fn().mockResolvedValue(["inside", "outside", "corner"]),
+		} as any;
+		const service = new SelectionService(store, gateway);
+
+		// Selection rectangle: 0..5, 0..5 — covers "inside", excludes the others
+		const ids = await service.selectArea(0, 0, 5, 5);
+
+		expect(ids).toContain("inside");
+		expect(ids).not.toContain("outside");
+		expect(ids).not.toContain("corner");
+	});
+
+	it("includes elements that partially overlap the rectangle boundary", async () => {
+		// Image spans 4..8 in x, 0..10 in y; selection is 0..5, 0..10
+		const partial = makeImage("partial", {
+			minX: 4,
+			minY: 0,
+			maxX: 8,
+			maxY: 10,
+		});
+		const store = new CanvasStore({ elements: [partial] });
+		const gateway = {
+			queryAt: vi.fn().mockResolvedValue(["partial"]),
+		} as any;
+		const service = new SelectionService(store, gateway);
+
+		const ids = await service.selectArea(0, 0, 5, 10);
+
+		expect(ids).toContain("partial");
+	});
+
+	it("excludes worker-returned ids not found in the store", async () => {
 		const store = new CanvasStore({ elements: [] });
 		const gateway = {
-			queryAt: vi.fn().mockResolvedValue(["el-1", "el-2"]),
+			queryAt: vi.fn().mockResolvedValue(["ghost-id"]),
 		} as any;
 		const service = new SelectionService(store, gateway);
 
 		const ids = await service.selectArea(0, 0, 10, 10);
 
-		expect(gateway.queryAt).toHaveBeenCalledWith(5, 5, 5);
-		expect(ids).toEqual(["el-1", "el-2"]);
-	});
-
-	it("handles non-square selections correctly", async () => {
-		const store = new CanvasStore({ elements: [] });
-		const gateway = { queryAt: vi.fn().mockResolvedValue([]) } as any;
-		const service = new SelectionService(store, gateway);
-
-		await service.selectArea(10, 20, 30, 40);
-
-		// midpoint: (20, 30), radius = max(20, 20) / 2 = 10
-		expect(gateway.queryAt).toHaveBeenCalledWith(20, 30, 10);
+		expect(ids).toHaveLength(0);
 	});
 });

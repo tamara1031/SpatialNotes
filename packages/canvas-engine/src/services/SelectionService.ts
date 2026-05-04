@@ -1,6 +1,7 @@
 import type { WorkerGateway } from "../bridge/WorkerGateway";
 import { getNumber, MetadataKey } from "../metadata/ElementMetadata";
 import type { CanvasStore } from "../store/CanvasStore";
+import type { Bounds } from "../utils/ElementUtils";
 import { ElementUtils } from "../utils/ElementUtils";
 
 export class SelectionService {
@@ -51,17 +52,37 @@ export class SelectionService {
 		this.store.dispatch({ type: "UPDATE_ELEMENTS", payload: updates });
 	}
 
-	public selectArea(
+	public async selectArea(
 		minX: number,
 		minY: number,
 		maxX: number,
 		maxY: number,
 	): Promise<string[]> {
-		// Query the worker for elements in the specified area
-		return this.gateway.queryAt(
-			(minX + maxX) / 2,
-			(minY + maxY) / 2,
-			Math.max(maxX - minX, maxY - minY) / 2,
-		);
+		const cx = (minX + maxX) / 2;
+		const cy = (minY + maxY) / 2;
+		// Half-diagonal is the tightest bounding-circle radius: it guarantees
+		// every element that intersects the rectangle is returned by the
+		// circular spatial index query (max(w,h)/2 misses corners).
+		const w = maxX - minX;
+		const h = maxY - minY;
+		const halfDiag = Math.sqrt(w * w + h * h) / 2;
+
+		const candidates = await this.gateway.queryAt(cx, cy, halfDiag);
+
+		// Post-filter: discard elements whose bounds fall entirely outside the
+		// selection rectangle (the circular query over-selects the corner zones).
+		const rect: Bounds = { minX, minY, maxX, maxY };
+		const elements = this.store.getState().elements;
+		return candidates.filter((id) => {
+			const el = elements.find((e) => e.id === id);
+			if (!el) return false;
+			const b = ElementUtils.getBounds(el);
+			return (
+				b.maxX >= rect.minX &&
+				b.minX <= rect.maxX &&
+				b.maxY >= rect.minY &&
+				b.minY <= rect.maxY
+			);
+		});
 	}
 }
