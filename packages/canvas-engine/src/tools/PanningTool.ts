@@ -1,11 +1,12 @@
-import type { InteractionContext, Tool } from "./Tool";
+import type { InteractionContext } from "./Tool";
+import { AbstractTool } from "./AbstractTool";
 
-export class PanningTool implements Tool {
+export class PanningTool extends AbstractTool {
 	getCursor(): string {
 		return "grabbing";
 	}
 
-	async onPointerDown(
+	protected async _onPointerDown(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
@@ -16,7 +17,7 @@ export class PanningTool implements Tool {
 		});
 	}
 
-	async onPointerMove(
+	protected async _onPointerMove(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
@@ -37,7 +38,7 @@ export class PanningTool implements Tool {
 		}
 	}
 
-	async onPointerUp(
+	protected async _onPointerUp(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },

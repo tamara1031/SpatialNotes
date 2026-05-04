@@ -1,30 +1,31 @@
 import { CanvasTool } from "../types";
-import type { InteractionContext, Tool } from "./Tool";
+import type { InteractionContext } from "./Tool";
+import { AbstractTool } from "./AbstractTool";
 
-export class EraserTool implements Tool {
-	async onPointerDown(
+export class EraserTool extends AbstractTool {
+	protected async _onPointerDown(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		ctx.store.update({ isInteracting: true });
 		await this.eraseAt(coords.x, coords.y, ctx);
 	}
 
-	async onPointerMove(
+	protected async _onPointerMove(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		if (!ctx.store.getState().isInteracting) return;
 		await this.eraseAt(coords.x, coords.y, ctx);
 	}
 
-	async onPointerUp(
+	protected async _onPointerUp(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		// Finalize worker interaction
 		await ctx.gateway.pointerUp();
 		ctx.store.update({ isInteracting: false });
