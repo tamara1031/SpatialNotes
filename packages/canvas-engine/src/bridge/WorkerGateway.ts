@@ -1,5 +1,8 @@
 import { WorkerRpcClient } from "engine-core";
 import type { CanvasElement } from "../types";
+import type { PointerUpResult, WasmFragment } from "./worker-types";
+
+export type { PointerUpResult, WasmFragment };
 
 export class WorkerGateway extends WorkerRpcClient {
 	constructor() {
@@ -36,8 +39,8 @@ export class WorkerGateway extends WorkerRpcClient {
 		return this.request("POINTER_MOVE", { x, y, pressure, tiltX, tiltY });
 	}
 
-	async pointerUp(): Promise<unknown> {
-		return this.request("POINTER_UP");
+	async pointerUp(): Promise<PointerUpResult | null> {
+		return this.request<PointerUpResult | null>("POINTER_UP");
 	}
 
 	// --- Data Synchronization ---
@@ -76,8 +79,8 @@ export class WorkerGateway extends WorkerRpcClient {
 		element: CanvasElement,
 		eraserPath: unknown,
 		radius: number,
-	): Promise<unknown[]> {
-		return this.request<unknown[]>("PARTIAL_ERASE", {
+	): Promise<WasmFragment[]> {
+		return this.request<WasmFragment[]>("PARTIAL_ERASE", {
 			element,
 			eraserPath,
 			radius,

@@ -6,13 +6,6 @@ import type {
 } from "../store/CanvasStore";
 import type { CanvasElement } from "../types";
 
-/** Shape of stroke fragments returned by the WASM partial-erase operation. */
-interface WasmFragment {
-	id: string;
-	data: { type?: string; [key: string]: unknown };
-	parent_id: string;
-}
-
 type PrecisionUpdate =
 	| { id: string; changes: { isDeleted: true } }
 	| {
@@ -66,11 +59,11 @@ export class EraserService {
 			if (el && el.type === "ELEMENT_STROKE") {
 				const eraserPath = await this.gateway.getInteractionPoints();
 				if (eraserPath.length >= 4) {
-					const fragments = (await this.gateway.partialErase(
+					const fragments = await this.gateway.partialErase(
 						el,
 						eraserPath,
 						radius,
-					)) as WasmFragment[];
+					);
 					if (fragments) {
 						const updates: PrecisionUpdate[] = [
 							{ id: el.id, changes: { isDeleted: true } },
