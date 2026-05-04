@@ -60,11 +60,12 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 
 			case "GET_ELEMENT_AT": {
-				const elId = engine.queryEraser(
+				// queryEraser returns string[]; pick the closest hit or null.
+				const hits = engine.queryEraser(
 					[payload.x, payload.y],
 					payload.radius ?? 5,
 				);
-				self.postMessage({ type: "DONE", id, payload: elId });
+				self.postMessage({ type: "DONE", id, payload: hits[0] ?? null });
 				break;
 			}
 
