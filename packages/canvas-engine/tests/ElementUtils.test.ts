@@ -32,6 +32,42 @@ describe("ElementUtils", () => {
 		});
 	});
 
+	describe("getCollectiveBounds", () => {
+		it("returns null for an empty array", () => {
+			expect(ElementUtils.getCollectiveBounds([])).toBeNull();
+		});
+
+		it("returns bounds of a single element unchanged", () => {
+			const el: any = {
+				type: "ELEMENT_STROKE",
+				metadata: { points: [10, 20, 30, 40] },
+			};
+			expect(ElementUtils.getCollectiveBounds([el])).toEqual({
+				minX: 10,
+				minY: 20,
+				maxX: 30,
+				maxY: 40,
+			});
+		});
+
+		it("computes union bounds across multiple elements", () => {
+			const stroke: any = {
+				type: "ELEMENT_STROKE",
+				metadata: { points: [0, 0, 50, 50] },
+			};
+			const image: any = {
+				type: "ELEMENT_IMAGE",
+				metadata: { min_x: 40, min_y: 60, max_x: 100, max_y: 120 },
+			};
+			expect(ElementUtils.getCollectiveBounds([stroke, image])).toEqual({
+				minX: 0,
+				minY: 0,
+				maxX: 100,
+				maxY: 120,
+			});
+		});
+	});
+
 	describe("offsetMetadata", () => {
 		it("shifts stroke points by (dx, dy)", () => {
 			const meta = { points: [0, 0, 10, 20] };

@@ -102,6 +102,29 @@ export const ElementUtils = {
 	},
 
 	/**
+	 * Returns the union bounding box of all given elements.
+	 * Returns null when the array is empty (no defined bounds).
+	 */
+	getCollectiveBounds(elements: CanvasElement[]): Bounds | null {
+		if (elements.length === 0) return null;
+
+		let minX = Number.POSITIVE_INFINITY;
+		let minY = Number.POSITIVE_INFINITY;
+		let maxX = Number.NEGATIVE_INFINITY;
+		let maxY = Number.NEGATIVE_INFINITY;
+
+		for (const el of elements) {
+			const b = ElementUtils.getBounds(el);
+			if (b.minX < minX) minX = b.minX;
+			if (b.minY < minY) minY = b.minY;
+			if (b.maxX > maxX) maxX = b.maxX;
+			if (b.maxY > maxY) maxY = b.maxY;
+		}
+
+		return { minX, minY, maxX, maxY };
+	},
+
+	/**
 	 * Clips coordinates to the paper boundary based on layout mode.
 	 */
 	clipCoords(

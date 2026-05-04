@@ -81,21 +81,11 @@ export class ClipboardService {
 		elements: CanvasElement[],
 		origin: { x: number; y: number },
 	): CanvasElement[] {
-		let minX = Number.POSITIVE_INFINITY;
-		let minY = Number.POSITIVE_INFINITY;
-		let maxX = Number.NEGATIVE_INFINITY;
-		let maxY = Number.NEGATIVE_INFINITY;
+		const bounds = ElementUtils.getCollectiveBounds(elements);
+		if (!bounds) return elements;
 
-		for (const el of elements) {
-			const b = ElementUtils.getBounds(el);
-			if (b.minX < minX) minX = b.minX;
-			if (b.minY < minY) minY = b.minY;
-			if (b.maxX > maxX) maxX = b.maxX;
-			if (b.maxY > maxY) maxY = b.maxY;
-		}
-
-		const dx = origin.x - (minX + maxX) / 2;
-		const dy = origin.y - (minY + maxY) / 2;
+		const dx = origin.x - (bounds.minX + bounds.maxX) / 2;
+		const dy = origin.y - (bounds.minY + bounds.maxY) / 2;
 
 		return elements.map((el) => ({
 			...el,

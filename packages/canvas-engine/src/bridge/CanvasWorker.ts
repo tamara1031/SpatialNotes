@@ -1,7 +1,13 @@
 import init, { CanvasEngine, init_engine } from "canvas-wasm";
 
-let wasmInstance: any;
-let engine: CanvasEngine;
+let wasmInstance: { memory: WebAssembly.Memory } | undefined;
+let engine: CanvasEngine | undefined;
+
+/** Throws an Error (caught by the outer try/catch → ERROR reply) if INIT has not completed. */
+function assertEngine(): CanvasEngine {
+	if (!engine) throw new Error("Engine not initialized: send INIT first");
+	return engine;
+}
 
 self.onmessage = async (e: MessageEvent) => {
 	const { type, payload, id } = e.data;
@@ -17,22 +23,22 @@ self.onmessage = async (e: MessageEvent) => {
 
 			case "BIND_CANVAS":
 				// payload.canvas is an OffscreenCanvas
-				await engine.bindCanvas(payload.canvas);
+				await assertEngine().bindCanvas(payload.canvas);
 				self.postMessage({ type: "DONE", id });
 				break;
 
 			case "UPSERT_ELEMENT":
-				engine.upsertElement(payload.element);
+				assertEngine().upsertElement(payload.element);
 				self.postMessage({ type: "DONE", id });
 				break;
 
 			case "REMOVE_ELEMENT":
-				engine.removeElement(payload.id);
+				assertEngine().removeElement(payload.id);
 				self.postMessage({ type: "DONE", id });
 				break;
 
 			case "POINTER_DOWN":
-				engine.pointerDown(
+				assertEngine().pointerDown(
 					payload.x,
 					payload.y,
 					payload.pressure || 0,
@@ -43,7 +49,7 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 
 			case "POINTER_MOVE":
-				engine.pointerMove(
+				assertEngine().pointerMove(
 					payload.x,
 					payload.y,
 					payload.pressure || 0,
@@ -54,14 +60,14 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 
 			case "POINTER_UP": {
-				const result = engine.pointerUp();
+				const result = assertEngine().pointerUp();
 				self.postMessage({ type: "DONE", id, payload: result });
 				break;
 			}
 
 			case "GET_ELEMENT_AT": {
 				// queryEraser returns string[]; pick the closest hit or null.
-				const hits = engine.queryEraser(
+				const hits = assertEngine().queryEraser(
 					[payload.x, payload.y],
 					payload.radius ?? 5,
 				);
@@ -69,47 +75,49 @@ self.onmessage = async (e: MessageEvent) => {
 				break;
 			}
 
-			case "SYNC":
-				engine.clear();
+			case "SYNC": {
+				const eng = assertEngine();
+				eng.clear();
 				for (const el of payload.elements) {
-					engine.upsertElement(el);
+					eng.upsertElement(el);
 				}
 				self.postMessage({ type: "DONE", id });
 				break;
+			}
 
 			case "EXPORT_SVG": {
-				const svg = engine.exportSvg();
+				const svg = assertEngine().exportSvg();
 				self.postMessage({ type: "DONE", id, payload: svg });
 				break;
 			}
 
-			case "GET_CURRENT_INTERACTION_POINTS":
-				if (engine) {
-					const ptr = engine.getInteractionPointsPtr();
-					const len = engine.getInteractionPointsLen();
-					// Create a copy of the f64 data to send to main thread
-					const data = new Float64Array(
-						wasmInstance.memory.buffer,
-						ptr,
-						len,
-					).slice();
-					self.postMessage({ type: "DONE", id, payload: Array.from(data) });
-				}
+			case "GET_CURRENT_INTERACTION_POINTS": {
+				const eng = assertEngine();
+				if (!wasmInstance) throw new Error("Wasm instance not available");
+				const ptr = eng.getInteractionPointsPtr();
+				const len = eng.getInteractionPointsLen();
+				// Create a copy of the f64 data to send to main thread
+				const data = new Float64Array(
+					wasmInstance.memory.buffer,
+					ptr,
+					len,
+				).slice();
+				self.postMessage({ type: "DONE", id, payload: Array.from(data) });
 				break;
+			}
+
 			case "GET_CURRENT_STROKE_PATH":
-				if (engine) {
-					self.postMessage({
-						type: "DONE",
-						id,
-						payload: engine.getCurrentStrokePath(),
-					});
-				}
+				self.postMessage({
+					type: "DONE",
+					id,
+					payload: assertEngine().getCurrentStrokePath(),
+				});
 				break;
 
 			case "QUERY_AT": {
 				// query_eraser expects a flat point path [x0, y0, x1, y1, ...].
 				// For a single-point hit-test we synthesise a 1-point path.
-				const hitIds = engine.queryEraser(
+				const hitIds = assertEngine().queryEraser(
 					[payload.x, payload.y],
 					payload.radius,
 				);
@@ -118,7 +126,7 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 
 			case "PARTIAL_ERASE": {
-				const fragments = engine.partialErase(
+				const fragments = assertEngine().partialErase(
 					payload.element,
 					payload.eraserPath,
 					payload.radius,
