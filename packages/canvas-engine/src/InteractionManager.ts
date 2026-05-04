@@ -48,8 +48,10 @@ export class InteractionManager {
 	// --- Event Handlers ---
 
 	handlePointerDown = async (e: PointerEvent) => {
+		const coords = this.getMmCoords(e);
+
 		if (e.button === 1 || e.button === 2) {
-			this.panningTool.onPointerDown(e, this.context);
+			await this.panningTool.onPointerDown(e, this.context, coords);
 			return;
 		}
 
@@ -58,7 +60,6 @@ export class InteractionManager {
 			this.context.store.update({ isPanning: false, lastPanPos: null });
 		}
 
-		const coords = this.getMmCoords(e);
 		// Middleware: Notify Worker with stylus data
 		await this.context.gateway.pointerDown(
 			coords.x,
@@ -68,17 +69,18 @@ export class InteractionManager {
 			e.tiltY,
 		);
 
-		this.activeTool?.onPointerDown(e, this.context, coords);
+		await this.activeTool?.onPointerDown(e, this.context, coords);
 	};
 
 	handlePointerMove = async (e: PointerEvent) => {
+		const coords = this.getMmCoords(e);
 		const state = this.context.store.getState();
+
 		if (state.isPanning) {
-			this.panningTool.onPointerMove(e, this.context);
+			await this.panningTool.onPointerMove(e, this.context, coords);
 			return;
 		}
 
-		const coords = this.getMmCoords(e);
 		// Middleware: Notify Worker with stylus data
 		await this.context.gateway.pointerMove(
 			coords.x,
@@ -88,23 +90,24 @@ export class InteractionManager {
 			e.tiltY,
 		);
 
-		this.activeTool?.onPointerMove(e, this.context, coords);
+		await this.activeTool?.onPointerMove(e, this.context, coords);
 	};
 
 	handlePointerUp = async (e: PointerEvent) => {
+		const coords = this.getMmCoords(e);
 		const state = this.context.store.getState();
+
 		if (state.isPanning) {
-			this.panningTool.onPointerUp(e, this.context);
+			await this.panningTool.onPointerUp(e, this.context, coords);
 			return;
 		}
 
-		const coords = this.getMmCoords(e);
 		// Tool handles the transition (drawing finalize, etc.)
 		await this.activeTool?.onPointerUp(e, this.context, coords);
 	};
 
-	handleDoubleClick = (e: MouseEvent) => {
+	handleDoubleClick = async (e: MouseEvent) => {
 		const coords = this.getMmCoords(e);
-		this.activeTool?.onDoubleClick?.(e, this.context, coords);
+		await this.activeTool?.onDoubleClick?.(e, this.context, coords);
 	};
 }

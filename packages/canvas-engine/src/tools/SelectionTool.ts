@@ -69,7 +69,7 @@ export class SelectionTool implements Tool {
 		}
 	}
 
-	onPointerMove(
+	async onPointerMove(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },

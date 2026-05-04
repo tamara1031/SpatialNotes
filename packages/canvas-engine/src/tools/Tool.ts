@@ -25,21 +25,21 @@ export interface Tool {
 		e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	): Promise<void> | void;
+	): Promise<void>;
 	onPointerMove(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	): Promise<void> | void;
+	): Promise<void>;
 	onPointerUp(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	): Promise<void> | void;
+	): Promise<void>;
 	onDoubleClick?(
 		e: MouseEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	): Promise<void> | void;
+	): Promise<void>;
 	getCursor(): string;
 }
