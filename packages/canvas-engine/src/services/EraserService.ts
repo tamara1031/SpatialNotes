@@ -1,4 +1,4 @@
-import type { WasmFragment, WorkerGateway } from "../bridge/WorkerGateway";
+import type { WorkerGateway } from "../bridge/WorkerGateway";
 import type {
 	CanvasAction,
 	CanvasState,
