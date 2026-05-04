@@ -60,7 +60,10 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 
 			case "GET_ELEMENT_AT": {
-				const elId = engine.queryEraser([payload.x, payload.y], payload.radius ?? 5);
+				const elId = engine.queryEraser(
+					[payload.x, payload.y],
+					payload.radius ?? 5,
+				);
 				self.postMessage({ type: "DONE", id, payload: elId });
 				break;
 			}
