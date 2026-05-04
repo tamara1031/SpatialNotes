@@ -34,7 +34,7 @@ export class InteractionManager {
 
 	// --- Middleware & Point Conversion ---
 
-	getMmCoords(e: PointerEvent): { x: number; y: number } {
+	getMmCoords(e: MouseEvent): { x: number; y: number } {
 		if (!this.container) return { x: 0, y: 0 };
 		const rect = this.container.getBoundingClientRect();
 		const state = this.context.store.getState();
@@ -110,6 +110,7 @@ export class InteractionManager {
 	};
 
 	handleDoubleClick = (e: MouseEvent) => {
-		this.activeTool?.onDoubleClick?.(e, this.context);
+		const coords = this.getMmCoords(e);
+		this.activeTool?.onDoubleClick?.(e, this.context, coords);
 	};
 }

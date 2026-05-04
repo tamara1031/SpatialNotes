@@ -16,54 +16,59 @@ export class SelectionTool implements Tool {
 			state.pageSize,
 		);
 
-		ctx.gateway.getElementAt(x, y).then((hitId) => {
-			const isAlreadySelected = hitId
-				? state.selectedElementIds.includes(hitId)
-				: false;
+		ctx.gateway
+			.getElementAt(x, y)
+			.then((hitId) => {
+				const isAlreadySelected = hitId
+					? state.selectedElementIds.includes(hitId)
+					: false;
 
-			if (state.activeTool === CanvasTool.PICKER) {
-				if (hitId) {
-					let newSelection = state.selectedElementIds;
-					if (!e.shiftKey && !isAlreadySelected) {
-						newSelection = [hitId];
-					} else if (e.shiftKey) {
-						if (isAlreadySelected) {
-							newSelection = state.selectedElementIds.filter(
-								(id) => id !== hitId,
-							);
-						} else {
-							newSelection = [...state.selectedElementIds, hitId];
+				if (state.activeTool === CanvasTool.PICKER) {
+					if (hitId) {
+						let newSelection = state.selectedElementIds;
+						if (!e.shiftKey && !isAlreadySelected) {
+							newSelection = [hitId];
+						} else if (e.shiftKey) {
+							if (isAlreadySelected) {
+								newSelection = state.selectedElementIds.filter(
+									(id) => id !== hitId,
+								);
+							} else {
+								newSelection = [...state.selectedElementIds, hitId];
+							}
 						}
+						ctx.store.update({
+							selectedElementIds: newSelection,
+							isDraggingSelection: true,
+							dragStartMm: { x, y },
+							selectionOffsetMm: { dx: 0, dy: 0 },
+						});
+					} else {
+						ctx.store.update({ selectedElementIds: [] });
 					}
-					ctx.store.update({
-						selectedElementIds: newSelection,
-						isDraggingSelection: true,
-						dragStartMm: { x, y },
-						selectionOffsetMm: { dx: 0, dy: 0 },
-					});
-				} else {
-					ctx.store.update({ selectedElementIds: [] });
+					return;
 				}
-				return;
-			}
 
-			if (state.activeTool === CanvasTool.SELECTOR) {
-				if (isAlreadySelected) {
-					ctx.store.update({
-						isDraggingSelection: true,
-						dragStartMm: { x, y },
-						selectionOffsetMm: { dx: 0, dy: 0 },
-					});
-				} else {
-					ctx.store.update({
-						isSelecting: true,
-						selectionStart: { x, y },
-						selectionEnd: { x, y },
-						selectedElementIds: [],
-					});
+				if (state.activeTool === CanvasTool.SELECTOR) {
+					if (isAlreadySelected) {
+						ctx.store.update({
+							isDraggingSelection: true,
+							dragStartMm: { x, y },
+							selectionOffsetMm: { dx: 0, dy: 0 },
+						});
+					} else {
+						ctx.store.update({
+							isSelecting: true,
+							selectionStart: { x, y },
+							selectionEnd: { x, y },
+							selectedElementIds: [],
+						});
+					}
 				}
-			}
-		});
+			})
+			.catch((err: unknown) => {
+				console.error("SelectionTool: getElementAt failed", err);
+			});
 	}
 
 	onPointerMove(
@@ -123,9 +128,14 @@ export class SelectionTool implements Tool {
 			const maxX = Math.max(state.selectionStart.x, state.selectionEnd.x);
 			const maxY = Math.max(state.selectionStart.y, state.selectionEnd.y);
 
-			ctx.services.selection.selectArea(minX, minY, maxX, maxY).then((ids) => {
-				ctx.store.update({ selectedElementIds: ids });
-			});
+			ctx.services.selection
+				.selectArea(minX, minY, maxX, maxY)
+				.then((ids) => {
+					ctx.store.update({ selectedElementIds: ids });
+				})
+				.catch((err: unknown) => {
+					console.error("SelectionTool: selectArea failed", err);
+				});
 		}
 
 		ctx.store.update({
@@ -135,20 +145,29 @@ export class SelectionTool implements Tool {
 		});
 	}
 
-	onDoubleClick(_e: MouseEvent, ctx: InteractionContext) {
+	onDoubleClick(
+		_e: MouseEvent,
+		ctx: InteractionContext,
+		coords: { x: number; y: number },
+	) {
 		const state = ctx.store.getState();
 
-		ctx.gateway.getElementAt(0, 0).then((hitId) => {
-			if (hitId) {
-				const el = state.elements.find((e) => e.id === hitId);
-				if (el && el.type === "ELEMENT_TEXT") {
-					ctx.store.update({
-						editingElementId: hitId,
-						selectedElementIds: [hitId],
-					});
+		ctx.gateway
+			.getElementAt(coords.x, coords.y)
+			.then((hitId) => {
+				if (hitId) {
+					const el = state.elements.find((e) => e.id === hitId);
+					if (el && el.type === "ELEMENT_TEXT") {
+						ctx.store.update({
+							editingElementId: hitId,
+							selectedElementIds: [hitId],
+						});
+					}
 				}
-			}
-		});
+			})
+			.catch((err: unknown) => {
+				console.error("SelectionTool: getElementAt (dblclick) failed", err);
+			});
 	}
 
 	getCursor() {

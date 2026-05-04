@@ -36,6 +36,10 @@ export interface Tool {
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
 	): Promise<void> | void;
-	onDoubleClick?(e: MouseEvent, ctx: InteractionContext): Promise<void> | void;
+	onDoubleClick?(
+		e: MouseEvent,
+		ctx: InteractionContext,
+		coords: { x: number; y: number },
+	): Promise<void> | void;
 	getCursor(): string;
 }
