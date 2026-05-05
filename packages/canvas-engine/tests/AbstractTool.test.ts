@@ -14,7 +14,7 @@ class StubTool extends AbstractTool {
 	) {
 		super();
 		if (handlers.dblclick) {
-			this._onDoubleClick = async () => handlers.dblclick!();
+			this._onDoubleClick = async () => handlers.dblclick?.();
 		}
 	}
 

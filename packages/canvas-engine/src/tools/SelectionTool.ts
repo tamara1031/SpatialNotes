@@ -1,7 +1,7 @@
 import { CanvasTool } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
-import type { InteractionContext } from "./Tool";
 import { AbstractTool } from "./AbstractTool";
+import type { InteractionContext } from "./Tool";
 
 export class SelectionTool extends AbstractTool {
 	protected async _onPointerDown(

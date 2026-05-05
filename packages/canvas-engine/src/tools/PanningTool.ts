@@ -1,5 +1,5 @@
-import type { InteractionContext } from "./Tool";
 import { AbstractTool } from "./AbstractTool";
+import type { InteractionContext } from "./Tool";
 
 export class PanningTool extends AbstractTool {
 	getCursor(): string {

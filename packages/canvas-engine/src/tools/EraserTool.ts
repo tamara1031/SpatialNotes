@@ -1,6 +1,6 @@
 import { CanvasTool } from "../types";
-import type { InteractionContext } from "./Tool";
 import { AbstractTool } from "./AbstractTool";
+import type { InteractionContext } from "./Tool";
 
 export class EraserTool extends AbstractTool {
 	protected async _onPointerDown(
