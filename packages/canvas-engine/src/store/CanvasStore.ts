@@ -155,6 +155,9 @@ export class CanvasStore {
 		if (patch.activeTool && patch.activeTool !== oldState.activeTool) {
 			this.emit("TOOL_CHANGED", this.state.activeTool);
 		}
+		if (patch.status !== undefined && patch.status !== oldState.status) {
+			this.emit("STATUS_CHANGED", { status: this.state.status });
+		}
 
 		this.notify();
 	}
