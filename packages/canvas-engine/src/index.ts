@@ -24,6 +24,7 @@ import {
 } from "./types";
 import { clientPixelToMm } from "./utils/coordinates";
 
+export type { CanvasEvent, CanvasEventMap } from "./store/CanvasStore";
 export * from "./types";
 export * from "./ui/CanvasView";
 export { pointsToCatmullRomPath } from "./utils/path-smoothing";

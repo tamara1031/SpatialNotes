@@ -1,13 +1,14 @@
 import { CanvasTool } from "../types";
 import { ElementUtils } from "../utils/ElementUtils";
-import type { InteractionContext, Tool } from "./Tool";
+import { AbstractTool } from "./AbstractTool";
+import type { InteractionContext } from "./Tool";
 
-export class DrawingTool implements Tool {
-	async onPointerDown(
+export class DrawingTool extends AbstractTool {
+	protected async _onPointerDown(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		const state = ctx.store.getState();
 
 		if (
@@ -24,11 +25,11 @@ export class DrawingTool implements Tool {
 		ctx.store.update({ isInteracting: true });
 	}
 
-	async onPointerMove(
+	protected async _onPointerMove(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		const state = ctx.store.getState();
 		if (!state.isInteracting) return;
 
@@ -44,11 +45,11 @@ export class DrawingTool implements Tool {
 		}
 	}
 
-	async onPointerUp(
+	protected async _onPointerUp(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
-	) {
+	): Promise<void> {
 		const state = ctx.store.getState();
 		if (!state.isInteracting) return;
 

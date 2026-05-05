@@ -1,26 +1,27 @@
-import type { InteractionContext, Tool } from "./Tool";
+import { AbstractTool } from "./AbstractTool";
+import type { InteractionContext } from "./Tool";
 
-export class PanningTool implements Tool {
+export class PanningTool extends AbstractTool {
 	getCursor(): string {
 		return "grabbing";
 	}
 
-	onPointerDown(
+	protected async _onPointerDown(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
-	): void {
+	): Promise<void> {
 		ctx.store.update({
 			isPanning: true,
 			lastPanPos: { x: e.clientX, y: e.clientY },
 		});
 	}
 
-	onPointerMove(
+	protected async _onPointerMove(
 		e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
-	): void {
+	): Promise<void> {
 		const state = ctx.store.getState();
 		if (state.isPanning && state.lastPanPos) {
 			const dx = e.clientX - state.lastPanPos.x;
@@ -37,11 +38,11 @@ export class PanningTool implements Tool {
 		}
 	}
 
-	onPointerUp(
+	protected async _onPointerUp(
 		_e: PointerEvent,
 		ctx: InteractionContext,
 		_coords: { x: number; y: number },
-	): void {
+	): Promise<void> {
 		ctx.store.update({ isPanning: false, lastPanPos: null });
 	}
 }
