@@ -54,6 +54,9 @@ export type CanvasEvent =
 			payload: { status: "LOADING" | "READY" | "ERROR"; message?: string };
 	  };
 
+/** Maps each CanvasEvent type string to its corresponding payload type. */
+export type CanvasEventMap = { [E in CanvasEvent as E["type"]]: E["payload"] };
+
 export type CanvasAction =
 	| { type: "CREATE_ELEMENT"; payload: CanvasElement }
 	| { type: "UPDATE_ELEMENTS"; payload: CanvasElementUpdate[] }
@@ -67,7 +70,11 @@ export type CanvasAction =
 export class CanvasStore {
 	private state: CanvasState;
 	private listeners: Set<() => void> = new Set();
-	private eventListeners: Map<string, Set<(payload: any) => void>> = new Map();
+	private eventListeners: Map<
+		CanvasEvent["type"],
+		// Payload type varies per key; safety is enforced at the emit/on call sites.
+		Set<(payload: any) => void>
+	> = new Map();
 	private actionListeners: Set<(command: CanvasStoreCommand) => void> =
 		new Set();
 	// Tracks nesting depth of BATCH dispatch calls. notify() is suppressed
@@ -147,6 +154,9 @@ export class CanvasStore {
 		}
 		if (patch.activeTool && patch.activeTool !== oldState.activeTool) {
 			this.emit("TOOL_CHANGED", this.state.activeTool);
+		}
+		if (patch.status !== undefined && patch.status !== oldState.status) {
+			this.emit("STATUS_CHANGED", { status: this.state.status });
 		}
 
 		this.notify();
@@ -242,7 +252,7 @@ export class CanvasStore {
 
 	on<T extends CanvasEvent["type"]>(
 		type: T,
-		listener: (payload: Extract<CanvasEvent, { type: T }>["payload"]) => void,
+		listener: (payload: CanvasEventMap[T]) => void,
 	) {
 		if (!this.eventListeners.has(type)) {
 			this.eventListeners.set(type, new Set());
@@ -258,7 +268,10 @@ export class CanvasStore {
 		});
 	}
 
-	private emit(type: string, payload: any) {
+	private emit<K extends CanvasEvent["type"]>(
+		type: K,
+		payload: CanvasEventMap[K],
+	): void {
 		this.eventListeners.get(type)?.forEach((l) => {
 			l(payload);
 		});

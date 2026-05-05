@@ -409,6 +409,69 @@ describe("CanvasStore — typed event subscriptions (on)", () => {
 		expect(listener).toHaveBeenCalledTimes(1);
 		expect(listener).toHaveBeenCalledWith([]);
 	});
+
+	it("on(STATUS_CHANGED) fires when status transitions via update()", () => {
+		const store = new CanvasStore({ status: "LOADING" });
+		const listener = vi.fn();
+		store.on("STATUS_CHANGED", listener);
+
+		store.update({ status: "READY" });
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith({ status: "READY" });
+	});
+
+	it("on(STATUS_CHANGED) does not fire when status is updated to the same value", () => {
+		const store = new CanvasStore({ status: "LOADING" });
+		const listener = vi.fn();
+		store.on("STATUS_CHANGED", listener);
+
+		store.update({ status: "LOADING" });
+
+		expect(listener).not.toHaveBeenCalled();
+	});
+
+	it("on(STATUS_CHANGED) fires on each distinct transition in sequence", () => {
+		const store = new CanvasStore({ status: "LOADING" });
+		const received: string[] = [];
+		store.on("STATUS_CHANGED", ({ status }) => received.push(status));
+
+		store.update({ status: "READY" });
+		store.update({ status: "ERROR" });
+		store.update({ status: "READY" });
+
+		expect(received).toEqual(["READY", "ERROR", "READY"]);
+	});
+
+	it("on(COMMAND_EMITTED) fires when emitCommand() is called directly", () => {
+		const store = new CanvasStore();
+		const listener = vi.fn();
+		store.on("COMMAND_EMITTED", listener);
+
+		const command = {
+			type: "UPDATE_ELEMENTS" as const,
+			payload: [{ id: "el-1", changes: { metadata: { color: "#f00" } } }],
+		};
+		store.emitCommand(command);
+
+		expect(listener).toHaveBeenCalledTimes(1);
+		expect(listener).toHaveBeenCalledWith(command);
+	});
+
+	it("on(COMMAND_EMITTED) fires alongside onAction() for the same command", () => {
+		const store = new CanvasStore();
+		const eventListener = vi.fn();
+		const actionListener = vi.fn();
+		store.on("COMMAND_EMITTED", eventListener);
+		store.onAction(actionListener);
+
+		store.emitCommand({ type: "UNDO" });
+
+		expect(eventListener).toHaveBeenCalledTimes(1);
+		expect(actionListener).toHaveBeenCalledTimes(1);
+		expect(eventListener).toHaveBeenCalledWith({ type: "UNDO" });
+		expect(actionListener).toHaveBeenCalledWith({ type: "UNDO" });
+	});
 });
 
 describe("CanvasStore — snapshot round-trip", () => {
