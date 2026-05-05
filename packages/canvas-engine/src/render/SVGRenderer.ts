@@ -14,6 +14,18 @@ import type { CanvasRenderer } from "./Renderer";
 
 const MM_TO_PX = 96 / 25.4;
 
+/**
+ * Per-element DOM node cache entry.
+ * Exactly one of svgNode / htmlNode is non-null depending on element type.
+ * textareaNode is non-null only for ELEMENT_TEXT while in editing mode.
+ */
+interface CachedNode {
+	fingerprint: string;
+	svgNode: SVGPathElement | null;
+	htmlNode: HTMLElement | null;
+	textareaNode: HTMLTextAreaElement | null;
+}
+
 export class SVGRenderer implements CanvasRenderer {
 	container: HTMLElement | null = null;
 	private lastState: CanvasState | null = null;
@@ -29,6 +41,11 @@ export class SVGRenderer implements CanvasRenderer {
 	private lastScale = 1.0;
 	private onTextEdit?: (id: string, newContent: string) => void;
 	private onTextEditCancel?: () => void;
+
+	// Keyed DOM reconciliation state
+	private nodeCache = new Map<string, CachedNode>();
+	private lastElementsRef: CanvasElement[] | null = null;
+	private lastSortedVisible: CanvasElement[] = [];
 
 	constructor(callbacks?: {
 		onTextEdit?: (id: string, newContent: string) => void;
@@ -113,8 +130,11 @@ export class SVGRenderer implements CanvasRenderer {
 		if (this.viewportRoot && this.container) {
 			this.container.removeChild(this.viewportRoot);
 		}
+		this.nodeCache.clear();
+		this.lastElementsRef = null;
+		this.lastSortedVisible = [];
 		this.container = null;
-		this.gateway = null; // Added this line
+		this.gateway = null;
 		this.viewportRoot = null;
 		this.paperSurface = null;
 		this.svgElement = null;
@@ -293,45 +313,194 @@ export class SVGRenderer implements CanvasRenderer {
 		}
 	}
 
+	/**
+	 * Incrementally reconciles element DOM nodes using a per-element visual
+	 * fingerprint.  On each call:
+	 *   1. When elements array changed: purge stale nodes, recompute sorted list.
+	 *   2. For each visible element: skip if fingerprint unchanged; otherwise
+	 *      update in-place or create a new node.
+	 *   3. When elements array changed: re-append in z-index order so DOM order
+	 *      matches the visual stacking.
+	 *
+	 * During active drawing or panning the elements array reference is stable,
+	 * so only step 2 runs — and every fingerprint matches → zero DOM work.
+	 */
 	private renderElements(state: CanvasState) {
 		if (!this.elementsGroup || !this.htmlElementsLayer) return;
 
-		// Clear layers
-		while (this.elementsGroup.firstChild)
-			this.elementsGroup.removeChild(this.elementsGroup.firstChild);
-		while (this.htmlElementsLayer.firstChild)
-			this.htmlElementsLayer.removeChild(this.htmlElementsLayer.firstChild);
+		const {
+			elements,
+			selectedElementIds,
+			isDraggingSelection,
+			selectionOffsetMm,
+			editingElementId,
+		} = state;
 
-		const sortedElements = [...state.elements].sort((a, b) => {
-			const az = getNumber(a.metadata, MetadataKey.Z_INDEX);
-			const bz = getNumber(b.metadata, MetadataKey.Z_INDEX);
-			return az - bz;
-		});
+		const elementsChanged = elements !== this.lastElementsRef;
+		this.lastElementsRef = elements;
 
-		sortedElements.forEach((el) => {
-			if (el.isDeleted) return;
+		if (elementsChanged) {
+			// Recompute the sorted visible set
+			this.lastSortedVisible = [...elements]
+				.filter((el) => !el.isDeleted)
+				.sort(
+					(a, b) =>
+						getNumber(a.metadata, MetadataKey.Z_INDEX) -
+						getNumber(b.metadata, MetadataKey.Z_INDEX),
+				);
 
-			const isSelected = state.selectedElementIds.includes(el.id);
-			const dx =
-				isSelected && state.isDraggingSelection
-					? state.selectionOffsetMm.dx
-					: 0;
-			const dy =
-				isSelected && state.isDraggingSelection
-					? state.selectionOffsetMm.dy
-					: 0;
-
-			if (el.type === "ELEMENT_STROKE") {
-				this.renderStroke(el, isSelected, dx, dy);
-			} else if (el.type === "ELEMENT_IMAGE") {
-				this.renderImage(el, isSelected, dx, dy);
-			} else if (el.type === "ELEMENT_TEXT") {
-				this.renderText(el, isSelected, dx, dy, state);
+			// Purge cached nodes for elements no longer present
+			const currentIds = new Set(this.lastSortedVisible.map((e) => e.id));
+			for (const [id, cached] of this.nodeCache) {
+				if (!currentIds.has(id)) {
+					cached.svgNode?.parentNode?.removeChild(cached.svgNode);
+					cached.htmlNode?.parentNode?.removeChild(cached.htmlNode);
+					cached.textareaNode?.parentNode?.removeChild(cached.textareaNode);
+					this.nodeCache.delete(id);
+				}
 			}
-		});
+		}
+
+		// Create or update each visible element's DOM node
+		for (const el of this.lastSortedVisible) {
+			const isSelected = selectedElementIds.includes(el.id);
+			const dx = isSelected && isDraggingSelection ? selectionOffsetMm.dx : 0;
+			const dy = isSelected && isDraggingSelection ? selectionOffsetMm.dy : 0;
+			const isEditing = editingElementId === el.id;
+			const fingerprint = `${el.updatedAt}:${isSelected ? 1 : 0}:${dx.toFixed(3)}:${dy.toFixed(3)}:${isEditing ? 1 : 0}`;
+
+			const cached = this.nodeCache.get(el.id);
+			if (cached) {
+				if (cached.fingerprint !== fingerprint) {
+					this.updateElementNode(cached, el, isSelected, dx, dy, isEditing);
+					cached.fingerprint = fingerprint;
+				}
+			} else {
+				const newCached: CachedNode = {
+					fingerprint,
+					svgNode: null,
+					htmlNode: null,
+					textareaNode: null,
+				};
+				this.createElementNodeInto(
+					newCached,
+					el,
+					isSelected,
+					dx,
+					dy,
+					isEditing,
+				);
+				this.nodeCache.set(el.id, newCached);
+			}
+		}
+
+		// Re-establish DOM order to match z-index sort (only when elements changed)
+		if (elementsChanged) {
+			for (const el of this.lastSortedVisible) {
+				const cached = this.nodeCache.get(el.id);
+				if (!cached) continue;
+				if (cached.svgNode) this.elementsGroup.appendChild(cached.svgNode);
+				if (cached.htmlNode)
+					this.htmlElementsLayer.appendChild(cached.htmlNode);
+				if (cached.textareaNode)
+					this.htmlElementsLayer.appendChild(cached.textareaNode);
+			}
+		}
 	}
 
-	private renderStroke(
+	/**
+	 * Populates a fresh CachedNode by creating and configuring the appropriate
+	 * DOM node(s) for the given element.  Does NOT append to the DOM — the
+	 * caller's DOM-order reconciliation pass handles that.
+	 */
+	private createElementNodeInto(
+		cached: CachedNode,
+		el: CanvasElement,
+		isSelected: boolean,
+		dx: number,
+		dy: number,
+		isEditing: boolean,
+	) {
+		if (el.type === "ELEMENT_STROKE") {
+			const path = document.createElementNS(
+				"http://www.w3.org/2000/svg",
+				"path",
+			);
+			this.applyStrokeAttrs(path, el, isSelected, dx, dy);
+			cached.svgNode = path;
+		} else if (el.type === "ELEMENT_IMAGE") {
+			const img = document.createElement("img") as HTMLImageElement;
+			this.applyImageAttrs(img, el, isSelected, dx, dy);
+			cached.htmlNode = img;
+		} else if (el.type === "ELEMENT_TEXT") {
+			const div = document.createElement("div") as HTMLDivElement;
+			this.applyTextAttrs(div, el, isSelected, dx, dy);
+			cached.htmlNode = div;
+			if (isEditing) {
+				const content = getString(el.metadata, MetadataKey.CONTENT);
+				cached.textareaNode = this.createTextarea(el, div, content);
+			}
+		}
+	}
+
+	/**
+	 * Applies the latest visual state to an already-mounted DOM node.
+	 * For text elements, also manages the textarea lifecycle as editing mode
+	 * transitions in and out.
+	 */
+	private updateElementNode(
+		cached: CachedNode,
+		el: CanvasElement,
+		isSelected: boolean,
+		dx: number,
+		dy: number,
+		isEditing: boolean,
+	) {
+		if (el.type === "ELEMENT_STROKE" && cached.svgNode) {
+			this.applyStrokeAttrs(cached.svgNode, el, isSelected, dx, dy);
+		} else if (el.type === "ELEMENT_IMAGE" && cached.htmlNode) {
+			this.applyImageAttrs(
+				cached.htmlNode as HTMLImageElement,
+				el,
+				isSelected,
+				dx,
+				dy,
+			);
+		} else if (el.type === "ELEMENT_TEXT" && cached.htmlNode) {
+			const wasEditing = cached.textareaNode !== null;
+
+			if (wasEditing && !isEditing) {
+				// Editing ended: remove textarea, restore div visibility
+				cached.textareaNode?.parentNode?.removeChild(cached.textareaNode);
+				cached.textareaNode = null;
+				(cached.htmlNode as HTMLDivElement).style.visibility = "";
+			} else if (!wasEditing && isEditing) {
+				// Editing started: create textarea overlay
+				const content = getString(el.metadata, MetadataKey.CONTENT);
+				const textarea = this.createTextarea(
+					el,
+					cached.htmlNode as HTMLDivElement,
+					content,
+				);
+				this.htmlElementsLayer?.appendChild(textarea);
+				cached.textareaNode = textarea;
+			}
+
+			// Only update div content/attrs when not editing (div is hidden while editing)
+			if (!isEditing) {
+				this.applyTextAttrs(
+					cached.htmlNode as HTMLDivElement,
+					el,
+					isSelected,
+					dx,
+					dy,
+				);
+			}
+		}
+	}
+
+	private applyStrokeAttrs(
+		path: SVGPathElement,
 		el: CanvasElement,
 		isSelected: boolean,
 		dx: number,
@@ -345,13 +514,13 @@ export class SVGRenderer implements CanvasRenderer {
 				? points.map((p, i) => (i % 2 === 0 ? p + dx : p + dy))
 				: points;
 
-		const d = pointsToCatmullRomPath(shiftedPoints);
-		const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-		path.setAttribute("d", d);
+		path.setAttribute("d", pointsToCatmullRomPath(shiftedPoints));
 		path.setAttribute("fill", "none");
 		path.setAttribute(
 			"stroke",
-			getString(el.metadata, MetadataKey.COLOR, "#fff"),
+			isSelected
+				? "var(--accent, #0078ff)"
+				: getString(el.metadata, MetadataKey.COLOR, "#fff"),
 		);
 		path.setAttribute(
 			"stroke-width",
@@ -359,24 +528,23 @@ export class SVGRenderer implements CanvasRenderer {
 		);
 		path.setAttribute("stroke-linecap", "round");
 		path.setAttribute("stroke-linejoin", "round");
-
-		let styleStr = "";
 		if (isSelected) {
-			styleStr += ` filter: drop-shadow(0 0 3px var(--accent, #0078ff)); opacity: 0.8;`;
-			path.setAttribute("stroke", "var(--accent, #0078ff)");
+			path.setAttribute(
+				"style",
+				"filter: drop-shadow(0 0 3px var(--accent, #0078ff)); opacity: 0.8;",
+			);
+		} else {
+			path.removeAttribute("style");
 		}
-		if (styleStr) path.setAttribute("style", styleStr);
-
-		this.elementsGroup?.appendChild(path);
 	}
 
-	private renderImage(
+	private applyImageAttrs(
+		img: HTMLImageElement,
 		el: CanvasElement,
 		isSelected: boolean,
 		dx: number,
 		dy: number,
 	) {
-		const img = document.createElement("img");
 		img.src = getString(el.metadata, MetadataKey.SRC);
 		img.style.position = "absolute";
 		img.style.left = `${(getNumber(el.metadata, MetadataKey.MIN_X) + dx) * MM_TO_PX}px`;
@@ -388,18 +556,16 @@ export class SVGRenderer implements CanvasRenderer {
 		img.style.border = isSelected
 			? "2px solid var(--accent, #0078ff)"
 			: "1px solid rgba(255,255,255,0.06)";
-		if (isSelected) img.style.opacity = "0.8";
-		this.htmlElementsLayer?.appendChild(img);
+		img.style.opacity = isSelected ? "0.8" : "";
 	}
 
-	private renderText(
+	private applyTextAttrs(
+		div: HTMLDivElement,
 		el: CanvasElement,
 		isSelected: boolean,
 		dx: number,
 		dy: number,
-		state: CanvasState,
 	) {
-		const div = document.createElement("div");
 		div.style.position = "absolute";
 		div.style.left = `${(getNumber(el.metadata, MetadataKey.MIN_X) + dx) * MM_TO_PX}px`;
 		div.style.top = `${(getNumber(el.metadata, MetadataKey.MIN_Y) + dy) * MM_TO_PX}px`;
@@ -413,7 +579,7 @@ export class SVGRenderer implements CanvasRenderer {
 		div.style.border = isSelected
 			? "2px solid var(--accent, #0078ff)"
 			: "1px solid rgba(255,255,255,0.1)";
-		if (isSelected) div.style.opacity = "0.8";
+		div.style.opacity = isSelected ? "0.8" : "";
 		div.style.maxWidth = "400px";
 		div.style.pointerEvents = "auto";
 
@@ -433,19 +599,13 @@ export class SVGRenderer implements CanvasRenderer {
 		} else {
 			div.innerText = content;
 		}
-
-		if (state.editingElementId === el.id) {
-			this.setupTextarea(el, div, content);
-		}
-
-		this.htmlElementsLayer?.appendChild(div);
 	}
 
-	private setupTextarea(
+	private createTextarea(
 		el: CanvasElement,
-		div: HTMLDivElement,
+		div: HTMLElement,
 		content: string,
-	) {
+	): HTMLTextAreaElement {
 		const textarea = document.createElement("textarea");
 		textarea.value = content;
 		textarea.style.position = "absolute";
@@ -477,11 +637,12 @@ export class SVGRenderer implements CanvasRenderer {
 			}
 		});
 
-		this.htmlElementsLayer?.appendChild(textarea);
+		div.style.visibility = "hidden";
 		setTimeout(() => {
 			textarea.focus();
 			textarea.select();
 		}, 0);
-		div.style.visibility = "hidden";
+
+		return textarea;
 	}
 }
