@@ -92,7 +92,10 @@ function textareas(c: HTMLElement): HTMLTextAreaElement[] {
 describe("SVGRenderer — keyed DOM reconciliation", () => {
 	let container: HTMLDivElement;
 	let renderer: SVGRenderer;
-	let mockGateway: { exportSVG: ReturnType<typeof vi.fn>; getStrokePath: ReturnType<typeof vi.fn> };
+	let mockGateway: {
+		exportSVG: ReturnType<typeof vi.fn>;
+		getStrokePath: ReturnType<typeof vi.fn>;
+	};
 
 	beforeEach(() => {
 		container = document.createElement("div");
@@ -140,10 +143,14 @@ describe("SVGRenderer — keyed DOM reconciliation", () => {
 	it("reuses the same SVG path node when only the viewport changes", () => {
 		const el = makeStroke("b");
 		const elements = [el] as any;
-		renderer.render(s({ elements, viewport: { pan: { x: 0, y: 0 }, scale: 1 } }));
+		renderer.render(
+			s({ elements, viewport: { pan: { x: 0, y: 0 }, scale: 1 } }),
+		);
 		const [pathBefore] = elementPaths(container);
 
-		renderer.render(s({ elements, viewport: { pan: { x: 50, y: 30 }, scale: 1.5 } }));
+		renderer.render(
+			s({ elements, viewport: { pan: { x: 50, y: 30 }, scale: 1.5 } }),
+		);
 		const [pathAfter] = elementPaths(container);
 
 		expect(pathAfter).toBe(pathBefore);
@@ -152,12 +159,25 @@ describe("SVGRenderer — keyed DOM reconciliation", () => {
 	// ── In-place attribute updates ────────────────────────────────────────
 
 	it("updates stroke color in-place (same node) when element metadata changes", () => {
-		const v1 = { ...makeStroke("c"), metadata: { points: [0, 0, 10, 10, 20, 5], color: "#ffffff", width: 1.2, z_index: 0 }, updatedAt: 1 } as any;
+		const v1 = {
+			...makeStroke("c"),
+			metadata: {
+				points: [0, 0, 10, 10, 20, 5],
+				color: "#ffffff",
+				width: 1.2,
+				z_index: 0,
+			},
+			updatedAt: 1,
+		} as any;
 		renderer.render(s({ elements: [v1] }));
 		const [pathBefore] = elementPaths(container);
 		expect(pathBefore.getAttribute("stroke")).toBe("#ffffff");
 
-		const v2 = { ...v1, metadata: { ...v1.metadata, color: "#ff0000" }, updatedAt: 2 };
+		const v2 = {
+			...v1,
+			metadata: { ...v1.metadata, color: "#ff0000" },
+			updatedAt: 2,
+		};
 		renderer.render(s({ elements: [v2] }));
 		const [pathAfter] = elementPaths(container);
 
@@ -206,8 +226,16 @@ describe("SVGRenderer — keyed DOM reconciliation", () => {
 	// ── DOM ordering ──────────────────────────────────────────────────────
 
 	it("renders elements in z_index order (lower z_index appears earlier in DOM)", () => {
-		const back = { ...makeStroke("h"), metadata: { points: [0, 0, 5, 5], color: "#aaa", width: 1, z_index: 0 }, updatedAt: 1 } as any;
-		const front = { ...makeStroke("i"), metadata: { points: [0, 0, 5, 5], color: "#bbb", width: 1, z_index: 10 }, updatedAt: 1 } as any;
+		const back = {
+			...makeStroke("h"),
+			metadata: { points: [0, 0, 5, 5], color: "#aaa", width: 1, z_index: 0 },
+			updatedAt: 1,
+		} as any;
+		const front = {
+			...makeStroke("i"),
+			metadata: { points: [0, 0, 5, 5], color: "#bbb", width: 1, z_index: 10 },
+			updatedAt: 1,
+		} as any;
 		// Intentionally add front-first to test that sorting works
 		renderer.render(s({ elements: [front, back] }));
 
@@ -219,13 +247,25 @@ describe("SVGRenderer — keyed DOM reconciliation", () => {
 	});
 
 	it("re-establishes DOM order when z_index changes (bring-to-front)", () => {
-		const a = { ...makeStroke("j"), metadata: { points: [0, 0, 5, 5], color: "#aaa", width: 1, z_index: 0 }, updatedAt: 1 } as any;
-		const b = { ...makeStroke("k"), metadata: { points: [0, 0, 5, 5], color: "#bbb", width: 1, z_index: 1 }, updatedAt: 1 } as any;
+		const a = {
+			...makeStroke("j"),
+			metadata: { points: [0, 0, 5, 5], color: "#aaa", width: 1, z_index: 0 },
+			updatedAt: 1,
+		} as any;
+		const b = {
+			...makeStroke("k"),
+			metadata: { points: [0, 0, 5, 5], color: "#bbb", width: 1, z_index: 1 },
+			updatedAt: 1,
+		} as any;
 		renderer.render(s({ elements: [a, b] }));
 		expect(elementPaths(container)[0].getAttribute("stroke")).toBe("#aaa");
 
 		// Promote a to front by giving it a higher z_index and bumping updatedAt
-		const aFront = { ...a, metadata: { ...a.metadata, z_index: 5 }, updatedAt: 2 };
+		const aFront = {
+			...a,
+			metadata: { ...a.metadata, z_index: 5 },
+			updatedAt: 2,
+		};
 		renderer.render(s({ elements: [aFront, b] }));
 
 		const paths = elementPaths(container);

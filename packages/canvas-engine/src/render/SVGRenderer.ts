@@ -382,7 +382,14 @@ export class SVGRenderer implements CanvasRenderer {
 					htmlNode: null,
 					textareaNode: null,
 				};
-				this.createElementNodeInto(newCached, el, isSelected, dx, dy, isEditing);
+				this.createElementNodeInto(
+					newCached,
+					el,
+					isSelected,
+					dx,
+					dy,
+					isEditing,
+				);
 				this.nodeCache.set(el.id, newCached);
 			}
 		}
@@ -393,7 +400,8 @@ export class SVGRenderer implements CanvasRenderer {
 				const cached = this.nodeCache.get(el.id);
 				if (!cached) continue;
 				if (cached.svgNode) this.elementsGroup.appendChild(cached.svgNode);
-				if (cached.htmlNode) this.htmlElementsLayer.appendChild(cached.htmlNode);
+				if (cached.htmlNode)
+					this.htmlElementsLayer.appendChild(cached.htmlNode);
 				if (cached.textareaNode)
 					this.htmlElementsLayer.appendChild(cached.textareaNode);
 			}
